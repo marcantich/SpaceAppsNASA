@@ -234,7 +234,212 @@ body {
   font-size: 11px;
 }
 
+/* Toolbar: test selector + hint */
+.test {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.test select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 6px;
+  font: inherit;
+}
+
+.zone {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zone button {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.zone button:hover {
+  border-color: #7fd1ff;
+}
+
+.zone button.active {
+  background: #7fd1ff;
+  border-color: #7fd1ff;
+  color: #10141f;
+}
+
+.hint {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* Earth: ranked analogs (left) + cell card (right) */
+.card.results {
+  left: 12px;
+  right: auto;
+  width: min(270px, calc(50% - 18px));
+}
+
+.card .small {
+  font-size: 11px;
+  margin: 6px 0 0;
+}
+
+.zone-note {
+  margin: -4px 0 6px;
+  padding: 3px 8px;
+  border-left: 3px solid #7fd1ff;
+  border-radius: 4px;
+  background: rgb(127 209 255 / 0.08);
+  font-size: 12px;
+}
+
+.ranks {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+}
+
+.ranks li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.ranks li:hover,
+.ranks li:focus {
+  background: rgb(255 255 255 / 0.06);
+  outline: none;
+}
+
+.score,
+.cmp-index b {
+  display: inline-grid;
+  place-items: center;
+  min-width: 34px;
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 7px;
+  color: #10141f;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.legend i {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--ramp);
+}
+
+/* "Earth cell vs target" block */
+.cmp {
+  margin: 4px 0 6px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.03);
+}
+
+.cmp-index {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+
+.cmp-index b {
+  min-width: 44px;
+  height: 34px;
+  font-size: 18px;
+}
+
+.cmp-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1px 8px;
+  margin-top: 5px;
+  font-size: 12px;
+}
+
+.cmp-name {
+  color: var(--muted);
+}
+
+.cmp-vals {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cmp-bar {
+  grid-column: 1 / -1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.cmp-bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #b73779, #fc8961, #fcfdbf);
+}
+
+/* Small loading pill at the bottom of the Earth pane */
+.status {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  z-index: 4;
+  transform: translateX(-50%);
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgb(16 20 31 / 0.9);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.status[hidden] {
+  display: none;
+}
+
 @media (max-width: 760px) {
+  .hint {
+    display: none;
+  }
+
+  .card.results {
+    top: 48px;
+    bottom: auto;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 35%;
+  }
+
   .card {
     top: auto;
     bottom: 8px;

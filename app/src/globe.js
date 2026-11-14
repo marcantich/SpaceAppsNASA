@@ -199,6 +199,178 @@ export function createGlobe(container, bodyKey) {
     cellOutline = null;
   }
 
+  // --- Hexagon layer: many H3 cells filled with a colour each (Earth matches) ---
+  let hexPrimitive = null;
+  const HEX_HEIGHT = 1500; // m above the ellipsoid: sits on the imagery without z-fighting
+
+  /** list = [{ h3, color: CSS colour, alpha? }]; replaces any previous layer. */
+  function showHexes(list) {
+    clearHexes();
+    if (!list.length) return;
+    const instances = list.map(({ h3, color, alpha = 0.78 }) => new Cesium.GeometryInstance({
+      geometry: new Cesium.PolygonGeometry({
+        polygonHierarchy: new Cesium.PolygonHierarchy(cellToBoundary(h3).map(([la, lo]) => toCartesian(la, lo))),
+        height: HEX_HEIGHT,
+        ellipsoid,
+        vertexFormat: Cesium.PerInstanceColorAppearance.FLAT_VERTEX_FORMAT,
+      }),
+      attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(css(color).withAlpha(alpha)) },
+      id: `hex:${h3}`,
+    }));
+    hexPrimitive = scene.primitives.add(new Cesium.Primitive({
+      geometryInstances: instances,
+      appearance: new Cesium.PerInstanceColorAppearance({ flat: true, translucent: true }),
+      asynchronous: true,
+    }));
+  }
+  function clearHexes() {
+    if (hexPrimitive) scene.primitives.remove(hexPrimitive);
+    hexPrimitive = null;
+  }
+
+  // --- Ranked results (#1, #2…) as labelled pins ---
+  const ranks = new Cesium.CustomDataSource('ranks');
+  viewer.dataSources.add(ranks);
+  /** list = [{ lat, lon, text, color, payload }] */
+  function setRanks(list) {
+    ranks.entities.removeAll();
+    list.forEach((r, k) => {
+      ranks.entities.add({
+        id: `rank:${k}`,
+        position: toCartesian(r.lat, r.lon, SURFACE_OFFSET * 3),
+        point: { pixelSize: k === 0 ? 14 : 11, color: css(r.color), outlineColor: Cesium.Color.WHITE, outlineWidth: 2 },
+        label: {
+          ...labelStyle(r.text),
+          font: `${k === 0 ? 'bold 13px' : '12px'} system-ui, sans-serif`,
+          pixelOffset: new Cesium.Cartesian2(0, -18),
+          disableDepthTestDistance: 0,
+        },
+        properties: { payload: r.payload },
+      });
+    });
+  }
+  const clearRanks = () => ranks.entities.removeAll();
+
+  // --- Search zone: a lat/lon box (zones.js) drawn as a faint fill + outline ---
+  let zoneEntities = [];
+  const ZONE_COLOR = css('#7fd1ff');
+
+  /** Outline points of a box, every ≤1° so long edges follow parallels and meridians. */
+  function boxRing(z) {
+    const span = ((z.east - z.west) + 360) % 360 || 360;
+    const full = span >= 359.9;
+    const pts = [];
+    const along = (la0, lo0, la1, lo1) => {
+      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(la1 - la0), Math.abs(lo1 - lo0))));
+      for (let k = 0; k <= steps; k++) pts.push(toCartesian(la0 + ((la1 - la0) * k) / steps, lo0 + ((lo1 - lo0) * k) / steps, 3000));
+    };
+    const e = z.west + span; // unwrapped east
+    if (full) {
+      // a full band of longitude: only the parallels (the pole side is a point)
+      const rings = [];
+      for (const la of [z.north, z.south]) {
+        if (Math.abs(la) >= 89.9) continue;
+        pts.length = 0;
+        along(la, -180, la, 180);
+        rings.push([...pts]);
+      }
+      return rings;
+    }
+    along(z.south, z.west, z.south, e);
+    along(z.south, e, z.north, e);
+    along(z.north, e, z.north, z.west);
+    along(z.north, z.west, z.south, z.west);
+    return [pts];
+  }
+
+  function showZone(z, { dashed = false } = {}) {
+    clearZone();
+    const rect = Cesium.Rectangle.fromDegrees(z.west, z.south, z.east, z.north);
+    zoneEntities.push(viewer.entities.add({
+      rectangle: { coordinates: rect, height: 800, material: ZONE_COLOR.withAlpha(0.07) },
+    }));
+    for (const ring of boxRing(z)) {
+      zoneEntities.push(viewer.entities.add({
+        polyline: {
+          positions: ring,
+          width: 2,
+          arcType: Cesium.ArcType.NONE,
+          material: dashed
+            ? new Cesium.PolylineDashMaterialProperty({ color: ZONE_COLOR, dashLength: 12 })
+            : ZONE_COLOR.withAlpha(0.9),
+        },
+      }));
+    }
+  }
+  function clearZone() {
+    zoneEntities.forEach((e) => viewer.entities.remove(e));
+    zoneEntities = [];
+  }
+  function flyToZone(z, duration = 1.6) {
+    const rect = Cesium.Rectangle.fromDegrees(z.west, z.south, z.east, z.north);
+    viewer.camera.flyTo({ destination: rect, duration });
+  }
+
+  /**
+   * Let the user drag a lat/lon box on the globe (camera frozen meanwhile).
+   * Resolves { south, north, west, east } or null if cancelled (Esc / too small / off the globe).
+   */
+  let drawing = null;
+  function drawBox() {
+    if (drawing) return drawing.promise;
+    const ctrl = scene.screenSpaceCameraController;
+    const draw = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
+    let start = null;
+    let box = null;
+    let resolveFn;
+    const promise = new Promise((r) => { resolveFn = r; });
+    const boxOf = (a, b) => {
+      // shortest way round in longitude: a drag never spans more than half the globe
+      let west = Math.min(a.lon, b.lon);
+      let east = Math.max(a.lon, b.lon);
+      if (east - west > 180) [west, east] = [east, west];
+      return { south: Math.min(a.lat, b.lat), north: Math.max(a.lat, b.lat), west, east };
+    };
+    const finish = (result) => {
+      draw.destroy();
+      document.removeEventListener('keydown', onKey, true);
+      ctrl.enableInputs = true;
+      viewer.canvas.style.cursor = '';
+      drawing = null;
+      suppressClick = true; // the mouse-up of the drag must not count as a click on Earth
+      setTimeout(() => { suppressClick = false; }, 0);
+      if (!result) clearZone();
+      resolveFn(result);
+    };
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      e.stopPropagation();
+      finish(null);
+    };
+    document.addEventListener('keydown', onKey, true);
+    ctrl.enableInputs = false;
+    viewer.canvas.style.cursor = 'crosshair';
+    draw.setInputAction((e) => {
+      start = toLatLon(e.position);
+    }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
+    draw.setInputAction((e) => {
+      viewer.canvas.style.cursor = 'crosshair';
+      if (!start) return;
+      const p = toLatLon(e.endPosition);
+      if (!p) return;
+      box = boxOf(start, p);
+      showZone(box, { dashed: true });
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
+    draw.setInputAction((e) => {
+      const p = start && toLatLon(e.position);
+      if (p) box = boxOf(start, p);
+      const ok = box && box.north - box.south > 0.2 && Math.abs(box.east - box.west) > 0.2;
+      finish(ok ? box : null);
+    }, Cesium.ScreenSpaceEventType.LEFT_UP);
+    drawing = { promise, cancel: () => finish(null) };
+    return promise;
+  }
+
   /** Remove the coordinate marker, the cell outline and un-highlight the selected site. */
   function clearSelection() {
     clearMarker();
@@ -210,14 +382,22 @@ export function createGlobe(container, bodyKey) {
   // --- Mouse handling ---
   const pickListeners = [];
   const siteListeners = [];
+  const rankListeners = [];
 
+  let suppressClick = false; // true right after drawing a zone
   const handler = new Cesium.ScreenSpaceEventHandler(viewer.canvas);
   handler.setInputAction((e) => {
+    if (drawing || suppressClick) return;
     const picked = scene.pick(e.position);
     const entity = picked?.id;
     if (entity && sites.entities.contains(entity)) {
       const site = selectSite(entity);
       siteListeners.forEach((fn) => fn(site));
+      return;
+    }
+    if (entity && ranks.entities.contains(entity)) {
+      const { payload } = entity.properties.getValue(viewer.clock.currentTime);
+      rankListeners.forEach((fn) => fn(payload));
       return;
     }
     const p = toLatLon(e.position);
@@ -231,8 +411,9 @@ export function createGlobe(container, bodyKey) {
   handler.setInputAction((e) => {
     const p = toLatLon(e.endPosition);
     readout.textContent = p ? formatLatLon(p) : '—';
-    const overSite = scene.pick(e.endPosition)?.id;
-    viewer.canvas.style.cursor = overSite && sites.entities.contains(overSite) ? 'pointer' : '';
+    const over = scene.pick(e.endPosition)?.id;
+    const clickable = over && (sites.entities.contains(over) || ranks.entities.contains(over));
+    viewer.canvas.style.cursor = clickable ? 'pointer' : '';
   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
   return {
@@ -252,6 +433,23 @@ export function createGlobe(container, bodyKey) {
     /** Outline an H3 cell (id string) on the globe; clearCell() removes it. */
     showCell,
     clearCell,
+    /** Fill many H3 cells with colours ([{ h3, color, alpha? }]); clearHexes() removes them. */
+    showHexes,
+    clearHexes,
+    /** Numbered result pins ([{ lat, lon, text, color, payload }]); fn(payload) on click. */
+    setRanks,
+    clearRanks,
+    /** Search zone box ({ south, north, west, east }): draw, fly to, let the user drag one. */
+    showZone,
+    clearZone,
+    flyToZone,
+    drawBox,
+    cancelDraw() {
+      drawing?.cancel();
+    },
+    onRankSelect(fn) {
+      rankListeners.push(fn);
+    },
     /** fn({ lat, lon }) when the user clicks empty ground. */
     onPick(fn) {
       pickListeners.push(fn);

@@ -21,22 +21,22 @@ variables:
     unit: "°"
     type: numeric
     tolerance: 5                     # [supuesto]
-    note: "Calcular a la MISMA resolución en los tres cuerpos (enfoque §2.2)"
+    note: "MISMA escala en los tres cuerpos (enfoque §2.2): píxeles de ~460–474 m, diferencias centrales (≈ 0,9 km), mediana ponderada por área en la celda H3"
     sources:
-      moon:  "Global: calculada desde LOLA ldem_64. Polo (80–90S): PGDA LDRM_80S_1000MPP_ADJ_SLP_<L>M. Ver docs/06_datos_luna.md"
-      mars:  "MOLA / MOLA-HRSC blend (PDS) [verificar]"
-      earth: "SRTMGL30 (Earthdata, 30″ ≈ 0,93 km), media del hexágono H3 res 5"
+      moon:  "LRO LOLA GDR ldem_64, 64 px/° (~474 m) → src/analogs/moon.py (H3 res 4, ~12,3 km)"
+      mars:  "MGS MOLA MEGDR 128 px/° (~463 m) + mapas polares → src/analogs/mars_grid.py (H3 res 5, ~9,1 km)"
+      earth: "NOAA ETOPO 2022 15″ (~463 m), solo tierra → src/analogs/earth_grid.py (H3 res 6, ~6,5 km)"
 
   roughness_deg:
     label: "Rugosidad (RMS de la pendiente)"
     unit: "°"
     type: numeric
     tolerance: 3                     # [supuesto]
-    note: "Misma resolución que la pendiente"
+    note: "Paso alto: RMS de la pendiente tras quitar el plano (Marte, Tierra) o el gradiente medio (Luna, ≈ lo mismo) de la celda"
     sources:
-      moon:  "Global: calculada desde LOLA ldem_64. Polo: PGDA …_ROUGH_<L>M (o RMSD) [verificar definición]"
-      mars:  "MOLA [verificar]"
-      earth: "SRTMGL30, RMS de la pendiente en el hexágono H3 res 5"
+      moon:  "LRO LOLA GDR ldem_64 (moon.py)"
+      mars:  "MGS MOLA MEGDR 128 px/° (mars_grid.py)"
+      earth: "NOAA ETOPO 2022 15″ (earth_grid.py)"
 
   rock_abundance_pct:
     label: "Abundancia de rocas"
@@ -89,9 +89,9 @@ variables:
     tolerance: 20                    # [supuesto]
     note: "Diviner PRP da la media a 2 cm de profundidad; MODIS da la superficie: no es exactamente la misma magnitud [verificar]"
     sources:
-      moon:  "Global: Diviner GCP (media de tbol, 0,5°). Polo: Diviner PRP temp_avg (0,5 km)"
-      mars:  "Mars Climate Database [verificar]"
-      earth: "MYD11C3 (Aqua), media de los 12 meses de (día+noche)/2, climatología 2019–2023"
+      moon:  "LRO Diviner GCP: (día + noche)/2 del ciclo medio de la misión (moon.py)"
+      mars:  "MGS TES MY26 (día) + MRO MCS MY31 (noche): (día + noche)/2 (mars_grid.py)"
+      earth: "MODIS Aqua MYD11C3: (día + noche)/2 de las 12 medias mensuales 2019–2023 (earth_grid.py)"
 
   t_max_K:
     label: "Temperatura máxima anual"
@@ -99,9 +99,9 @@ variables:
     type: numeric
     tolerance: 30                    # [supuesto]
     sources:
-      moon:  "Global: Diviner GCP (máximo de tbol, 0,5°). Polo: Diviner PRP temp_max"
-      mars:  "Mars Climate Database [verificar]"
-      earth: "MYD11C3 (Aqua 13:30), mes más cálido de la climatología 2019–2023"
+      moon:  "LRO Diviner GCP: máximo del ciclo diurno medio (moon.py)"
+      mars:  "MGS TES MY26: percentil 95 de los valores de la tarde (mars_grid.py)"
+      earth: "MODIS Aqua MYD11C3 (13:30): mes más cálido de la climatología 2019–2023 (earth_grid.py). Es una media mensual, no un P95: sale unos K más baja que la definición de Marte"
 
   t_min_K:
     label: "Temperatura mínima anual"
@@ -110,9 +110,20 @@ variables:
     tolerance: 30                    # [supuesto]
     note: "Condición típica (mes/hora más fría de la climatología), no el récord"
     sources:
-      moon:  "Global: Diviner GCP (mínimo de tbol, 0,5°). Polo: Diviner PRP"
-      mars:  "TES MY26 noche (~02 h) [verificar cobertura]"
-      earth: "MYD11C3 (Aqua 01:30), mes más frío de la climatología 2019–2023"
+      moon:  "LRO Diviner GCP: mínimo del ciclo diurno medio (moon.py)"
+      mars:  null                    # no exportada: para Marte se compara t_night_K
+      earth: "MODIS Aqua MYD11C3 (01:30): mes más frío de la climatología 2019–2023 (earth_grid.py)"
+
+  t_night_K:
+    label: "Temperatura nocturna (media anual)"
+    unit: "K"
+    type: numeric
+    tolerance: 20                    # [supuesto]
+    note: "La temperatura que mejor comparten la Tierra y Marte: media anual de noche"
+    sources:
+      moon:  null                    # no exportada: para la Luna se compara t_min_K
+      mars:  "MRO MCS DDR v6.2, MY31, ~03 h (mars_grid.py)"
+      earth: "MODIS Aqua MYD11C3 (01:30), media anual 2019–2023 (earth_grid.py)"
 
   precip_mm_year:
     label: "Lluvia media anual (aridez)"
@@ -132,9 +143,10 @@ variables:
     tolerance: 0.5                   # [supuesto]
     note: "Analogía PARCIAL: en la Luna el hielo sublima al vacío; en la Tierra hay atmósfera"
     sources:
-      moon:  "Diviner PRP, columna ice_depth (−999 = más de 2,87 m, NO es sin dato) + PGDA LPSR_80S_20MPP (sombra permanente)"
-      mars:  "SWIM (Subsurface Water Ice Mapping) [verificar]"
-      earth: "ESA CCI Permafrost, espesor de la capa activa [verificar]"
+      moon:  "LRO Diviner PRP, profundidad de estabilidad del hielo (polo sur ≤ −80°); |lat| < 60°: sin hielo (supuesto). Metros continuos; 10 = no (moon.py)"
+      mars:  "SWIM 2.0 (±60°) + neutrones GRS + supuesto al N de 70° (mars_grid.py). Clases 0,5 / 3 / 5 / 10"
+      earth: "Estimada: hielo permanente MCD12C1 → 0 m; permafrost (LST media < 0 °C) → capa activa por Stefan E·√(grados-día de deshielo), E = 0,035 [supuesto]; si no, 10 m. Clases como Marte (earth_grid.py). Validar con ESA CCI Permafrost"
+    # Las tres fichas traen además ice_depth_source (de dónde sale el valor en cada celda: medido, modelo o supuesto)
 
   dust_aod:
     label: "Polvo en suspensión (espesor óptico)"
@@ -143,8 +155,8 @@ variables:
     tolerance: 0.2                   # [supuesto]
     sources:
       moon:  null
-      mars:  "TES / Mars Climate Database, opacidad del polvo [verificar]"
-      earth: "MERRA-2 M2TMNXAER, DUEXTTAU (solo polvo, 550 nm), media anual 2019–2023"
+      mars:  "MGS TES MY26, 9,3 µm × 2,6 → visible (mars_grid.py)"
+      earth: "NASA MERRA-2 M2TMNXAER, DUEXTTAU (solo polvo, 550 nm), media anual 2019–2023 (earth_grid.py)"
 
   silica_wt_pct:
     label: "Sílice (SiO₂)"
@@ -153,9 +165,9 @@ variables:
     tolerance: 5                     # [supuesto]
     note: "Composición de la superficie expuesta. Basalto ~45–52 %, granito ~70 %, arena de cuarzo > 90 %"
     sources:
-      moon:  "Lunar Prospector GRS, SiO₂ (2°, ~60 km) [verificar unidades]"
-      mars:  "Mars Odyssey GRS, Si (5°) × 2,139 → SiO₂ [verificar]"
-      earth: "ECOSTRESS ECO_L3G_WPS (0,01°, 53° N–53° S), media en el píxel de 0,05°"
+      moon:  "Lunar Prospector GRS, SiO₂ (2°, ~60 km) [verificar unidades] (moon.py)"
+      mars:  "Mars Odyssey GRS, Si (5°) × 2,139 → SiO₂ [verificar] — PENDIENTE: mars_grid.py lo calcula (grs_si) pero la web no lo exporta"
+      earth: "ECOSTRESS ECO_L3G_WPS (0,01°, 53° N–53° S) (earth_grid.py)"
 
   snow_cover_pct:
     label: "Nieve (cobertura media anual)"

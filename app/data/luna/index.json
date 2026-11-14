@@ -13,7 +13,7 @@
    "scale": 0.25,
    "offset": 0.0,
    "unit": "°",
-   "label": "Slope (median, ~950 m baseline)",
+   "label": "Slope (median; ~474 m pixels, central differences ≈ 0.95 km baseline)",
    "source": "LRO LOLA GDR ldem_64, 64 px/deg (PDS Geosciences)",
    "short_source": "LOLA"
   },
@@ -80,11 +80,21 @@
   {
    "name": "ice_depth_m",
    "dtype": "u1",
+   "scale": 0.5,
+   "offset": 0.0,
+   "unit": "m",
+   "label": "Depth to water ice (class like Mars SWIM; 10 = no ice found)",
+   "source": "LRO Diviner Polar Resource Product, ice-stability depth (Paige et al. 2010), south pole ≤ −80°; away from the poles (|lat| < 60°) assumed: ice not stable near the surface; 60–80° and north pole: no data",
+   "source_column": "ice_depth_source"
+  },
+  {
+   "name": "ice_depth_cont_m",
+   "dtype": "u1",
    "scale": 0.05,
    "offset": 0.0,
    "unit": "m",
-   "label": "Depth to stable water ice (0 = surface; 10 = none found)",
-   "source": "LRO Diviner Polar Resource Product, ice-stability depth (Paige et al. 2010), south pole ≤ −80°; away from the poles (|lat| < 60°) assumed: ice not stable near the surface; 60–80° and north pole: no data",
+   "label": "Depth to stable water ice, metres (0 = surface; 10 = none found)",
+   "source": "LRO Diviner Polar Resource Product, ice-stability depth (Paige et al. 2010), south pole ≤ −80°",
    "source_column": "ice_depth_source"
   },
   {
@@ -215,612 +225,612 @@
   "0": {
    "file": "r000.bin.gz",
    "n_cells": 2401,
-   "bytes": 24550
+   "bytes": 24557
   },
   "1": {
    "file": "r001.bin.gz",
    "n_cells": 2401,
-   "bytes": 25236
+   "bytes": 25245
   },
   "2": {
    "file": "r002.bin.gz",
    "n_cells": 2401,
-   "bytes": 25208
+   "bytes": 25219
   },
   "3": {
    "file": "r003.bin.gz",
    "n_cells": 2401,
-   "bytes": 24192
+   "bytes": 24226
   },
   "4": {
    "file": "r004.bin.gz",
    "n_cells": 2001,
-   "bytes": 20225
+   "bytes": 20295
   },
   "5": {
    "file": "r005.bin.gz",
    "n_cells": 2401,
-   "bytes": 25357
+   "bytes": 25453
   },
   "6": {
    "file": "r006.bin.gz",
    "n_cells": 2401,
-   "bytes": 25143
+   "bytes": 25223
   },
   "7": {
    "file": "r007.bin.gz",
    "n_cells": 2401,
-   "bytes": 25522
+   "bytes": 25606
   },
   "8": {
    "file": "r008.bin.gz",
    "n_cells": 2401,
-   "bytes": 24477
+   "bytes": 24571
   },
   "9": {
    "file": "r009.bin.gz",
    "n_cells": 2401,
-   "bytes": 25115
+   "bytes": 25188
   },
   "10": {
    "file": "r010.bin.gz",
    "n_cells": 2401,
-   "bytes": 25381
+   "bytes": 25458
   },
   "11": {
    "file": "r011.bin.gz",
    "n_cells": 2401,
-   "bytes": 25744
+   "bytes": 25809
   },
   "12": {
    "file": "r012.bin.gz",
    "n_cells": 2401,
-   "bytes": 24122
+   "bytes": 24174
   },
   "13": {
    "file": "r013.bin.gz",
    "n_cells": 2401,
-   "bytes": 24378
+   "bytes": 24426
   },
   "14": {
    "file": "r014.bin.gz",
    "n_cells": 2001,
-   "bytes": 21062
+   "bytes": 21078
   },
   "15": {
    "file": "r015.bin.gz",
    "n_cells": 2401,
-   "bytes": 24116
+   "bytes": 24123
   },
   "16": {
    "file": "r016.bin.gz",
    "n_cells": 2401,
-   "bytes": 25015
+   "bytes": 25031
   },
   "17": {
    "file": "r017.bin.gz",
    "n_cells": 2401,
-   "bytes": 25069
+   "bytes": 25089
   },
   "18": {
    "file": "r018.bin.gz",
    "n_cells": 2401,
-   "bytes": 24979
+   "bytes": 24995
   },
   "19": {
    "file": "r019.bin.gz",
    "n_cells": 2401,
-   "bytes": 24988
+   "bytes": 25006
   },
   "20": {
    "file": "r020.bin.gz",
    "n_cells": 2401,
-   "bytes": 24778
+   "bytes": 24792
   },
   "21": {
    "file": "r021.bin.gz",
    "n_cells": 2401,
-   "bytes": 22554
+   "bytes": 22569
   },
   "22": {
    "file": "r022.bin.gz",
    "n_cells": 2401,
-   "bytes": 24563
+   "bytes": 24573
   },
   "23": {
    "file": "r023.bin.gz",
    "n_cells": 2401,
-   "bytes": 24455
+   "bytes": 24477
   },
   "24": {
    "file": "r024.bin.gz",
    "n_cells": 2001,
-   "bytes": 20591
+   "bytes": 20609
   },
   "25": {
    "file": "r025.bin.gz",
    "n_cells": 2401,
-   "bytes": 25013
+   "bytes": 25031
   },
   "26": {
    "file": "r026.bin.gz",
    "n_cells": 2401,
-   "bytes": 22572
+   "bytes": 22590
   },
   "27": {
    "file": "r027.bin.gz",
    "n_cells": 2401,
-   "bytes": 24734
+   "bytes": 24757
   },
   "28": {
    "file": "r028.bin.gz",
    "n_cells": 2401,
-   "bytes": 23629
+   "bytes": 23634
   },
   "29": {
    "file": "r029.bin.gz",
    "n_cells": 2401,
-   "bytes": 22822
+   "bytes": 22836
   },
   "30": {
    "file": "r030.bin.gz",
    "n_cells": 2401,
-   "bytes": 23981
+   "bytes": 23990
   },
   "31": {
    "file": "r031.bin.gz",
    "n_cells": 2401,
-   "bytes": 23149
+   "bytes": 23162
   },
   "32": {
    "file": "r032.bin.gz",
    "n_cells": 2401,
-   "bytes": 24062
+   "bytes": 24066
   },
   "33": {
    "file": "r033.bin.gz",
    "n_cells": 2401,
-   "bytes": 24094
+   "bytes": 24106
   },
   "34": {
    "file": "r034.bin.gz",
    "n_cells": 2401,
-   "bytes": 23902
+   "bytes": 23914
   },
   "35": {
    "file": "r035.bin.gz",
    "n_cells": 2401,
-   "bytes": 24408
+   "bytes": 24425
   },
   "36": {
    "file": "r036.bin.gz",
    "n_cells": 2401,
-   "bytes": 24678
+   "bytes": 24694
   },
   "37": {
    "file": "r037.bin.gz",
    "n_cells": 2401,
-   "bytes": 23835
+   "bytes": 23850
   },
   "38": {
    "file": "r038.bin.gz",
    "n_cells": 2001,
-   "bytes": 17734
+   "bytes": 17748
   },
   "39": {
    "file": "r039.bin.gz",
    "n_cells": 2401,
-   "bytes": 24163
+   "bytes": 24168
   },
   "40": {
    "file": "r040.bin.gz",
    "n_cells": 2401,
-   "bytes": 24486
+   "bytes": 24501
   },
   "41": {
    "file": "r041.bin.gz",
    "n_cells": 2401,
-   "bytes": 23672
+   "bytes": 23690
   },
   "42": {
    "file": "r042.bin.gz",
    "n_cells": 2401,
-   "bytes": 22609
+   "bytes": 22626
   },
   "43": {
    "file": "r043.bin.gz",
    "n_cells": 2401,
-   "bytes": 22551
+   "bytes": 22561
   },
   "44": {
    "file": "r044.bin.gz",
    "n_cells": 2401,
-   "bytes": 23149
+   "bytes": 23164
   },
   "45": {
    "file": "r045.bin.gz",
    "n_cells": 2401,
-   "bytes": 23742
+   "bytes": 23760
   },
   "46": {
    "file": "r046.bin.gz",
    "n_cells": 2401,
-   "bytes": 24089
+   "bytes": 24100
   },
   "47": {
    "file": "r047.bin.gz",
    "n_cells": 2401,
-   "bytes": 21631
+   "bytes": 21647
   },
   "48": {
    "file": "r048.bin.gz",
    "n_cells": 2401,
-   "bytes": 23517
+   "bytes": 23535
   },
   "49": {
    "file": "r049.bin.gz",
    "n_cells": 2001,
-   "bytes": 19370
+   "bytes": 19390
   },
   "50": {
    "file": "r050.bin.gz",
    "n_cells": 2401,
-   "bytes": 24107
+   "bytes": 24124
   },
   "51": {
    "file": "r051.bin.gz",
    "n_cells": 2401,
-   "bytes": 23284
+   "bytes": 23292
   },
   "52": {
    "file": "r052.bin.gz",
    "n_cells": 2401,
-   "bytes": 23887
+   "bytes": 23899
   },
   "53": {
    "file": "r053.bin.gz",
    "n_cells": 2401,
-   "bytes": 22631
+   "bytes": 22643
   },
   "54": {
    "file": "r054.bin.gz",
    "n_cells": 2401,
-   "bytes": 23590
+   "bytes": 23607
   },
   "55": {
    "file": "r055.bin.gz",
    "n_cells": 2401,
-   "bytes": 23588
+   "bytes": 23604
   },
   "56": {
    "file": "r056.bin.gz",
    "n_cells": 2401,
-   "bytes": 23583
+   "bytes": 23601
   },
   "57": {
    "file": "r057.bin.gz",
    "n_cells": 2401,
-   "bytes": 23504
+   "bytes": 23519
   },
   "58": {
    "file": "r058.bin.gz",
    "n_cells": 2001,
-   "bytes": 18485
+   "bytes": 18494
   },
   "59": {
    "file": "r059.bin.gz",
    "n_cells": 2401,
-   "bytes": 23363
+   "bytes": 23384
   },
   "60": {
    "file": "r060.bin.gz",
    "n_cells": 2401,
-   "bytes": 23646
+   "bytes": 23665
   },
   "61": {
    "file": "r061.bin.gz",
    "n_cells": 2401,
-   "bytes": 22340
+   "bytes": 22352
   },
   "62": {
    "file": "r062.bin.gz",
    "n_cells": 2401,
-   "bytes": 22553
+   "bytes": 22564
   },
   "63": {
    "file": "r063.bin.gz",
    "n_cells": 2001,
-   "bytes": 19378
+   "bytes": 19396
   },
   "64": {
    "file": "r064.bin.gz",
    "n_cells": 2401,
-   "bytes": 22892
+   "bytes": 22908
   },
   "65": {
    "file": "r065.bin.gz",
    "n_cells": 2401,
-   "bytes": 23252
+   "bytes": 23272
   },
   "66": {
    "file": "r066.bin.gz",
    "n_cells": 2401,
-   "bytes": 23359
+   "bytes": 23377
   },
   "67": {
    "file": "r067.bin.gz",
    "n_cells": 2401,
-   "bytes": 23765
+   "bytes": 23770
   },
   "68": {
    "file": "r068.bin.gz",
    "n_cells": 2401,
-   "bytes": 23662
+   "bytes": 23677
   },
   "69": {
    "file": "r069.bin.gz",
    "n_cells": 2401,
-   "bytes": 23428
+   "bytes": 23437
   },
   "70": {
    "file": "r070.bin.gz",
    "n_cells": 2401,
-   "bytes": 23441
+   "bytes": 23461
   },
   "71": {
    "file": "r071.bin.gz",
    "n_cells": 2401,
-   "bytes": 24094
+   "bytes": 24107
   },
   "72": {
    "file": "r072.bin.gz",
    "n_cells": 2001,
-   "bytes": 19758
+   "bytes": 19774
   },
   "73": {
    "file": "r073.bin.gz",
    "n_cells": 2401,
-   "bytes": 23682
+   "bytes": 23698
   },
   "74": {
    "file": "r074.bin.gz",
    "n_cells": 2401,
-   "bytes": 23748
+   "bytes": 23759
   },
   "75": {
    "file": "r075.bin.gz",
    "n_cells": 2401,
-   "bytes": 23876
+   "bytes": 23885
   },
   "76": {
    "file": "r076.bin.gz",
    "n_cells": 2401,
-   "bytes": 23423
+   "bytes": 23439
   },
   "77": {
    "file": "r077.bin.gz",
    "n_cells": 2401,
-   "bytes": 24334
+   "bytes": 24351
   },
   "78": {
    "file": "r078.bin.gz",
    "n_cells": 2401,
-   "bytes": 23931
+   "bytes": 23946
   },
   "79": {
    "file": "r079.bin.gz",
    "n_cells": 2401,
-   "bytes": 23802
+   "bytes": 23821
   },
   "80": {
    "file": "r080.bin.gz",
    "n_cells": 2401,
-   "bytes": 24078
+   "bytes": 24091
   },
   "81": {
    "file": "r081.bin.gz",
    "n_cells": 2401,
-   "bytes": 23738
+   "bytes": 23751
   },
   "82": {
    "file": "r082.bin.gz",
    "n_cells": 2401,
-   "bytes": 23705
+   "bytes": 23714
   },
   "83": {
    "file": "r083.bin.gz",
    "n_cells": 2001,
-   "bytes": 19847
+   "bytes": 19863
   },
   "84": {
    "file": "r084.bin.gz",
    "n_cells": 2401,
-   "bytes": 24084
+   "bytes": 24101
   },
   "85": {
    "file": "r085.bin.gz",
    "n_cells": 2401,
-   "bytes": 24679
+   "bytes": 24699
   },
   "86": {
    "file": "r086.bin.gz",
    "n_cells": 2401,
-   "bytes": 24028
+   "bytes": 24052
   },
   "87": {
    "file": "r087.bin.gz",
    "n_cells": 2401,
-   "bytes": 23985
+   "bytes": 23996
   },
   "88": {
    "file": "r088.bin.gz",
    "n_cells": 2401,
-   "bytes": 24338
+   "bytes": 24356
   },
   "89": {
    "file": "r089.bin.gz",
    "n_cells": 2401,
-   "bytes": 23796
+   "bytes": 23807
   },
   "90": {
    "file": "r090.bin.gz",
    "n_cells": 2401,
-   "bytes": 25370
+   "bytes": 25382
   },
   "91": {
    "file": "r091.bin.gz",
    "n_cells": 2401,
-   "bytes": 24388
+   "bytes": 24393
   },
   "92": {
    "file": "r092.bin.gz",
    "n_cells": 2401,
-   "bytes": 24587
+   "bytes": 24600
   },
   "93": {
    "file": "r093.bin.gz",
    "n_cells": 2401,
-   "bytes": 25048
+   "bytes": 25064
   },
   "94": {
    "file": "r094.bin.gz",
    "n_cells": 2401,
-   "bytes": 23769
+   "bytes": 23777
   },
   "95": {
    "file": "r095.bin.gz",
    "n_cells": 2401,
-   "bytes": 24873
+   "bytes": 24892
   },
   "96": {
    "file": "r096.bin.gz",
    "n_cells": 2401,
-   "bytes": 25281
+   "bytes": 25293
   },
   "97": {
    "file": "r097.bin.gz",
    "n_cells": 2001,
-   "bytes": 20449
+   "bytes": 20466
   },
   "98": {
    "file": "r098.bin.gz",
    "n_cells": 2401,
-   "bytes": 24198
+   "bytes": 24213
   },
   "99": {
    "file": "r099.bin.gz",
    "n_cells": 2401,
-   "bytes": 25140
+   "bytes": 25159
   },
   "100": {
    "file": "r100.bin.gz",
    "n_cells": 2401,
-   "bytes": 24133
+   "bytes": 24151
   },
   "101": {
    "file": "r101.bin.gz",
    "n_cells": 2401,
-   "bytes": 24023
+   "bytes": 24048
   },
   "102": {
    "file": "r102.bin.gz",
    "n_cells": 2401,
-   "bytes": 24168
+   "bytes": 24172
   },
   "103": {
    "file": "r103.bin.gz",
    "n_cells": 2401,
-   "bytes": 24563
+   "bytes": 24579
   },
   "104": {
    "file": "r104.bin.gz",
    "n_cells": 2401,
-   "bytes": 24298
+   "bytes": 24312
   },
   "105": {
    "file": "r105.bin.gz",
    "n_cells": 2401,
-   "bytes": 25209
+   "bytes": 25226
   },
   "106": {
    "file": "r106.bin.gz",
    "n_cells": 2401,
-   "bytes": 24446
+   "bytes": 24457
   },
   "107": {
    "file": "r107.bin.gz",
    "n_cells": 2001,
-   "bytes": 20353
+   "bytes": 20371
   },
   "108": {
    "file": "r108.bin.gz",
    "n_cells": 2401,
-   "bytes": 25052
+   "bytes": 25094
   },
   "109": {
    "file": "r109.bin.gz",
    "n_cells": 2401,
-   "bytes": 24914
+   "bytes": 24960
   },
   "110": {
    "file": "r110.bin.gz",
    "n_cells": 2401,
-   "bytes": 25081
+   "bytes": 25162
   },
   "111": {
    "file": "r111.bin.gz",
    "n_cells": 2401,
-   "bytes": 24691
+   "bytes": 24746
   },
   "112": {
    "file": "r112.bin.gz",
    "n_cells": 2401,
-   "bytes": 24859
+   "bytes": 24936
   },
   "113": {
    "file": "r113.bin.gz",
    "n_cells": 2401,
-   "bytes": 25201
+   "bytes": 25301
   },
   "114": {
    "file": "r114.bin.gz",
    "n_cells": 2401,
-   "bytes": 25334
+   "bytes": 25421
   },
   "115": {
    "file": "r115.bin.gz",
    "n_cells": 2401,
-   "bytes": 24541
+   "bytes": 24615
   },
   "116": {
    "file": "r116.bin.gz",
    "n_cells": 2401,
-   "bytes": 25242
+   "bytes": 25338
   },
   "117": {
    "file": "r117.bin.gz",
    "n_cells": 2001,
-   "bytes": 20504
+   "bytes": 20582
   },
   "118": {
    "file": "r118.bin.gz",
    "n_cells": 2401,
-   "bytes": 24594
+   "bytes": 24662
   },
   "119": {
    "file": "r119.bin.gz",
    "n_cells": 2401,
-   "bytes": 26056
+   "bytes": 26194
   },
   "120": {
    "file": "r120.bin.gz",
    "n_cells": 2401,
-   "bytes": 27027
+   "bytes": 27281
   },
   "121": {
    "file": "r121.bin.gz",
    "n_cells": 2401,
-   "bytes": 27022
+   "bytes": 27279
   }
  },
  "cell_size_km": 12.3

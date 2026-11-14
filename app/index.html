@@ -17,6 +17,22 @@
         <input type="checkbox" id="relief" />
         Relief
       </label>
+      <label class="test" title="What do you want to test? (weights from configs/pruebas.yaml)">
+        Test
+        <select id="prueba">
+          <option value="">All shared variables</option>
+        </select>
+      </label>
+      <div class="zone" role="group" aria-label="Earth search zone">
+        <label class="test" title="Search the best analogs only inside this region of Earth">
+          Earth zone
+          <select id="zone">
+            <option value="">Whole Earth</option>
+          </select>
+        </label>
+        <button type="button" id="draw-zone" title="Drag a box on the Earth globe to search only inside it (Esc cancels)">▭ Draw area</button>
+      </div>
+      <span class="hint">Click any point of the target body → best Earth analogs</span>
     </header>
 
     <main class="panes">
@@ -28,6 +44,9 @@
       <section class="pane">
         <span class="pane-label">Earth</span>
         <div id="earth" class="globe"></div>
+        <aside id="earth-results" class="card results" hidden aria-live="polite"></aside>
+        <aside id="earth-card" class="card" hidden aria-live="polite"></aside>
+        <div id="earth-status" class="status" hidden></div>
       </section>
     </main>
 

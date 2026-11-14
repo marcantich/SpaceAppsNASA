@@ -78,7 +78,7 @@ def write_index(targets: pd.DataFrame, earth: pd.DataFrame, variables_cfg: dict,
 
 # name → (dtype, scale, offset, unit, label)
 MARS_WEB_COLUMNS: dict[str, tuple[str, float, float, str, str]] = {
-    "slope_deg":              ("u1", 0.25, 0.0, "°", "Slope (median, ~460 m baseline)"),
+    "slope_deg":              ("u1", 0.25, 0.0, "°", "Slope (median; ~460 m pixels, central differences ≈ 0.9 km baseline)"),
     "roughness_deg":          ("u1", 0.25, 0.0, "°", "Roughness (RMS slope after removing a plane)"),
     "t_mean_K":               ("u1", 1.0, 100.0, "K", "Mean surface temperature ((day + night) / 2)"),
     "t_max_K":                ("u1", 1.0, 100.0, "K", "Max surface temperature (P95 of afternoon values)"),
@@ -117,6 +117,19 @@ MARS_SOURCES = {
     "sun_elev_max_deg": "calculated, not measured: highest noon Sun elevation over a year, flat horizon: "
                         "90° − max(0, |lat| − 25.19°) (obliquity of Mars)",
 }
+
+
+def ice_depth_class(depth_m) -> np.ndarray:
+    """Depth to ice (m) → the SWIM classes used for Mars, the Moon and Earth, so the three compare alike:
+    0.5 = ice within the top 1 m (incl. at the surface) · 3 = 1–5 m · 5 = deeper than 5 m · 10 = no ice found."""
+    d = np.asarray(depth_m, dtype=float)
+    out = np.full(d.shape, np.nan)
+    ok = np.isfinite(d)
+    out[ok] = 10.0
+    out[ok & (d <= 1.0)] = 0.5
+    out[ok & (d > 1.0) & (d <= 5.0)] = 3.0
+    out[ok & (d > 5.0) & (d < 10.0)] = 5.0
+    return out
 
 
 def _quantize(values: np.ndarray, dtype: str, scale: float, offset: float) -> np.ndarray:
@@ -228,14 +241,17 @@ def write_mars_targets(targets: pd.DataFrame, variables_cfg: dict) -> None:
 # error 1 K, tolerance 20–30 K) because the Moon spans ~40 K (shadowed craters) to ~400 K (noon);
 # the Mars encoding (100–354 K) would clip both ends.
 MOON_WEB_COLUMNS: dict[str, tuple[str, float, float, str, str]] = {
-    "slope_deg":          ("u1", 0.25, 0.0, "°", "Slope (median, ~950 m baseline)"),
+    "slope_deg":          ("u1", 0.25, 0.0, "°", "Slope (median; ~474 m pixels, central differences ≈ 0.95 km baseline)"),
     "roughness_deg":      ("u1", 0.25, 0.0, "°", "Roughness (RMS slope after removing the mean gradient)"),
     "t_mean_K":           ("u1", 2.0, 0.0, "K", "Mean surface temperature ((day + night) / 2)"),
     "t_max_K":            ("u1", 2.0, 0.0, "K", "Max surface temperature (diurnal cycle)"),
     "t_min_K":            ("u1", 2.0, 0.0, "K", "Min surface temperature (diurnal cycle)"),
     "sun_elev_max_deg":   ("u1", 0.5, 0.0, "°", "Highest noon Sun elevation over a year (|lat| < 80° only)"),
     "psr_frac":           ("u1", 0.005, 0.0, "", "Fraction of the cell in permanent shadow (80–90° S)"),
-    "ice_depth_m":        ("u1", 0.05, 0.0, "m", "Depth to stable water ice (0 = surface; 10 = none found)"),
+    # ice_depth_m in the SAME classes as Mars and Earth (0.5 / 3 / 5 / 10, ice_depth_class); the metres stay
+    # in ice_depth_cont_m (0 = stable at the surface)
+    "ice_depth_m":        ("u1", 0.5, 0.0, "m", "Depth to water ice (class like Mars SWIM; 10 = no ice found)"),
+    "ice_depth_cont_m":   ("u1", 0.05, 0.0, "m", "Depth to stable water ice, metres (0 = surface; 10 = none found)"),
     "ice_depth_source":   ("u1", 1.0, 0.0, "", "Source of ice_depth_m: 1 Diviner PRP, 3 assumed"),
     "ice_frac_1m":        ("u1", 0.005, 0.0, "", "Fraction of the cell with stable ice within 1 m"),
     "precip_mm_year":     ("u1", 1.0, 0.0, "mm/year", "Rainfall (0 on the Moon)"),
@@ -264,6 +280,7 @@ MOON_SOURCES = {
     "ice_depth_m": "LRO Diviner Polar Resource Product, ice-stability depth (Paige et al. 2010), south pole ≤ −80°; "
                    "away from the poles (|lat| < 60°) assumed: ice not stable near the surface; "
                    "60–80° and north pole: no data",
+    "ice_depth_cont_m": "LRO Diviner Polar Resource Product, ice-stability depth (Paige et al. 2010), south pole ≤ −80°",
     "ice_depth_source": "1 = Diviner PRP model, 3 = assumption (|lat| < 60°)",
     "ice_frac_1m": "LRO Diviner Polar Resource Product (south pole ≤ −80°); 0 for |lat| < 60° (assumption)",
     "precip_mm_year": "0 by definition (no atmosphere, no rain), as in configs/variables.yaml",
@@ -287,6 +304,7 @@ MOON_DISPLAY: dict[str, dict] = {
     "sun_elev_max_deg": {"short_source": "calc."},
     "psr_frac": {"short_source": "PGDA"},
     "ice_depth_m": {"source_column": "ice_depth_source"},
+    "ice_depth_cont_m": {"source_column": "ice_depth_source"},
     "ice_depth_source": {"codes": {"1": "Diviner PRP", "3": "assumed"}},
     "ice_frac_1m": {"short_source": "Diviner PRP"},
     "precip_mm_year": {"short_source": "none"},

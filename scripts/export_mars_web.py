@@ -22,7 +22,8 @@ from analogs.paths import APP_DATA, PROCESSED  # noqa: E402
 
 def main() -> None:
     df = pd.read_parquet(PROCESSED / "mars_h3r5.parquet", columns=["h3", *MARS_WEB_COLUMNS])
-    index = write_grid_binary(df, "marte", MARS_WEB_COLUMNS, MARS_SOURCES, MARS_DISPLAY)
+    index = write_grid_binary(df, "marte", MARS_WEB_COLUMNS, MARS_SOURCES, MARS_DISPLAY,
+                              extra={"cell_size_km": 9.1})       # H3 res 5 on Mars (~9.1 km across)
     sizes = [r["bytes"] for r in index["regions"].values()]
     print(f"app/data/marte/: {len(sizes)} regions, {index['n_cells']:,} cells, "
           f"{sum(sizes) / 1e6:.1f} MB total, {min(sizes) / 1e3:.0f}–{max(sizes) / 1e3:.0f} KB per region")

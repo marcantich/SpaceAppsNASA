@@ -13,7 +13,7 @@
    "scale": 0.25,
    "offset": 0.0,
    "unit": "°",
-   "label": "Slope (median, ~460 m baseline)",
+   "label": "Slope (median; ~460 m pixels, central differences ≈ 0.9 km baseline)",
    "source": "MGS MOLA MEGDR 128 px/deg + polar maps (PDS Geosciences)",
    "short_source": "MOLA"
   },
@@ -785,5 +785,6 @@
    "n_cells": 16807,
    "bytes": 103953
   }
- }
+ },
+ "cell_size_km": 9.1
 }

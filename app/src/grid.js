@@ -25,7 +25,9 @@ async function gunzip(buffer) {
   return new Response(stream).arrayBuffer();
 }
 
-const byH3 = (a, b) => (BigInt(`0x${a}`) < BigInt(`0x${b}`) ? -1 : 1);
+// All cells of one resolution are 15-character lower-case hex strings, so plain string order IS the
+// numeric order (and ~50× faster than comparing BigInts: an Earth region has 117,649 res-6 cells).
+const byH3 = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
 export class CardGrid {
   /** @param {string} body folder under app/data/ (e.g. "marte") */

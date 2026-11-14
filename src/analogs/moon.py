@@ -315,6 +315,10 @@ def _prp(grid: Grid) -> pd.DataFrame:
     out.loc[low, ["ice_frac_1m", "ice_frac_surface"]] = 0.0
     out.loc[low, "ice_depth_m"] = NO_ICE_DEPTH_M
     out.loc[low, "ice_depth_source"] = 3.0                                    # assumed
+    # Same classes as Mars and Earth (0.5 / 3 / 5 / 10) so the three compare alike; metres kept apart
+    from .export import ice_depth_class
+    out["ice_depth_cont_m"] = out["ice_depth_m"]
+    out["ice_depth_m"] = ice_depth_class(out["ice_depth_cont_m"].to_numpy())
     return out
 
 
