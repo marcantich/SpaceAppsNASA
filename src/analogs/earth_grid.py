@@ -375,14 +375,48 @@ MATCH_COLUMNS = ["slope_deg", "roughness_deg", "t_mean_K", "t_max_K", "t_min_K",
                  "ice_depth_m", "sun_elev_max_deg", "precip_mm_year", "env"]
 
 
+def match_scoring_meta() -> dict:
+    """Bloques de puntuación de match.json, leídos de configs/variables.yaml y configs/pruebas.yaml.
+
+    Fórmula (src/analogs/similarity.py = app/src/scoring.js): nota suave 1/(1+(Δ/half_diff)²), o matriz de
+    clases (hielo); nota de cada dimensión = media ponderada de sus variables; índice = media ponderada de
+    las dimensiones (peso = el mayor de sus variables); el ranking mezcla la celda con sus 6 vecinas.
+    scripts/export_scoring.py lo reescribe sin tocar match.bin.gz.
+    """
+    import yaml
+
+    from .paths import CONFIGS
+
+    cfg = yaml.safe_load((CONFIGS / "variables.yaml").read_text(encoding="utf-8"))
+    pruebas = yaml.safe_load((CONFIGS / "pruebas.yaml").read_text(encoding="utf-8"))["pruebas"]
+    key = lambda x: format(float(x), "g")  # noqa: E731  0.5 → "0.5", 3 → "3" (igual que String(n) en JS)
+    variables = {}
+    for k, v in cfg["variables"].items():
+        if k not in MATCH_COLUMNS or v.get("type", "numeric") != "numeric":
+            continue
+        spec = {"label": v["label"], "unit": v.get("unit", ""), "tolerance": v["tolerance"],
+                "dimension": v.get("dimension") or k, "criterion": v.get("criterion", "")}
+        if v.get("half_diff"):
+            spec["half_diff"] = v["half_diff"]
+        if v.get("matrix"):
+            spec["matrix"] = {key(a): {key(b): float(x) for b, x in row.items()} for a, row in v["matrix"].items()}
+        variables[k] = spec
+    return {
+        "variables": variables,
+        "dimensions": cfg.get("dimensions", {}),
+        "area_weight": float((cfg.get("scoring") or {}).get("area_weight", 0.0)),
+        "zero_on_target": {"precip_mm_year": ["mars", "moon"]},   # no llueve: vale 0 aunque la ficha no lo traiga
+        "pruebas": {k: {"label": v["label"], "weights": v["weights"], "test_validity": v.get("test_validity", "")}
+                    for k, v in pruebas.items()},
+    }
+
+
 def write_match_table(df: pd.DataFrame) -> dict:
     import gzip
     import json
 
-    import yaml
-
     from .export import _quantize
-    from .paths import APP_DATA, CONFIGS
+    from .paths import APP_DATA
 
     sel = df[df["in_mask"] == 1].copy()
     ids = np.array([h3i.str_to_int(h) for h in sel["h3"]], dtype=np.uint64)
@@ -398,8 +432,6 @@ def write_match_table(df: pd.DataFrame) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     (out / "match.bin.gz").write_bytes(gzip.compress(b"".join(blobs), compresslevel=9, mtime=0))
 
-    variables = yaml.safe_load((CONFIGS / "variables.yaml").read_text(encoding="utf-8"))["variables"]
-    pruebas = yaml.safe_load((CONFIGS / "pruebas.yaml").read_text(encoding="utf-8"))["pruebas"]
     meta = {
         "_aviso": "",
         "n_cells": int(len(ids)),
@@ -408,13 +440,7 @@ def write_match_table(df: pd.DataFrame) -> dict:
         "encoding": "gzip; blocks: h3 high u4, h3 low u4, then one block per column; value = stored*scale + offset; "
                     "stored = max of dtype means no data",
         "columns": cols,
-        # Fórmula (src/analogs/similarity.py): nota = max(0, 1 − |objetivo − tierra| / tolerancia);
-        # índice = 100 · Σ peso·nota / Σ peso, solo con las variables que existen en los dos lados
-        "variables": {k: {"label": v["label"], "unit": v.get("unit", ""), "tolerance": v["tolerance"]}
-                      for k, v in variables.items() if k in MATCH_COLUMNS and v.get("type", "numeric") == "numeric"},
-        "zero_on_target": {"precip_mm_year": ["mars", "moon"]},   # no llueve: vale 0 aunque la ficha no lo traiga
-        "pruebas": {k: {"label": v["label"], "weights": v["weights"], "test_validity": v.get("test_validity", "")}
-                    for k, v in pruebas.items()},
+        **match_scoring_meta(),
     }
     (out / "match.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
     log(f"match.bin.gz: {len(ids):,} celdas de búsqueda, {(out / 'match.bin.gz').stat().st_size / 1e6:.1f} MB")

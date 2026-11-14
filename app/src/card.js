@@ -1,5 +1,6 @@
 // The card panel: shows the values of one H3 cell (ROADMAP 4.9).
 import { formatLatLon } from './coords.js';
+import { inkOn } from './match.js';
 
 // Sections of the card and the columns they show (columns not in the grid are skipped)
 const SECTIONS = [
@@ -150,68 +151,109 @@ const fmt = (v, unit, name) => {
   return `${v.toFixed(d)}${unit && unit !== '°' ? ` ${unit}` : unit}`;
 };
 
-/** "Earth cell vs target" block: index + one bar per compared variable (note 0–1). */
-function compareBlock({ rows, index, body, color }) {
-  const bars = rows.map((r) => `
-    <div class="cmp-row" title="${esc(r.label)} · note ${Number.isFinite(r.note) ? r.note.toFixed(2) : '—'}">
-      <span class="cmp-name">${esc(r.short ?? r.label)}</span>
-      <span class="cmp-vals">${fmt(r.target, r.unit, r.name)} <span class="muted">vs</span> ${fmt(r.earth, r.unit, r.name)}</span>
-      <span class="cmp-bar"><i style="width:${Number.isFinite(r.note) ? Math.round(r.note * 100) : 0}%"></i></span>
-    </div>`).join('');
-  return `<section class="cmp">
-      <div class="cmp-index"><b style="background:${color};color:${inkOn(color)}">${Number.isFinite(index) ? index.toFixed(0) : '—'}</b>
-        <span>analog index vs the ${esc(body)} cell<br><span class="muted">0–100, physical units with tolerances</span></span></div>
-      ${bars}
-    </section>`;
+const ENV = ['outside the search zone', 'polar ice', 'desert', 'arid open land'];
+const latLonShort = (lat, lon) =>
+  `${Math.abs(lat).toFixed(1)}° ${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lon).toFixed(1)}° ${lon >= 0 ? 'E' : 'W'}`;
+
+/** "200 → 235 K": target → Earth, compact, unit once (strip). */
+const UNIT_SHORT = { 'mm/year': 'mm', 'mm/yr': 'mm' };
+function pair({ name, target, earth, unit }) {
+  if (name === 'ice_depth_m') return `${fmt(target, '', name)}<i>→</i>${fmt(earth, '', name)}`;
+  const num = (v) => {
+    if (!Number.isFinite(v)) return '—';
+    const a = Math.abs(v);
+    return v.toFixed(a >= 100 || a === 0 ? 0 : a >= 10 ? 1 : 2);
+  };
+  const u = UNIT_SHORT[unit] ?? unit ?? '';
+  return `${num(target)}<i>→</i>${num(earth)}${u === '°' ? '°' : u ? ` ${u}` : ''}`;
+}
+
+/** Score badge with readable text on any ramp colour. */
+const badge = (score, color, cls = 'score') =>
+  `<b class="${cls}" style="background:${color};color:${inkOn(color)}">${Number.isFinite(score) ? score.toFixed(0) : '—'}</b>`;
+
+/**
+ * Horizontal comparison strip at the top of the Earth pane: the index, then one column per
+ * dimension (Terrain, Thermal…) with its score and a mini bar per variable.
+ * data = { index, cell, ring, body, color, colorOf, dims: [{ label, score, rows: [{ name, short, unit,
+ *          target, earth, note }] }] }
+ */
+export function createCompareStrip(el, { onClose } = {}) {
+  el.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close]')) onClose?.();
+  });
+  return {
+    show({ index, cell, ring, body, color, colorOf, dims, place }) {
+      const cols = dims.map((d) => `
+        <div class="dim">
+          <div class="dim-head">${badge(d.score, colorOf(d.score), 'mini')}<span>${esc(d.label)}</span></div>
+          ${d.rows.map((r) => `
+            <div class="dim-row" title="${esc(r.label)} · ${esc(body)} ${fmt(r.target, r.unit, r.name)} vs Earth ${fmt(r.earth, r.unit, r.name)} · note ${Number.isFinite(r.note) ? r.note.toFixed(2) : '—'}">
+              <span class="dim-name">${esc(r.short)}</span>
+              <span class="dim-vals">${pair(r)}</span>
+              <span class="cmp-bar"><i style="width:${Number.isFinite(r.note) ? Math.round(r.note * 100) : 0}%"></i></span>
+            </div>`).join('')}
+        </div>`).join('');
+      el.hidden = false;
+      el.innerHTML = `
+        <div class="strip-index">
+          ${badge(index, color, 'big')}
+          <div><b>Analog index</b><span class="muted">${esc(place ?? 'Earth cell')} vs the ${esc(body)} cell</span>
+            ${Number.isFinite(ring) ? `<span class="muted small">cell ${cell.toFixed(0)} · 20 km around ${ring.toFixed(0)}</span>` : ''}</div>
+        </div>
+        <div class="dims">${cols}</div>
+        <button class="strip-close" data-close aria-label="Close">×</button>`;
+    },
+    hide() {
+      el.hidden = true;
+      el.innerHTML = '';
+    },
+  };
 }
 
 /**
  * Earth-side panel with the ranked analogs of the selected target cell.
  * handlers.onPick(best) when a result is clicked; handlers.onClose().
  */
-/** Dark or light text, whichever reads better on a CSS colour ("rgb(r, g, b)" or "#rrggbb"). */
-function inkOn(css) {
-  const m = String(css).match(/\d+/g);
-  const [r, g, b] = css.startsWith('#') ? [1, 3, 5].map((i) => parseInt(css.slice(i, i + 2), 16)) : (m ?? [0, 0, 0]).map(Number);
-  return 0.299 * r + 0.587 * g + 0.114 * b > 120 ? '#10141f' : '#ffffff';
-}
-
 export function createMatchPanel(el, { onPick, onClose } = {}) {
   let current = [];
+  let infoOpen = false;
   el.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) return onClose?.();
     const li = e.target.closest('[data-rank]');
     if (li) onPick?.(current[Number(li.dataset.rank)]);
   });
+  el.addEventListener('toggle', (e) => {
+    if (e.target.matches('details')) infoOpen = e.target.open;
+  }, true);
   return {
     loading(text) {
       el.hidden = false;
       el.innerHTML = `<header><h2>Best Earth analogs</h2><button data-close aria-label="Close">×</button></header>
         <p class="muted">${esc(text)}</p>`;
     },
-    /** results = EarthMatcher.rank() + { body, colorOf(score) , shortOf(name) } */
+    /** res = EarthMatcher.rank() (best[k].country filled by the caller) */
     show(res, { body, colorOf, testNote, validity, zoneLabel }) {
       current = res.best;
-      const items = res.best.map((b, k) => {
-        const lat = `${Math.abs(b.lat).toFixed(1)}° ${b.lat >= 0 ? 'N' : 'S'}`;
-        const lon = `${Math.abs(b.lon).toFixed(1)}° ${b.lon >= 0 ? 'E' : 'W'}`;
-        const zone = ['outside', 'polar ice', 'desert', 'arid open land'][b.env] ?? '';
-        return `<li data-rank="${k}" tabindex="0">
-            <b class="score" style="background:${colorOf(b.score)};color:${inkOn(colorOf(b.score))}">${b.score.toFixed(0)}</b>
-            <span><b>#${k + 1}</b> · ${lat}, ${lon}<br><span class="muted">${zone}</span></span>
-          </li>`;
-      }).join('');
+      const items = res.best.map((b, k) => `<li data-rank="${k}" tabindex="0">
+            ${badge(b.score, colorOf(b.score))}
+            <span class="rank-txt"><b>#${k + 1} · ${esc(b.country ?? 'Earth')}</b>
+              <span class="muted small">${latLonShort(b.lat, b.lon)}</span></span>
+            <span class="env">${ENV[b.env] ?? ''}</span>
+          </li>`).join('');
       el.hidden = false;
       el.innerHTML = `<header><h2>Best Earth analogs</h2><button data-close aria-label="Close">×</button></header>
-        <p class="where">for the selected ${esc(body)} cell · ${esc(testNote)}</p>
-        ${zoneLabel ? `<p class="zone-note">Only inside <b>${esc(zoneLabel)}</b> · results ≥ ${Math.round(res.minKm)} km apart</p>` : ''}
+        <p class="where">${esc(body)} cell · ${esc(testNote)}</p>
+        ${zoneLabel ? `<p class="zone-note">Only inside <b>${esc(zoneLabel)}</b></p>` : ''}
         <ol class="ranks">${items}</ol>
         <div class="legend"><span>${res.threshold.toFixed(0)}</span><i></i><span>100</span></div>
-        <p class="muted small">Coloured hexagons: the ${res.top.length.toLocaleString()} best of
-          ${res.n.toLocaleString()} Earth search cells${zoneLabel ? ' in this zone' : ''} (deserts, polar ice, arid land; ~6.5 km).
-          Index ≥ 90: ${res.histogram.ge90.toLocaleString()} cells · ≥ 75: ${res.histogram.ge75.toLocaleString()}.</p>
-        ${validity ? `<p class="muted small"><b>Validity:</b> ${esc(validity)}</p>` : ''}
-        <footer>Click a result or any point of Earth to see its card and the comparison.</footer>`;
+        <details class="more"${infoOpen ? ' open' : ''}><summary>How these are ranked</summary>
+          <p class="muted small">Coloured hexagons: the ${res.top.length.toLocaleString()} best of
+            ${res.n.toLocaleString()} Earth search cells${zoneLabel ? ' in this zone' : ''} (deserts, polar ice, arid land; ~6.5 km).
+            The list ranks each cell together with its 6 neighbours (~20 km), so homogeneous areas come
+            first; results are ≥ ${Math.round(res.minKm)} km apart.</p>
+          ${validity ? `<p class="muted small"><b>Validity:</b> ${esc(validity)}</p>` : ''}
+        </details>`;
     },
     hide() {
       el.hidden = true;
@@ -221,46 +263,58 @@ export function createMatchPanel(el, { onPick, onClose } = {}) {
   };
 }
 
+// Always-visible key values of a card; the rest goes under "More info"
+const SUMMARY = ['elevation_m', 'slope_deg', 't_mean_K', 'ice_depth_m'];
+
 export function createCardPanel(el, { onClose } = {}) {
+  let moreOpen = false; // remembered between cards of this panel
   el.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) onClose?.();
   });
+  el.addEventListener('toggle', (e) => {
+    if (e.target.matches('details.more')) moreOpen = e.target.open;
+  }, true);
+
+  const head = (title, sub) => `<header><div><h2>${esc(title)}</h2>${sub ? `<p class="sub">${esc(sub)}</p>` : ''}</div>
+    <button data-close aria-label="Close">×</button></header>`;
 
   return {
-    loading(title, lat, lon) {
+    loading(title, lat, lon, sub) {
       el.hidden = false;
-      el.innerHTML = `<header><h2>${esc(title)}</h2><button data-close aria-label="Close">×</button></header>
-        <p class="where">${formatLatLon({ lat, lon })}</p><p class="muted">Loading the card…</p>`;
+      el.innerHTML = `${head(title, sub)}<p class="where">${formatLatLon({ lat, lon })}</p><p class="muted">Loading…</p>`;
     },
     message(title, text) {
       el.hidden = false;
-      el.innerHTML = `<header><h2>${esc(title)}</h2><button data-close aria-label="Close">×</button></header>
-        <p class="muted">${esc(text)}</p>`;
+      el.innerHTML = `${head(title)}<p class="muted">${esc(text)}</p>`;
     },
     /**
      * card = CardGrid.cardAt() result.
-     * opts.compare = { rows: [{label, unit, target, earth, note}], index, body } → "vs target" block
-     * opts.footer  = HTML for the footer
+     * opts.subtitle = second line under the title (site type, country…)
+     * opts.footer   = text at the bottom of "More info"
      */
     show(title, lat, lon, card, opts = {}) {
       const cols = Object.fromEntries(card.columns.map((c) => [c.name, c]));
       const values = { ...card.values, _lat: lat };
+      const row = (k) => {
+        const col = cols[k];
+        const { text, src } = formatValue(col, values[k], values, cols);
+        return `<dt title="${esc(col.label)}">${SHORT[k] ?? esc(col.label)}</dt>
+                <dd title="${esc(col.unit ? `Unit: ${col.unit} · ` : '')}Source: ${esc(col.source)}">${text}</dd>
+                <dd class="src" title="Source: ${esc(col.source)}">${src ? tag(src) : ''}</dd>`;
+      };
+      const summary = SUMMARY.filter((k) => cols[k]).map(row).join('');
       const sections = SECTIONS.map(([name, keys]) => {
-        const rows = keys.filter((k) => cols[k]).map((k) => {
-          const col = cols[k];
-          const { text, src } = formatValue(col, values[k], values, cols);
-          return `<dt title="${esc(col.label)}">${SHORT[k] ?? esc(col.label)}</dt>
-                  <dd title="${esc(col.unit ? `Unit: ${col.unit} · ` : '')}Source: ${esc(col.source)}">${text}</dd>
-                  <dd class="src" title="Source: ${esc(col.source)}">${src ? tag(src) : ''}</dd>`;
-        }).join('');
+        const rows = keys.filter((k) => cols[k]).map(row).join('');
         return rows ? `<section><h3>${name}</h3><dl>${rows}</dl></section>` : '';
       }).join('');
       el.hidden = false;
-      el.innerHTML = `<header><h2>${esc(title)}</h2><button data-close aria-label="Close">×</button></header>
-        <p class="where">${formatLatLon({ lat, lon })} · cell <code>${card.h3}</code> (~${card.cellSizeKm ?? 9} km)</p>
-        ${opts.compare ? compareBlock(opts.compare) : ''}
-        ${sections}
-        <footer>${opts.footer ?? 'Hover a value to see its source.'}</footer>`;
+      el.innerHTML = `${head(title, opts.subtitle)}
+        <p class="where">${formatLatLon({ lat, lon })} · ~${card.cellSizeKm ?? 9} km cell</p>
+        <dl class="summary">${summary}</dl>
+        <details class="more"${moreOpen ? ' open' : ''}><summary>More info</summary>
+          ${sections}
+          <footer>${opts.footer ?? 'Hover a value to see its source.'}</footer>
+        </details>`;
     },
     hide() {
       el.hidden = true;

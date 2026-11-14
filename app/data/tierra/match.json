@@ -98,52 +98,107 @@
   "slope_deg": {
    "label": "Pendiente",
    "unit": "°",
-   "tolerance": 5
+   "tolerance": 5,
+   "dimension": "terrain",
+   "criterion": "Operativo: ~3° separa las clases de pendiente para un rover (0–3 llano, 3–8 suave, 8–15 moderada, > 15 fuerte; límite operativo de Curiosity ~20°) y es ~2× el error de pendiente entre MDE de ~460 m",
+   "half_diff": 3
   },
   "roughness_deg": {
    "label": "Rugosidad (RMS de la pendiente)",
    "unit": "°",
-   "tolerance": 3
+   "tolerance": 3,
+   "dimension": "terrain",
+   "criterion": "Medida: ~2° es el ruido de la rugosidad RMS con MDE de ~460 m (MOLA con < 50 % de cobertura láser, ETOPO); diferencias menores no son significativas",
+   "half_diff": 2
   },
   "sun_elev_max_deg": {
    "label": "Elevación máxima del Sol",
    "unit": "°",
-   "tolerance": 3
+   "tolerance": 3,
+   "dimension": "sky",
+   "criterion": "Físico: 10° de diferencia en la altura máxima del Sol cambia la irradiancia de mediodía en un panel horizontal ≲ 15 % (a media altura) y la longitud de las sombras ~2× con Sol bajo. Con 3° la búsqueda quedaba atada a la misma latitud",
+   "half_diff": 10
   },
   "t_mean_K": {
    "label": "Temperatura media anual",
    "unit": "K",
-   "tolerance": 20
+   "tolerance": 20,
+   "dimension": "thermal",
+   "criterion": "Climático: ~15 K es la diferencia de temperatura media anual entre cinturones climáticos vecinos de la Tierra (polar ↔ subpolar ↔ templado). Ninguna celda de la Tierra llega a los ~210 K de Marte: la curva suave sigue ordenando (la meseta antártica por delante del Sahara)",
+   "half_diff": 15
   },
   "t_max_K": {
    "label": "Temperatura máxima anual",
    "unit": "K",
-   "tolerance": 30
+   "tolerance": 30,
+   "dimension": "thermal",
+   "criterion": "Climático: los extremos varían más que la media; 20 K ≈ amplitud entre el mes más cálido de dos desiertos de latitudes vecinas. Además Marte da un P95 y la Tierra una media mensual (unos K de sesgo)",
+   "half_diff": 20
   },
   "t_min_K": {
    "label": "Temperatura mínima anual",
    "unit": "K",
-   "tolerance": 30
+   "tolerance": 30,
+   "dimension": "thermal",
+   "criterion": "Climático: igual que la máxima (20 K entre cinturones vecinos en el mes más frío)",
+   "half_diff": 20
   },
   "t_night_K": {
    "label": "Temperatura nocturna (media anual)",
    "unit": "K",
-   "tolerance": 20
+   "tolerance": 20,
+   "dimension": "thermal",
+   "criterion": "Climático: como la media anual (15 K entre cinturones vecinos)",
+   "half_diff": 15
   },
   "precip_mm_year": {
    "label": "Lluvia media anual (aridez)",
    "unit": "mm/año",
-   "tolerance": 250
+   "tolerance": 250,
+   "dimension": "water",
+   "criterion": "Clases de aridez (UNEP): hiperárido < 25 mm, árido 25–200, semiárido 200–500. Con objetivo 0 (Marte, Luna), 100 mm/año = mitad del rango árido → nota 0,5",
+   "half_diff": 100
   },
   "ice_depth_m": {
    "label": "Profundidad del hielo",
    "unit": "m",
-   "tolerance": 0.5
+   "tolerance": 0.5,
+   "dimension": "water",
+   "criterion": "Operativo, por alcance de instrumentos: ≤ 1 m lo ven neutrones/radar y lo saca un taladro corto; 1–5 m necesita taladro profundo; > 5 m y 'sin hielo' son casi equivalentes para operaciones de superficie",
+   "matrix": {
+    "0.5": {
+     "0.5": 1.0,
+     "3": 0.5,
+     "5": 0.25,
+     "10": 0.0
+    },
+    "3": {
+     "0.5": 0.5,
+     "3": 1.0,
+     "5": 0.6,
+     "10": 0.1
+    },
+    "5": {
+     "0.5": 0.25,
+     "3": 0.6,
+     "5": 1.0,
+     "10": 0.3
+    },
+    "10": {
+     "0.5": 0.0,
+     "3": 0.1,
+     "5": 0.3,
+     "10": 1.0
+    }
+   }
   },
   "dust_aod": {
    "label": "Polvo en suspensión (espesor óptico)",
    "unit": "",
-   "tolerance": 0.2
+   "tolerance": 0.2,
+   "dimension": "sky",
+   "criterion": "Atmosférico: el fondo de Marte es τ ≈ 0,3–0,6 (tormentas > 1) y los desiertos de la Tierra τ ≈ 0,1–0,5; 0,15 ≈ la diferencia entre un desierto limpio y uno polvoriento",
+   "half_diff": 0.15
   }
  },
  "zero_on_target": {
@@ -219,5 +274,23 @@
    },
    "test_validity": "La geometría del relieve sí se reproduce"
   }
- }
+ },
+ "dimensions": {
+  "terrain": {
+   "label": "Terrain"
+  },
+  "thermal": {
+   "label": "Thermal"
+  },
+  "water": {
+   "label": "Water & ice"
+  },
+  "sky": {
+   "label": "Sky & light"
+  },
+  "composition": {
+   "label": "Composition"
+  }
+ },
+ "area_weight": 0.4
 }

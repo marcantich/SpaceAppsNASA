@@ -25,7 +25,7 @@ import yaml
 sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from analogs.paths import CONFIGS, PROCESSED, VALIDATION  # noqa: E402
-from analogs.similarity import analog_index, variable_scores  # noqa: E402
+from analogs.similarity import analog_index, dimensions_of, variable_scores  # noqa: E402
 
 MALLAS = {  # nombre → (fichero, cómo se llama cada fila)
     "005deg": ("fichas_tierra_005deg.parquet", "píxeles de 0,05° (~5,6 km)"),
@@ -153,7 +153,7 @@ def ask_weights(vars_in_target: list[str], pruebas: dict) -> dict:
 def run_search(target: dict, cells: pd.DataFrame, variables: dict, weights: dict, title: str,
                exclude_near: tuple[float, float] | None = None) -> None:
     scores = variable_scores(target, cells, {k: variables[k] for k in weights})
-    idx = analog_index(scores, weights)
+    idx = analog_index(scores, weights, dimensions_of(variables))
     res = cells.assign(indice=idx).join(scores.add_prefix("nota_"))
     res = res.dropna(subset=["indice"]).sort_values("indice", ascending=False)
     if exclude_near:

@@ -203,10 +203,26 @@ export function createGlobe(container, bodyKey) {
   let hexPrimitive = null;
   const HEX_HEIGHT = 1500; // m above the ellipsoid: sits on the imagery without z-fighting
 
-  /** list = [{ h3, color: CSS colour, alpha? }]; replaces any previous layer. */
+  /** Resolves once Cesium has built a primitive (geometry is made in web workers), or after `ms`. */
+  function whenReady(primitive, ms = 4000) {
+    return new Promise((resolve) => {
+      const t0 = performance.now();
+      const off = scene.postRender.addEventListener(() => {
+        if (primitive.ready || primitive.isDestroyed() || performance.now() - t0 > ms) {
+          off();
+          resolve();
+        }
+      });
+    });
+  }
+
+  /**
+   * list = [{ h3, color: CSS colour, alpha? }]; replaces any previous layer.
+   * Returns a promise that resolves when the layer is ready to draw (fly the camera after that).
+   */
   function showHexes(list) {
     clearHexes();
-    if (!list.length) return;
+    if (!list.length) return Promise.resolve();
     const instances = list.map(({ h3, color, alpha = 0.78 }) => new Cesium.GeometryInstance({
       geometry: new Cesium.PolygonGeometry({
         polygonHierarchy: new Cesium.PolygonHierarchy(cellToBoundary(h3).map(([la, lo]) => toCartesian(la, lo))),
@@ -222,6 +238,7 @@ export function createGlobe(container, bodyKey) {
       appearance: new Cesium.PerInstanceColorAppearance({ flat: true, translucent: true }),
       asynchronous: true,
     }));
+    return whenReady(hexPrimitive);
   }
   function clearHexes() {
     if (hexPrimitive) scene.primitives.remove(hexPrimitive);
@@ -396,9 +413,12 @@ export function createGlobe(container, bodyKey) {
   handler.setInputAction((e) => {
     if (drawing || suppressClick) return;
     const picked = scene.pick(e.position);
-    const entity = picked?.id;
+    // only entities (sites, rank pins); the hexagon layer's ids are plain strings ("hex:…") and
+    // EntityCollection.contains() throws on them, which used to swallow clicks on coloured cells
+    const entity = picked?.id instanceof Cesium.Entity ? picked.id : null;
     if (entity && sites.entities.contains(entity)) {
-      const site = selectSite(entity);
+      // with a listener, the app moves the camera itself once the site's data is ready
+      const site = selectSite(entity, { fly: !siteListeners.length });
       siteListeners.forEach((fn) => fn(site));
       return;
     }
@@ -415,10 +435,17 @@ export function createGlobe(container, bodyKey) {
     pickListeners.forEach((fn) => fn(p));
   }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
+  // Hover: the coordinates follow the mouse every frame, but the "is it clickable?" test is a GPU
+  // pick (it redraws the scene, thousands of hexagons included), so it runs at most every 150 ms
+  let lastHoverPick = 0;
   handler.setInputAction((e) => {
     const p = toLatLon(e.endPosition);
     readout.textContent = p ? formatLatLon(p) : '—';
-    const over = scene.pick(e.endPosition)?.id;
+    const now = performance.now();
+    if (drawing || now - lastHoverPick < 150) return;
+    lastHoverPick = now;
+    const id = scene.pick(e.endPosition)?.id;
+    const over = id instanceof Cesium.Entity ? id : null;
     const clickable = over && (sites.entities.contains(over) || ranks.entities.contains(over));
     viewer.canvas.style.cursor = clickable ? 'pointer' : '';
   }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);

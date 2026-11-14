@@ -4,15 +4,41 @@
 # Lista ÚNICA de columnas que comparten las fichas de la Tierra, la Luna y Marte.
 # Si una variable se añade aquí, el resto del código la recoge sola.
 #
-#   type       numeric  → nota = 1 − |x_objetivo − x_tierra| / tolerance   (mínimo 0)
-#              categorical → nota = matrix[objetivo][tierra]; si no hay matriz: igual = 1, distinto = 0
-#   tolerance  diferencia a partir de la cual la nota de esa variable es 0
+#   type       numeric  → nota por diferencia (abajo); categorical → nota = matrix[objetivo][tierra]
+#   half_diff  NOTA SUAVE (la que usan la web y src/analogs/similarity.py):
+#                  nota = 1 / (1 + (diferencia / half_diff)²)
+#              → 1 si es igual, 0,5 con una diferencia de half_diff, 0,2 con 2×, 0,06 con 4×…
+#              Nunca llega a 0: cuando la Tierra no alcanza el valor del objetivo (frío de Marte)
+#              sigue ordenando lo más cercano por delante.
+#   matrix     (numérica por clases, p. ej. hielo) parecido entre clases: matrix[objetivo][tierra]
+#   tolerance  fórmula LINEAL antigua: nota = max(0, 1 − |Δ| / tolerance). Solo la usan las
+#              variables sin half_diff y las herramientas viejas (comparador de app/comparator.js)
+#   dimension  grupo de la variable (bloque `dimensions` al final): el índice pesa las DIMENSIONES,
+#              no las variables, para que 3 temperaturas no cuenten 3 veces
+#   criterion  POR QUÉ ese half_diff (físico, operativo o de medida)
 #   sources    de dónde sale el número en cada cuerpo (null = no existe o no aplica)
 #
-# ⚠️ TODAS las tolerancias son [supuesto]: las fija el equipo de Ciencia.
+# ⚠️ Los half_diff tienen un criterio escrito pero siguen siendo [supuesto]: falta validarlos
+#    con análogos conocidos (docs/09: punto 9 del informe de criterios).
 # ⚠️ Las fuentes marcadas [verificar] están identificadas pero no descargadas ni comprobadas.
 # Ver docs/03_enfoque.md §2 para los cuidados de cada variable.
 # =============================================================================
+
+# Índice (web y src/analogs/similarity.py):
+#   nota_dimensión = media ponderada de las notas de sus variables disponibles
+#   índice_celda   = 100 · Σ W_d · nota_d / Σ W_d      (W_d = 1, o el mayor peso de la prueba en esa dimensión)
+#   índice_zona    = (1 − area_weight) · índice_celda + area_weight · media de las 6 celdas vecinas
+#                    (las vecinas fuera de la zona de búsqueda cuentan 0): premia zonas homogéneas de
+#                    ~20 km donde cabe una campaña de campo. El ranking usa índice_zona.
+dimensions:
+  terrain:     {label: "Terrain"}
+  thermal:     {label: "Thermal"}
+  water:       {label: "Water & ice"}
+  sky:         {label: "Sky & light"}
+  composition: {label: "Composition"}
+
+scoring:
+  area_weight: 0.4                   # [supuesto] peso de las 6 vecinas en el índice del ranking
 
 variables:
 
@@ -21,6 +47,9 @@ variables:
     unit: "°"
     type: numeric
     tolerance: 5                     # [supuesto]
+    dimension: terrain
+    half_diff: 3                     # nota 0,5 con 3° de diferencia
+    criterion: "Operativo: ~3° separa las clases de pendiente para un rover (0–3 llano, 3–8 suave, 8–15 moderada, > 15 fuerte; límite operativo de Curiosity ~20°) y es ~2× el error de pendiente entre MDE de ~460 m"
     note: "MISMA escala en los tres cuerpos (enfoque §2.2): píxeles de ~460–474 m, diferencias centrales (≈ 0,9 km), mediana ponderada por área en la celda H3"
     sources:
       moon:  "LRO LOLA GDR ldem_64, 64 px/° (~474 m) → src/analogs/moon.py (H3 res 4, ~12,3 km)"
@@ -32,6 +61,9 @@ variables:
     unit: "°"
     type: numeric
     tolerance: 3                     # [supuesto]
+    dimension: terrain
+    half_diff: 2                     # nota 0,5 con 2° de diferencia
+    criterion: "Medida: ~2° es el ruido de la rugosidad RMS con MDE de ~460 m (MOLA con < 50 % de cobertura láser, ETOPO); diferencias menores no son significativas"
     note: "Paso alto: RMS de la pendiente tras quitar el plano (Marte, Tierra) o el gradiente medio (Luna, ≈ lo mismo) de la celda"
     sources:
       moon:  "LRO LOLA GDR ldem_64 (moon.py)"
@@ -43,6 +75,9 @@ variables:
     unit: "%"
     type: numeric
     tolerance: 10                    # [supuesto]
+    dimension: terrain
+    half_diff: 5                     # nota 0,5 con 5 % de diferencia
+    criterion: "Operativo: 5 % de área cubierta de rocas cambia la densidad de obstáculos para un rover de forma apreciable (Golombek & Rapp 1997)"
     note: "Mejor que la inercia térmica, que depende de la presión del gas (enfoque §2.3)"
     sources:
       moon:  "Diviner dgdr_ra_avg_cyl_032 (60N–60S). En el polo NO existe → vacío (comprobado)"
@@ -64,7 +99,10 @@ variables:
     label: "Elevación máxima del Sol"
     unit: "°"
     type: numeric
-    tolerance: 3                     # [supuesto]
+    tolerance: 3                     # [supuesto] (fórmula lineal antigua)
+    dimension: sky
+    half_diff: 10                    # nota 0,5 con 10° de diferencia
+    criterion: "Físico: 10° de diferencia en la altura máxima del Sol cambia la irradiancia de mediodía en un panel horizontal ≲ 15 % (a media altura) y la longitud de las sombras ~2× con Sol bajo. Con 3° la búsqueda quedaba atada a la misma latitud"
     # Definition (closed 2026-11-14; used for Mars in src/analogs/mars_grid.py and for Earth in
     # src/analogs/earth.py): highest NOON Sun elevation over a whole year, flat horizon:
     #     h_max = 90° − max(0, |lat| − obliquity)
@@ -87,6 +125,9 @@ variables:
     unit: "K"
     type: numeric
     tolerance: 20                    # [supuesto]
+    dimension: thermal
+    half_diff: 15                    # nota 0,5 con 15 K de diferencia
+    criterion: "Climático: ~15 K es la diferencia de temperatura media anual entre cinturones climáticos vecinos de la Tierra (polar ↔ subpolar ↔ templado). Ninguna celda de la Tierra llega a los ~210 K de Marte: la curva suave sigue ordenando (la meseta antártica por delante del Sahara)"
     note: "Diviner PRP da la media a 2 cm de profundidad; MODIS da la superficie: no es exactamente la misma magnitud [verificar]"
     sources:
       moon:  "LRO Diviner GCP: (día + noche)/2 del ciclo medio de la misión (moon.py)"
@@ -98,6 +139,9 @@ variables:
     unit: "K"
     type: numeric
     tolerance: 30                    # [supuesto]
+    dimension: thermal
+    half_diff: 20                    # nota 0,5 con 20 K de diferencia
+    criterion: "Climático: los extremos varían más que la media; 20 K ≈ amplitud entre el mes más cálido de dos desiertos de latitudes vecinas. Además Marte da un P95 y la Tierra una media mensual (unos K de sesgo)"
     sources:
       moon:  "LRO Diviner GCP: máximo del ciclo diurno medio (moon.py)"
       mars:  "MGS TES MY26: percentil 95 de los valores de la tarde (mars_grid.py)"
@@ -108,6 +152,9 @@ variables:
     unit: "K"
     type: numeric
     tolerance: 30                    # [supuesto]
+    dimension: thermal
+    half_diff: 20                    # nota 0,5 con 20 K de diferencia
+    criterion: "Climático: igual que la máxima (20 K entre cinturones vecinos en el mes más frío)"
     note: "Condición típica (mes/hora más fría de la climatología), no el récord"
     sources:
       moon:  "LRO Diviner GCP: mínimo del ciclo diurno medio (moon.py)"
@@ -119,6 +166,9 @@ variables:
     unit: "K"
     type: numeric
     tolerance: 20                    # [supuesto]
+    dimension: thermal
+    half_diff: 15                    # nota 0,5 con 15 K de diferencia
+    criterion: "Climático: como la media anual (15 K entre cinturones vecinos)"
     note: "La temperatura que mejor comparten la Tierra y Marte: media anual de noche"
     sources:
       moon:  null                    # no exportada: para la Luna se compara t_min_K
@@ -130,6 +180,9 @@ variables:
     unit: "mm/año"
     type: numeric
     tolerance: 250                   # [supuesto]
+    dimension: water
+    half_diff: 100                   # nota 0,5 con 100 mm/año
+    criterion: "Clases de aridez (UNEP): hiperárido < 25 mm, árido 25–200, semiárido 200–500. Con objetivo 0 (Marte, Luna), 100 mm/año = mitad del rango árido → nota 0,5"
     note: "En la Luna y Marte vale 0: mide cuánto se aleja la Tierra de un ambiente sin agua líquida"
     sources:
       moon:  "0 (no llueve)"
@@ -140,7 +193,16 @@ variables:
     label: "Profundidad del hielo"
     unit: "m"
     type: numeric
-    tolerance: 0.5                   # [supuesto]
+    tolerance: 0.5                   # [supuesto] (fórmula lineal antigua)
+    dimension: water
+    # Clases (0,5 = en el primer metro · 3 = 1–5 m · 5 = > 5 m · 10 = sin hielo): parecido por matriz,
+    # no por diferencia. Fila = objetivo, columna = Tierra.
+    matrix:
+      0.5: {0.5: 1.0, 3: 0.5, 5: 0.25, 10: 0.0}
+      3:   {0.5: 0.5, 3: 1.0, 5: 0.6,  10: 0.1}
+      5:   {0.5: 0.25, 3: 0.6, 5: 1.0, 10: 0.3}
+      10:  {0.5: 0.0, 3: 0.1, 5: 0.3,  10: 1.0}
+    criterion: "Operativo, por alcance de instrumentos: ≤ 1 m lo ven neutrones/radar y lo saca un taladro corto; 1–5 m necesita taladro profundo; > 5 m y 'sin hielo' son casi equivalentes para operaciones de superficie"
     note: "Analogía PARCIAL: en la Luna el hielo sublima al vacío; en la Tierra hay atmósfera"
     sources:
       moon:  "LRO Diviner PRP, profundidad de estabilidad del hielo (polo sur ≤ −80°); |lat| < 60°: sin hielo (supuesto). Metros continuos; 10 = no (moon.py)"
@@ -153,6 +215,9 @@ variables:
     unit: ""
     type: numeric
     tolerance: 0.2                   # [supuesto]
+    dimension: sky
+    half_diff: 0.15                  # nota 0,5 con 0,15 de diferencia
+    criterion: "Atmosférico: el fondo de Marte es τ ≈ 0,3–0,6 (tormentas > 1) y los desiertos de la Tierra τ ≈ 0,1–0,5; 0,15 ≈ la diferencia entre un desierto limpio y uno polvoriento"
     sources:
       moon:  null
       mars:  "MGS TES MY26, 9,3 µm × 2,6 → visible (mars_grid.py)"
@@ -163,6 +228,9 @@ variables:
     unit: "% peso"
     type: numeric
     tolerance: 5                     # [supuesto]
+    dimension: composition
+    half_diff: 5                     # nota 0,5 con 5 % de diferencia
+    criterion: "Geológico: 5 % de SiO₂ separa familias de roca (basalto 45–52 %, andesita 52–63 %, granito ~70 %). Aún no se compara: Marte no exporta grs_si"
     note: "Composición de la superficie expuesta. Basalto ~45–52 %, granito ~70 %, arena de cuarzo > 90 %"
     sources:
       moon:  "Lunar Prospector GRS, SiO₂ (2°, ~60 km) [verificar unidades] (moon.py)"
@@ -174,6 +242,9 @@ variables:
     unit: "%"
     type: numeric
     tolerance: 30                    # [supuesto]
+    dimension: water
+    half_diff: 20                    # nota 0,5 con 20 % de diferencia
+    criterion: "Cobertura: 20 puntos de cobertura media anual ≈ dos meses más o menos de suelo nevado"
     note: "Solo Tierra de momento: sirve para filtrar o para buscar a mano (hielo superficial)"
     sources:
       moon:  null
@@ -185,6 +256,7 @@ variables:
     unit: ""
     type: numeric
     tolerance: 1                     # igual → 1, distinto → 0
+    dimension: terrain
     sources:
       moon:  "LROC Pits Atlas (278 pozos, global). 0 al sur de −80° (comprobado)"
       mars:  "Mars Global Cave Candidate Catalog, MGC³ (USGS) [verificar]"
