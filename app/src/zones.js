@@ -1,22 +1,34 @@
-// Earth search zones: limit the analog search to one region (toolbar "Earth zone").
+// Earth search zones: limit the analog search to one region (toolbar "Zone").
 // A zone is a lat/lon box in degrees; west > east means it crosses the 180° meridian.
-// Predefined boxes cover the regions where Mars / Moon analog fieldwork is usually done.
+// Broad, easy-to-name regions; `group: 'other'` ones go under "Other zones" in the menu.
+// `words` = extra search terms for the place search box.
 import { greatCircleDistance } from 'h3-js';
 
 export const ZONES = [
-  { key: 'sahara', label: 'Sahara', south: 15, north: 35, west: -17, east: 35 },
-  { key: 'arabia', label: 'Arabian Peninsula', south: 12, north: 32, west: 34, east: 60 },
-  { key: 'atacama', label: 'Atacama & Altiplano', south: -30, north: -15, west: -72, east: -65 },
-  { key: 'sw_usa', label: 'SW USA (Mojave, Utah)', south: 31, north: 42, west: -120, east: -106 },
-  { key: 'tibet', label: 'Tibetan Plateau', south: 27, north: 40, west: 73, east: 104 },
-  { key: 'gobi', label: 'Gobi & Tarim', south: 36, north: 48, west: 73, east: 120 },
-  { key: 'australia', label: 'Australian Outback', south: -32, north: -18, west: 115, east: 145 },
-  { key: 'namib', label: 'Namib & Kalahari', south: -30, north: -17, west: 11, east: 25 },
-  { key: 'iceland', label: 'Iceland', south: 63, north: 67, west: -25, east: -13 },
-  { key: 'svalbard', label: 'Svalbard', south: 76, north: 81, west: 10, east: 34 },
-  { key: 'arctic', label: 'Greenland & Canadian Arctic', south: 60, north: 84, west: -95, east: -10 },
-  { key: 'dry_valleys', label: 'McMurdo Dry Valleys', south: -78.6, north: -76.4, west: 159, east: 165 },
-  { key: 'antarctica', label: 'Antarctica', south: -90, north: -60, west: -180, east: 180 },
+  { key: 'usa', label: 'USA', south: 24.5, north: 49.5, west: -125, east: -66,
+    words: 'united states america mojave utah nevada arizona death valley' },
+  { key: 'south_america', label: 'South America', south: -56, north: 13, west: -82, east: -34,
+    words: 'andes atacama altiplano chile peru bolivia argentina patagonia' },
+  { key: 'north_africa', label: 'North Africa', south: 10, north: 38, west: -18, east: 40,
+    words: 'sahara morocco algeria libya egypt mali niger chad' },
+  { key: 'australia', label: 'Australia', south: -44, north: -10, west: 112, east: 154,
+    words: 'outback pilbara' },
+  { key: 'mongolia', label: 'Mongolia & China', south: 25, north: 53, west: 73, east: 125,
+    words: 'gobi tarim taklamakan tibet himalaya qaidam' },
+  { key: 'arctic', label: 'Arctic', south: 60, north: 90, west: -180, east: 180,
+    words: 'greenland svalbard canada devon alaska siberia north pole' },
+  { key: 'antarctica', label: 'Antarctica', south: -90, north: -60, west: -180, east: 180,
+    words: 'south pole mcmurdo dry valleys' },
+  { key: 'middle_east', label: 'Middle East', group: 'other', south: 12, north: 42, west: 34, east: 63,
+    words: 'arabia saudi iran oman' },
+  { key: 'central_asia', label: 'Central Asia', group: 'other', south: 35, north: 55, west: 46, east: 80,
+    words: 'kazakhstan uzbekistan turkmenistan' },
+  { key: 'south_asia', label: 'South Asia', group: 'other', south: 20, north: 37, west: 60, east: 80,
+    words: 'thar india pakistan ladakh' },
+  { key: 'southern_africa', label: 'Southern Africa', group: 'other', south: -35, north: -15, west: 10, east: 36,
+    words: 'namib kalahari namibia botswana' },
+  { key: 'iceland', label: 'Iceland', group: 'other', south: 63, north: 67, west: -25, east: -13,
+    words: 'askja' },
 ];
 
 /** Normalise a box: clamp latitudes, order south/north, longitudes in [-180, 180]. */

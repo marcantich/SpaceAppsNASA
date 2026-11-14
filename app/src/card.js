@@ -159,7 +159,7 @@ function compareBlock({ rows, index, body, color }) {
       <span class="cmp-bar"><i style="width:${Number.isFinite(r.note) ? Math.round(r.note * 100) : 0}%"></i></span>
     </div>`).join('');
   return `<section class="cmp">
-      <div class="cmp-index"><b style="background:${color}">${Number.isFinite(index) ? index.toFixed(0) : '—'}</b>
+      <div class="cmp-index"><b style="background:${color};color:${inkOn(color)}">${Number.isFinite(index) ? index.toFixed(0) : '—'}</b>
         <span>analog index vs the ${esc(body)} cell<br><span class="muted">0–100, physical units with tolerances</span></span></div>
       ${bars}
     </section>`;
@@ -169,6 +169,13 @@ function compareBlock({ rows, index, body, color }) {
  * Earth-side panel with the ranked analogs of the selected target cell.
  * handlers.onPick(best) when a result is clicked; handlers.onClose().
  */
+/** Dark or light text, whichever reads better on a CSS colour ("rgb(r, g, b)" or "#rrggbb"). */
+function inkOn(css) {
+  const m = String(css).match(/\d+/g);
+  const [r, g, b] = css.startsWith('#') ? [1, 3, 5].map((i) => parseInt(css.slice(i, i + 2), 16)) : (m ?? [0, 0, 0]).map(Number);
+  return 0.299 * r + 0.587 * g + 0.114 * b > 120 ? '#10141f' : '#ffffff';
+}
+
 export function createMatchPanel(el, { onPick, onClose } = {}) {
   let current = [];
   el.addEventListener('click', (e) => {
@@ -190,7 +197,7 @@ export function createMatchPanel(el, { onPick, onClose } = {}) {
         const lon = `${Math.abs(b.lon).toFixed(1)}° ${b.lon >= 0 ? 'E' : 'W'}`;
         const zone = ['outside', 'polar ice', 'desert', 'arid open land'][b.env] ?? '';
         return `<li data-rank="${k}" tabindex="0">
-            <b class="score" style="background:${colorOf(b.score)}">${b.score.toFixed(0)}</b>
+            <b class="score" style="background:${colorOf(b.score)};color:${inkOn(colorOf(b.score))}">${b.score.toFixed(0)}</b>
             <span><b>#${k + 1}</b> · ${lat}, ${lon}<br><span class="muted">${zone}</span></span>
           </li>`;
       }).join('');

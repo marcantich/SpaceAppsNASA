@@ -307,6 +307,13 @@ export function createGlobe(container, bodyKey) {
     zoneEntities = [];
   }
   function flyToZone(z, duration = 1.6) {
+    if (((z.east - z.west) + 360) % 360 === 0) {
+      // a whole band of longitude (Arctic, Antarctica): look straight down on the pole
+      const pole = z.north >= 89.9 ? 90 : z.south <= -89.9 ? -90 : (z.north + z.south) / 2;
+      const height = Math.max(2.5e6, (90 - Math.min(Math.abs(z.south), Math.abs(z.north))) * 111e3 * 2.6);
+      viewer.camera.flyTo({ destination: toCartesian(pole, 0, height), duration });
+      return;
+    }
     const rect = Cesium.Rectangle.fromDegrees(z.west, z.south, z.east, z.north);
     viewer.camera.flyTo({ destination: rect, duration });
   }

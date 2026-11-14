@@ -23,14 +23,21 @@
           <option value="">All shared variables</option>
         </select>
       </label>
-      <div class="zone" role="group" aria-label="Earth search zone">
-        <label class="test" title="Search the best analogs only inside this region of Earth">
-          Earth zone
-          <select id="zone">
-            <option value="">Whole Earth</option>
-          </select>
-        </label>
-        <button type="button" id="draw-zone" title="Drag a box on the Earth globe to search only inside it (Esc cancels)">▭ Draw area</button>
+      <div class="search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-4-4" /></svg>
+        <input id="place-search" type="search" autocomplete="off" spellcheck="false"
+          placeholder="Search a base, site, region or lat, lon…"
+          role="combobox" aria-controls="place-results" aria-autocomplete="list" />
+        <ul id="place-results" class="suggest" role="listbox" hidden></ul>
+      </div>
+      <div class="zone" id="zone">
+        <button type="button" class="zone-btn" aria-haspopup="true" aria-expanded="false"
+          title="Search the best Earth analogs only inside a region">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+          Zone: <b class="zone-name">Whole Earth</b> <span class="caret">▾</span>
+        </button>
+        <button type="button" class="zone-clear" title="Search the whole Earth again" aria-label="Clear zone" hidden>×</button>
+        <div class="menu" role="menu" hidden></div>
       </div>
       <span class="hint">Click any point of the target body → best Earth analogs</span>
     </header>
