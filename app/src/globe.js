@@ -326,9 +326,14 @@ export function createGlobe(container, bodyKey) {
   function flyToZone(z, duration = 1.6) {
     if (((z.east - z.west) + 360) % 360 === 0) {
       // a whole band of longitude (Arctic, Antarctica): look straight down on the pole
+      // (a band around the equator is shown from above its middle, at the body's scale)
+      const R = ellipsoid.maximumRadius;
+      const mPerDeg = (R * Math.PI) / 180;
       const pole = z.north >= 89.9 ? 90 : z.south <= -89.9 ? -90 : (z.north + z.south) / 2;
-      const height = Math.max(2.5e6, (90 - Math.min(Math.abs(z.south), Math.abs(z.north))) * 111e3 * 2.6);
-      viewer.camera.flyTo({ destination: toCartesian(pole, 0, height), duration });
+      const reach = pole === 90 || pole === -90 ? 90 - Math.min(Math.abs(z.south), Math.abs(z.north)) : (z.north - z.south) / 2;
+      const height = Math.min(3 * R, Math.max(0.4 * R, reach * mPerDeg * 2.6));
+      const lon = Math.abs(pole) === 90 ? 0 : Cesium.Math.toDegrees(viewer.camera.positionCartographic.longitude);
+      viewer.camera.flyTo({ destination: toCartesian(pole, lon, height), duration });
       return;
     }
     const rect = Cesium.Rectangle.fromDegrees(z.west, z.south, z.east, z.north);

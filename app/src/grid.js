@@ -10,7 +10,7 @@
 // not stored: we rebuild the same list here with h3-js.
 import { cellToChildren, getBaseCellNumber, getRes0Cells, latLngToCell } from 'h3-js';
 
-const BASE = `${import.meta.env.BASE_URL}data/`;
+const BASE = `${import.meta.env?.BASE_URL ?? '/'}data/`; // (no Vite env when tested in Node)
 const RES0 = new Map(getRes0Cells().map((c) => [getBaseCellNumber(c), c]));
 const NODATA = { u1: 255, u2: 65535 };
 const BYTES = { u1: 1, u2: 2 };

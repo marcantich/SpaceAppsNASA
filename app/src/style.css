@@ -514,17 +514,62 @@ body {
   background: rgb(127 209 255 / 0.1);
 }
 
-.hint {
-  margin-left: auto;
+/* --- Toolbar: which body on each side ------------------------------------------------------------ */
+.bodies {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bodies .lbl {
   color: var(--muted);
   font-size: 12px;
 }
 
-/* Earth: ranked analogs (left) + cell card (right) */
-.card.results {
+.switch button {
+  padding: 6px 11px;
+}
+
+.swap {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.swap:hover {
+  border-color: var(--accent);
+  transform: rotate(180deg);
+}
+
+.test select {
+  max-width: 190px;
+}
+
+.panes {
+  position: relative; /* the score dock and the status pill sit across both globes */
+}
+
+/* --- Cards: left card on the left edge of the left globe, right card on the right edge ------------ */
+.card.side-left {
   left: 12px;
   right: auto;
-  width: min(270px, calc(50% - 18px));
+  top: 46px;
+}
+
+#card-right {
+  top: var(--right-top, 56px);
+  max-height: calc(100% - var(--right-top, 56px) - var(--dock-h, 0px) - 24px);
+}
+
+.card.side-left {
+  max-height: calc(100% - 46px - var(--dock-h, 0px) - 24px);
 }
 
 .card .small {
@@ -532,65 +577,6 @@ body {
   margin: 6px 0 0;
 }
 
-@media (max-width: 1350px) {
-  .hint {
-    display: none;
-  }
-}
-
-.zone-note {
-  margin: -4px 0 6px;
-  padding: 3px 8px;
-  border-left: 3px solid var(--zone);
-  border-radius: 4px;
-  background: rgb(127 209 255 / 0.08);
-  font-size: 12px;
-}
-
-.ranks {
-  list-style: none;
-  margin: 6px 0;
-  padding: 0;
-}
-
-.ranks li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 6px;
-  border-radius: 8px;
-  cursor: pointer;
-}
-
-.rank-txt {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  line-height: 1.3;
-}
-
-.rank-txt b {
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.rank-txt .small {
-  margin: 0;
-  font-size: 11px;
-}
-
-.ranks .env {
-  margin-left: auto;
-  padding-left: 6px;
-  color: var(--muted);
-  font-size: 10px;
-  text-align: right;
-  white-space: nowrap;
-}
-
-/* Card: title + subtitle, key values, "More info" */
 .card header .sub {
   margin: 2px 0 0;
   color: var(--muted);
@@ -601,12 +587,14 @@ body {
   margin: 2px 0 8px;
 }
 
-.card details.more {
+details.more,
+details.dock-more {
   border-top: 1px solid var(--line);
   padding-top: 6px;
 }
 
-.card details.more > summary {
+details.more > summary,
+details.dock-more > summary {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -620,20 +608,24 @@ body {
   user-select: none;
 }
 
-.card details.more > summary::-webkit-details-marker {
+details.more > summary::-webkit-details-marker,
+details.dock-more > summary::-webkit-details-marker {
   display: none;
 }
 
-.card details.more > summary::before {
+details.more > summary::before,
+details.dock-more > summary::before {
   content: '+';
   font-weight: 700;
 }
 
-.card details.more[open] > summary::before {
+details.more[open] > summary::before,
+details.dock-more[open] > summary::before {
   content: '−';
 }
 
-.card details.more > summary:hover {
+details.more > summary:hover,
+details.dock-more > summary:hover {
   border-color: var(--accent);
   color: var(--text);
 }
@@ -642,21 +634,130 @@ body {
   margin-top: 8px;
 }
 
-.ranks li:hover,
-.ranks li:focus {
+/* --- Results bar: top of the search globe, best sites side by side -------------------------------- */
+.results-bar {
+  position: absolute;
+  top: 46px;
+  left: 12px;
+  right: 56px; /* leaves the home button free */
+  z-index: 4;
+  padding: 8px 10px 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgb(16 20 31 / 0.94);
+  font-size: 12px;
+}
+
+.results-bar[hidden] {
+  display: none;
+}
+
+.bar-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.bar-head > b {
+  flex: none;
+  font-size: 13px;
+}
+
+.bar-head > .muted {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.zone-tag {
+  color: var(--zone);
+  font-weight: 600;
+}
+
+.bar-head .legend {
+  flex: 0 0 120px;
+  margin-left: auto;
+  cursor: help;
+}
+
+.bar-close,
+.dock-close {
+  flex: none;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.results-bar .ranks {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 0 0 2px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.results-bar .ranks li {
+  flex: 1 0 128px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.results-bar .ranks li:hover,
+.results-bar .ranks li:focus {
   background: rgb(255 255 255 / 0.06);
   outline: none;
+}
+
+.results-bar .ranks li.on {
+  border-color: var(--accent);
+  background: rgb(226 103 58 / 0.1);
+}
+
+.rank-txt {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.25;
+}
+
+.rank-txt b {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-txt .small {
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 10.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .score {
   flex: none;
   display: inline-grid;
   place-items: center;
-  min-width: 34px;
+  min-width: 32px;
   height: 26px;
-  padding: 0 6px;
+  padding: 0 5px;
   border-radius: 7px;
-  color: #10141f;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
@@ -676,46 +777,82 @@ body {
   background: var(--ramp);
 }
 
-/* Comparison strip: horizontal, at the top of the Earth pane */
-.strip {
+/* --- Score dock: bottom centre, across both globes ------------------------------------------------ */
+.dock {
   position: absolute;
-  top: 46px;
-  left: 12px;
-  right: 12px;
-  z-index: 4;
-  display: flex;
-  align-items: stretch;
-  gap: 12px;
-  padding: 10px 34px 10px 12px;
+  left: 50%;
+  bottom: 12px;
+  z-index: 5;
+  width: min(880px, calc(100% - 24px));
+  max-height: 55%;
+  overflow-y: auto;
+  transform: translateX(-50%);
+  padding: 10px 14px 8px;
   border: 1px solid var(--line);
-  border-radius: 10px;
-  background: rgb(16 20 31 / 0.94);
+  border-radius: 12px;
+  background: rgb(16 20 31 / 0.96);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
   font-size: 12px;
 }
 
-.strip[hidden] {
+.dock[hidden] {
   display: none;
 }
 
-.strip-index {
-  flex: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 170px;
-  padding-right: 12px;
-  border-right: 1px solid var(--line);
+.dock-close {
+  position: absolute;
+  top: 6px;
+  right: 8px;
 }
 
-.strip-index > div {
+.dock-pair {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.dock-side {
   display: flex;
   flex-direction: column;
-  gap: 1px;
-  line-height: 1.25;
+  min-width: 0;
+  line-height: 1.3;
 }
 
-.strip-index .small {
+.dock-side b {
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dock-side span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dock-side.left {
+  text-align: right;
+}
+
+.dock-score {
+  display: grid;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  justify-items: center;
+  gap: 2px 8px;
+}
+
+.dock-score .arrow {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.dock-sub {
+  grid-column: 1 / -1;
+  color: var(--muted);
   font-size: 10.5px;
+  white-space: nowrap;
 }
 
 .big,
@@ -728,9 +865,9 @@ body {
 }
 
 .big {
-  min-width: 52px;
-  height: 44px;
-  font-size: 22px;
+  min-width: 60px;
+  height: 46px;
+  font-size: 24px;
 }
 
 .mini {
@@ -741,18 +878,52 @@ body {
   font-size: 11px;
 }
 
-.dims {
-  flex: 1;
+.dock-dims {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
-  gap: 6px 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px 16px;
+  margin: 10px 0 8px;
+}
+
+.dock-dim {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 3px 8px;
+}
+
+.dock-dim-name {
+  color: var(--accent);
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dock-bar {
+  grid-column: 1 / -1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.dock-bar i {
+  display: block;
+  height: 100%;
+}
+
+details.dock-more .dims {
+  margin-top: 8px;
+}
+
+.dims {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 6px 16px;
   min-width: 0;
 }
 
 .dim-head {
-  display: flex;
-  align-items: center;
-  gap: 6px;
   margin-bottom: 3px;
   color: var(--accent);
   font-size: 10.5px;
@@ -784,46 +955,6 @@ body {
   font-style: normal;
 }
 
-.strip-close {
-  position: absolute;
-  top: 6px;
-  right: 8px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-}
-
-/* Panels of the Earth pane go below the strip when it is shown (main.js sets --panel-top) */
-@media (min-width: 761px) {
-  .pane .card {
-    top: var(--panel-top, 56px);
-    max-height: calc(100% - var(--panel-top, 56px) - 54px);
-  }
-}
-
-@media (max-width: 760px) {
-  .strip {
-    top: 40px;
-    left: 8px;
-    right: 8px;
-    padding: 6px 30px 6px 8px;
-  }
-
-  .strip-index {
-    max-width: 150px;
-  }
-
-  .dims {
-    grid-template-columns: repeat(4, minmax(110px, 1fr));
-  }
-
-  .pane .card.results {
-    top: var(--panel-top, 48px);
-  }
-}
 .cmp-bar {
   grid-column: 1 / -1;
   height: 4px;
@@ -838,46 +969,30 @@ body {
   background: linear-gradient(90deg, #b73779, #fc8961, #fcfdbf);
 }
 
-/* Small loading pill at the bottom of the Earth pane */
+/* --- Status pill: top centre, across both globes --------------------------------------------------- */
 .status {
   position: absolute;
+  top: 10px;
   left: 50%;
-  bottom: 14px;
-  z-index: 4;
+  z-index: 6;
   transform: translateX(-50%);
   padding: 5px 12px;
   border-radius: 999px;
-  background: rgb(16 20 31 / 0.9);
+  background: rgb(16 20 31 / 0.92);
   border: 1px solid var(--line);
   color: var(--text);
   font-size: 12px;
+  white-space: nowrap;
 }
 
 .status[hidden] {
   display: none;
 }
 
+/* --- Phones: globes stacked, cards and dock compact ---------------------------------------------- */
 @media (max-width: 760px) {
-  .hint {
+  .bodies .lbl {
     display: none;
-  }
-
-  .card.results {
-    top: 48px;
-    bottom: auto;
-    left: 8px;
-    right: 8px;
-    width: auto;
-    max-height: 35%;
-  }
-
-  .card {
-    top: auto;
-    bottom: 8px;
-    right: 8px;
-    left: 8px;
-    width: auto;
-    max-height: 45%;   /* leaves room above it for the framed hexagon */
   }
 
   .panes {
@@ -888,5 +1003,35 @@ body {
   .pane {
     border-right: 0;
     border-bottom: 1px solid var(--line);
+  }
+
+  .results-bar {
+    top: 40px;
+    left: 8px;
+    right: 8px;
+  }
+
+  .card,
+  .card.side-left,
+  #card-right {
+    top: auto;
+    bottom: 8px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    max-height: 40%;
+  }
+
+  .dock {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    max-height: 40%;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .dock-pair {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 8px;
   }
 }

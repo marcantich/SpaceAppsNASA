@@ -101,3 +101,11 @@ def test_peso_de_la_dimension_es_su_mayor_peso():
     dims = {"sun": "sky", "tm": "thermal", "tx": "thermal"}
     thermal = (1.0 * 0.5 + 0.6 * 0.0) / 1.6
     assert analog_index(scores, w, dims).iloc[0] == pytest.approx(100 * (0.8 * 1.0 + 1.0 * thermal) / 1.8)
+
+
+def test_dimension_sin_datos_cuenta_cero():
+    """Con dimensiones, una celda sin ningún dato de una dimensión no sube por no tenerlo."""
+    scores = pd.DataFrame({"slope": [1.0, 1.0], "temp": [0.5, np.nan]})
+    dims = {"slope": "terrain", "temp": "thermal"}
+    idx = analog_index(scores, {"slope": 1, "temp": 1}, dims)
+    assert idx.tolist() == pytest.approx([75.0, 50.0])    # la 2.ª no tiene térmica: cuenta 0, no 100

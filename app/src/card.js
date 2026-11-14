@@ -173,22 +173,32 @@ const badge = (score, color, cls = 'score') =>
   `<b class="${cls}" style="background:${color};color:${inkOn(color)}">${Number.isFinite(score) ? score.toFixed(0) : '—'}</b>`;
 
 /**
- * Horizontal comparison strip at the top of the Earth pane: the index, then one column per
- * dimension (Terrain, Thermal…) with its score and a mini bar per variable.
- * data = { index, cell, ring, body, color, colorOf, dims: [{ label, score, rows: [{ name, short, unit,
- *          target, earth, note }] }] }
+ * Score dock: bottom centre, across both globes. It is about the PAIR (clicked cell ◀ index ▶ candidate),
+ * so it sits between them. One bar per dimension; the per-variable values fold under "Variables".
+ * data = { index, cell, ring, color, colorOf, source: { name, body }, candidate: { name, body },
+ *          dims: [{ label, score, rows: [{ name, short, label, unit, target, earth, note }] }] }
  */
-export function createCompareStrip(el, { onClose } = {}) {
+export function createScoreDock(el, { onClose } = {}) {
+  let open = false; // "Variables" folded or not, remembered
   el.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) onClose?.();
   });
+  el.addEventListener('toggle', (e) => {
+    if (e.target.matches('details')) open = e.target.open;
+  }, true);
   return {
-    show({ index, cell, ring, body, color, colorOf, dims, place }) {
-      const cols = dims.map((d) => `
+    show({ index, cell, ring, color, colorOf, source, candidate, dims }) {
+      const bars = dims.map((d) => `
+        <div class="dock-dim" title="${esc(d.label)}: ${Number.isFinite(d.score) ? d.score.toFixed(0) : '—'} / 100">
+          <span class="dock-dim-name">${esc(d.label)}</span>
+          ${badge(d.score, colorOf(d.score), 'mini')}
+          <span class="dock-bar"><i style="width:${Number.isFinite(d.score) ? Math.round(d.score) : 0}%;background:${colorOf(d.score)}"></i></span>
+        </div>`).join('');
+      const vars = dims.map((d) => `
         <div class="dim">
-          <div class="dim-head">${badge(d.score, colorOf(d.score), 'mini')}<span>${esc(d.label)}</span></div>
+          <div class="dim-head"><span>${esc(d.label)}</span></div>
           ${d.rows.map((r) => `
-            <div class="dim-row" title="${esc(r.label)} · ${esc(body)} ${fmt(r.target, r.unit, r.name)} vs Earth ${fmt(r.earth, r.unit, r.name)} · note ${Number.isFinite(r.note) ? r.note.toFixed(2) : '—'}">
+            <div class="dim-row" title="${esc(r.label)} · ${esc(source.body)} ${fmt(r.target, r.unit, r.name)} vs ${esc(candidate.body)} ${fmt(r.earth, r.unit, r.name)} · note ${Number.isFinite(r.note) ? r.note.toFixed(2) : '—'}">
               <span class="dim-name">${esc(r.short)}</span>
               <span class="dim-vals">${pair(r)}</span>
               <span class="cmp-bar"><i style="width:${Number.isFinite(r.note) ? Math.round(r.note * 100) : 0}%"></i></span>
@@ -196,13 +206,19 @@ export function createCompareStrip(el, { onClose } = {}) {
         </div>`).join('');
       el.hidden = false;
       el.innerHTML = `
-        <div class="strip-index">
-          ${badge(index, color, 'big')}
-          <div><b>Analog index</b><span class="muted">${esc(place ?? 'Earth cell')} vs the ${esc(body)} cell</span>
-            ${Number.isFinite(ring) ? `<span class="muted small">cell ${cell.toFixed(0)} · 20 km around ${ring.toFixed(0)}</span>` : ''}</div>
+        <button class="dock-close" data-close aria-label="Close">×</button>
+        <div class="dock-pair">
+          <div class="dock-side left"><b>${esc(source.name)}</b><span>${esc(source.body)} · clicked cell</span></div>
+          <div class="dock-score">
+            <span class="arrow">◀</span>${badge(index, color, 'big')}<span class="arrow">▶</span>
+            <span class="dock-sub">analog index${Number.isFinite(ring) ? ` · cell ${cell.toFixed(0)}, 20 km around ${ring.toFixed(0)}` : ''}</span>
+          </div>
+          <div class="dock-side right"><b>${esc(candidate.name)}</b><span>${esc(candidate.body)} · analog</span></div>
         </div>
-        <div class="dims">${cols}</div>
-        <button class="strip-close" data-close aria-label="Close">×</button>`;
+        <div class="dock-dims">${bars}</div>
+        <details class="dock-more"${open ? ' open' : ''}><summary>Variables (${esc(source.body)} → ${esc(candidate.body)})</summary>
+          <div class="dims">${vars}</div>
+        </details>`;
     },
     hide() {
       el.hidden = true;
@@ -212,48 +228,48 @@ export function createCompareStrip(el, { onClose } = {}) {
 }
 
 /**
- * Earth-side panel with the ranked analogs of the selected target cell.
- * handlers.onPick(best) when a result is clicked; handlers.onClose().
+ * Results bar: top of the search pane, the best sites side by side (click one to compare it).
+ * handlers.onPick(best), onClose().
  */
-export function createMatchPanel(el, { onPick, onClose } = {}) {
+export function createResultsBar(el, { onPick, onClose } = {}) {
   let current = [];
-  let infoOpen = false;
+  let selected = 0;
   el.addEventListener('click', (e) => {
     if (e.target.closest('[data-close]')) return onClose?.();
     const li = e.target.closest('[data-rank]');
     if (li) onPick?.(current[Number(li.dataset.rank)]);
   });
-  el.addEventListener('toggle', (e) => {
-    if (e.target.matches('details')) infoOpen = e.target.open;
-  }, true);
+  const paint = () => el.querySelectorAll('[data-rank]').forEach((li) => {
+    li.classList.toggle('on', Number(li.dataset.rank) === selected);
+  });
   return {
     loading(text) {
       el.hidden = false;
-      el.innerHTML = `<header><h2>Best Earth analogs</h2><button data-close aria-label="Close">×</button></header>
-        <p class="muted">${esc(text)}</p>`;
+      el.innerHTML = `<div class="bar-head"><b>Best analogs</b><span class="muted">${esc(text)}</span>
+        <button class="bar-close" data-close aria-label="Close">×</button></div>`;
     },
-    /** res = EarthMatcher.rank() (best[k].country filled by the caller) */
-    show(res, { body, colorOf, testNote, validity, zoneLabel }) {
+    /** res = Matcher.rank(); best[k].name filled by the caller (country or nearest site) */
+    show(res, { bodyName, colorOf, testNote, validity, zoneLabel }) {
       current = res.best;
-      const items = res.best.map((b, k) => `<li data-rank="${k}" tabindex="0">
+      selected = 0;
+      const items = res.best.map((b, k) => `<li data-rank="${k}" tabindex="0" title="${esc(b.name ?? '')} · ${latLonShort(b.lat, b.lon)}${Number.isFinite(b.env) ? ` · ${ENV[b.env]}` : ''}">
             ${badge(b.score, colorOf(b.score))}
-            <span class="rank-txt"><b>#${k + 1} · ${esc(b.country ?? 'Earth')}</b>
-              <span class="muted small">${latLonShort(b.lat, b.lon)}</span></span>
-            <span class="env">${ENV[b.env] ?? ''}</span>
+            <span class="rank-txt"><b>#${k + 1} · ${esc(b.name ?? bodyName)}</b>
+              <span class="muted small">${latLonShort(b.lat, b.lon)}${Number.isFinite(b.env) && b.env > 0 ? ` · ${ENV[b.env]}` : ''}</span></span>
           </li>`).join('');
+      const info = `${res.n.toLocaleString()} cells searched${zoneLabel ? ` in ${zoneLabel}` : ''} · the list ranks each cell with its 6 neighbours (homogeneous areas first), results ≥ ${Math.round(res.minKm)} km apart${validity ? ` · Validity: ${validity}` : ''}`;
       el.hidden = false;
-      el.innerHTML = `<header><h2>Best Earth analogs</h2><button data-close aria-label="Close">×</button></header>
-        <p class="where">${esc(body)} cell · ${esc(testNote)}</p>
-        ${zoneLabel ? `<p class="zone-note">Only inside <b>${esc(zoneLabel)}</b></p>` : ''}
-        <ol class="ranks">${items}</ol>
-        <div class="legend"><span>${res.threshold.toFixed(0)}</span><i></i><span>100</span></div>
-        <details class="more"${infoOpen ? ' open' : ''}><summary>How these are ranked</summary>
-          <p class="muted small">Coloured hexagons: the ${res.top.length.toLocaleString()} best of
-            ${res.n.toLocaleString()} Earth search cells${zoneLabel ? ' in this zone' : ''} (deserts, polar ice, arid land; ~6.5 km).
-            The list ranks each cell together with its 6 neighbours (~20 km), so homogeneous areas come
-            first; results are ≥ ${Math.round(res.minKm)} km apart.</p>
-          ${validity ? `<p class="muted small"><b>Validity:</b> ${esc(validity)}</p>` : ''}
-        </details>`;
+      el.innerHTML = `<div class="bar-head"><b>Best analogs on ${esc(bodyName)}</b>
+          <span class="muted">${esc(testNote)}${zoneLabel ? ` · only in <b class="zone-tag">${esc(zoneLabel)}</b>` : ''}</span>
+          <span class="legend" title="${esc(info)}"><span>${res.threshold.toFixed(0)}</span><i></i><span>100</span> ⓘ</span>
+          <button class="bar-close" data-close aria-label="Close">×</button></div>
+        <ol class="ranks">${items}</ol>`;
+      paint();
+    },
+    /** Highlight the k-th result (-1 = none). */
+    select(k) {
+      selected = k;
+      paint();
     },
     hide() {
       el.hidden = true;

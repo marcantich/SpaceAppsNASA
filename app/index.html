@@ -8,10 +8,21 @@
   </head>
   <body>
     <header class="toolbar">
-      <h1>Earth Analogs</h1>
-      <div class="switch" role="group" aria-label="Target body">
-        <button type="button" data-body="mars" class="active">Mars</button>
-        <button type="button" data-body="moon">Moon</button>
+      <h1>Analogs</h1>
+      <div class="bodies">
+        <span class="lbl">Click on</span>
+        <div class="switch" id="left-body" role="group" aria-label="Body you click on (left)">
+          <button type="button" data-body="mars" class="active">Mars</button>
+          <button type="button" data-body="moon">Moon</button>
+          <button type="button" data-body="earth">Earth</button>
+        </div>
+        <button type="button" id="swap" class="swap" title="Swap the two globes (the selected analog becomes the clicked point)" aria-label="Swap">⇄</button>
+        <span class="lbl">search</span>
+        <div class="switch" id="right-body" role="group" aria-label="Body where analogs are searched (right)">
+          <button type="button" data-body="earth" class="active">Earth</button>
+          <button type="button" data-body="mars">Mars</button>
+          <button type="button" data-body="moon">Moon</button>
+        </div>
       </div>
       <label class="relief">
         <input type="checkbox" id="relief" />
@@ -32,30 +43,29 @@
       </div>
       <div class="zone" id="zone">
         <button type="button" class="zone-btn" aria-haspopup="true" aria-expanded="false"
-          title="Search the best Earth analogs only inside a region">
+          title="Search the best analogs only inside a region">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
           Zone: <b class="zone-name">Whole Earth</b> <span class="caret">▾</span>
         </button>
-        <button type="button" class="zone-clear" title="Search the whole Earth again" aria-label="Clear zone" hidden>×</button>
+        <button type="button" class="zone-clear" title="Search the whole body again" aria-label="Clear zone" hidden>×</button>
         <div class="menu" role="menu" hidden></div>
       </div>
-      <span class="hint">Click any point of the target body → best Earth analogs</span>
     </header>
 
     <main class="panes">
-      <section class="pane">
-        <span class="pane-label" id="target-label">Mars</span>
-        <div id="target" class="globe"></div>
-        <aside id="card" class="card" hidden aria-live="polite"></aside>
+      <section class="pane" id="pane-left">
+        <span class="pane-label" id="left-label">Mars · click a point</span>
+        <div id="globe-left" class="globe"></div>
+        <aside id="card-left" class="card side-left" hidden aria-live="polite"></aside>
       </section>
-      <section class="pane">
-        <span class="pane-label">Earth</span>
-        <div id="earth" class="globe"></div>
-        <section id="earth-compare" class="strip" hidden aria-live="polite"></section>
-        <aside id="earth-results" class="card results" hidden aria-live="polite"></aside>
-        <aside id="earth-card" class="card" hidden aria-live="polite"></aside>
-        <div id="earth-status" class="status" hidden></div>
+      <section class="pane" id="pane-right">
+        <span class="pane-label" id="right-label">Earth · analogs</span>
+        <div id="globe-right" class="globe"></div>
+        <section id="results" class="results-bar" hidden aria-live="polite"></section>
+        <aside id="card-right" class="card" hidden aria-live="polite"></aside>
       </section>
+      <section id="dock" class="dock" hidden aria-live="polite"></section>
+      <div id="status" class="status" hidden></div>
     </main>
 
     <script type="module" src="/src/main.js"></script>

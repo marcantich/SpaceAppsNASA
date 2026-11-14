@@ -3,7 +3,7 @@
 // Search box: type a name (Mars / Moon sites, known Earth analogs, Earth zones) or coordinates
 // ("-24.1, -70", "24.1S 70W", "18.4° N 77.5° E") and pick a suggestion with the mouse or the
 // arrow keys + Enter. Zone menu: limit the Earth analog search to a region or a drawn box.
-import { ZONES, zoneText } from './zones.js';
+import { ZONES_BY_BODY, zoneText } from './zones.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const norm = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
@@ -41,9 +41,9 @@ function matchScore(entry, q) {
 /**
  * entries(): [{ kind: 'site'|'analog'|'zone', body, label, sub, words?, data }]
  * onChoose({ kind, body, data }) — kind 'coords' gives data = { lat, lon }.
- * currentBody(): 'mars' | 'moon' (offered first for typed coordinates).
+ * bodies(): the three bodies, in the order offered for typed coordinates (left pane first).
  */
-export function createPlaceSearch(input, list, { entries, onChoose, currentBody }) {
+export function createPlaceSearch(input, list, { entries, onChoose, bodies }) {
   let shown = [];
   let active = -1;
   let index = null;
@@ -61,20 +61,18 @@ export function createPlaceSearch(input, list, { entries, onChoose, currentBody 
     const out = [];
     const c = parseCoords(raw);
     if (c) {
-      const target = currentBody();
-      const other = target === 'mars' ? 'moon' : 'mars';
-      for (const body of ['earth', target, other]) {
+      for (const body of bodies()) {
         out.push({ kind: 'coords', body, label: fmt(c), sub: `Go to this point on ${BODY_NAME[body]}`, data: c, group: 'Coordinates' });
       }
       return out;
     }
     if (!index) build();
     if (!q) {
-      // nothing typed yet: the sites of the body on screen, then the zones
-      const body = currentBody();
+      // nothing typed yet: the sites of the clicked body, then the zones of the search body
+      const [body, search] = bodies();
       return [
-        ...index.filter((e) => e.kind === 'site' && e.body === body).slice(0, 8),
-        ...index.filter((e) => e.kind === 'zone').slice(0, 7),
+        ...index.filter((e) => (e.kind === 'site' || e.kind === 'analog') && e.body === body).slice(0, 8),
+        ...index.filter((e) => e.kind === 'zone' && e.body === search).slice(0, 7),
       ].map(withGroup);
     }
     return index
@@ -86,7 +84,7 @@ export function createPlaceSearch(input, list, { entries, onChoose, currentBody 
   }
 
   function withGroup(e) {
-    const group = e.kind === 'zone' ? 'Earth · search zones'
+    const group = e.kind === 'zone' ? `${BODY_NAME[e.body]} · search zones`
       : e.kind === 'analog' ? 'Earth · known analogs' : `${BODY_NAME[e.body]} · sites`;
     return { ...e, group };
   }
@@ -171,25 +169,29 @@ export function createZoneMenu(root, { onSelect, onDraw }) {
   const menu = root.querySelector('.menu');
   let current = null;
   let custom = null;
+  let body = 'earth';
+  const NAME = { earth: 'Earth', mars: 'Mars', moon: 'the Moon' };
+  const whole = () => `Whole ${body === 'moon' ? 'Moon' : NAME[body]}`;
 
   const chip = (key, label, cls = '') =>
     `<button type="button" role="menuitemradio" aria-checked="${current === key}" class="chip ${cls}${current === key ? ' on' : ''}" data-zone="${key}">${esc(label)}</button>`;
 
   function render() {
-    const main = ZONES.filter((z) => !z.group);
-    const other = ZONES.filter((z) => z.group === 'other');
+    const zones = ZONES_BY_BODY[body] ?? [];
+    const main = zones.filter((z) => !z.group);
+    const other = zones.filter((z) => z.group === 'other');
     menu.innerHTML = `
-      <p class="menu-title">Search Earth analogs in…</p>
-      <div class="chips">${chip('', 'Whole Earth', 'wide')}${main.map((z) => chip(z.key, z.label)).join('')}</div>
-      <p class="menu-title">Other zones</p>
-      <div class="chips">${other.map((z) => chip(z.key, z.label)).join('')}</div>
+      <p class="menu-title">Search analogs on ${esc(NAME[body])} in…</p>
+      <div class="chips">${chip('', whole(), 'wide')}${main.map((z) => chip(z.key, z.label)).join('')}</div>
+      ${other.length ? `<p class="menu-title">Other zones</p>
+      <div class="chips">${other.map((z) => chip(z.key, z.label)).join('')}</div>` : ''}
       ${custom ? `<p class="menu-title">Your area</p><div class="chips">${chip('custom', zoneText(custom), 'wide')}</div>` : ''}
-      <button type="button" class="draw" data-draw>▭ Draw an area on the Earth globe</button>`;
+      <button type="button" class="draw" data-draw>▭ Draw an area on the ${esc(NAME[body])} globe</button>`;
   }
 
   function set(key, label) {
     current = key || null;
-    name.textContent = label ?? 'Whole Earth';
+    name.textContent = label ?? whole();
     root.classList.toggle('filtered', !!current);
     clear.hidden = !current;
   }
@@ -227,6 +229,12 @@ export function createZoneMenu(root, { onSelect, onDraw }) {
     set,
     setCustom(z) {
       custom = z;
+    },
+    /** Body whose zones are offered (the search body); forgets the custom area. */
+    setBody(b) {
+      body = b;
+      custom = null;
+      set(null);
     },
     drawing(on) {
       root.classList.toggle('drawing', on);

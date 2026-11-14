@@ -1,123 +1,92 @@
-// Target body (Mars or Moon) on the left, Earth on the right.
+// Two globes: the body you click on (left) and the body where analogs are searched (right).
+// Any pair of Earth, Mars and the Moon works (⇄ swaps them); the comparator is the same everywhere.
 //
-// Flow of a click on the target body ("think first, then animate"):
+// Flow of a click on the left globe ("data first, then a slow approach"):
 //   1. load the cell card and show it;
-//   2. score every Earth search cell, name the countries of the best ones, build the hexagon layer
-//      (waits until Cesium has it ready) and load the card of Earth analog #1;
-//   3. only then fly BOTH cameras at the same time, so nothing heavy runs during the flights.
+//   2. score every cell of the search body, name the best ones (country / nearest known site), build
+//      the hexagon layer (waits until Cesium has it ready) and open the card of analog #1 + the score;
+//   3. a short pause to read, then both cameras pull out to a regional view (where on the globe are
+//      we?), pause, and descend slowly onto the two hexagons, framed at the same size on screen.
 import * as Cesium from 'cesium';
 import 'cesium/Build/Cesium/Widgets/widgets.css';
 import { createGlobe } from './globe.js';
 import { loadSites } from './data.js';
 import { CardGrid } from './grid.js';
-import { createCardPanel, createCompareStrip, createMatchPanel } from './card.js';
-import { cellToBoundary, cellToLatLng } from 'h3-js';
+import { createCardPanel, createResultsBar, createScoreDock } from './card.js';
+import { cellToBoundary, cellToLatLng, greatCircleDistance } from 'h3-js';
 import { latLonToCartesian } from './coords.js';
-import { EarthMatcher, RAMP_CSS, rampColor } from './match.js';
+import { Matcher, RAMP_CSS, isTableLoaded, loadScoringMeta, loadTable, rampColor } from './match.js';
 import { areaIndex, scoreCell } from './scoring.js';
-import { ZONES, makeZone, zoneText } from './zones.js';
+import { ZONES_BY_BODY, makeZone, zoneText } from './zones.js';
 import { createPlaceSearch, createZoneMenu } from './places.js';
 import { countryAt, preloadCountries } from './countries.js';
 
+const NAME = { earth: 'Earth', mars: 'Mars', moon: 'Moon' };
+const RADIUS_KM = { earth: 6371, mars: 3390, moon: 1737 };
+// Card grids (app/data/): Earth H3 res 6 (~6.5 km), Mars res 5 (~9 km), Moon res 4 (~12 km)
+const GRIDS = { earth: new CardGrid('tierra'), mars: new CardGrid('marte'), moon: new CardGrid('luna') };
+
 const reliefBox = document.getElementById('relief');
 const reliefLabel = reliefBox.closest('label');
-const targetLabel = document.getElementById('target-label');
-const buttons = document.querySelectorAll('.switch button');
+const leftButtons = document.querySelectorAll('#left-body button');
+const rightButtons = document.querySelectorAll('#right-body button');
+const leftLabel = document.getElementById('left-label');
+const rightLabel = document.getElementById('right-label');
+const cardLeftEl = document.getElementById('card-left');
+const cardRightEl = document.getElementById('card-right');
+const resultsEl = document.getElementById('results');
+const dockEl = document.getElementById('dock');
+const status = document.getElementById('status');
+const pruebaSel = document.getElementById('prueba');
+resultsEl.style.setProperty('--ramp', RAMP_CSS);
 
-const earth = createGlobe('earth', 'earth');
-let target = null;
+let left = null;  // globe on the left (+ .key)
+let right = null; // globe on the right (+ .key)
 let sites = { targets: [], analogs: [] };
 
-// --- 4.9 Click any point of the target body → card of its H3 cell ---
-// Planet-wide card grids available in app/data/ (Mars: H3 res 5, ~9 km; Moon: H3 res 4, ~12 km)
-const GRIDS = { mars: new CardGrid('marte'), moon: new CardGrid('luna') };
-const cardEl = document.getElementById('card');
-const card = createCardPanel(cardEl, { onClose: clearAll });
-let cardRequest = 0; // ignore answers to older clicks
-
-async function showCardAt(lat, lon, title, subtitle = null) {
-  const request = ++cardRequest;
-  const grid = GRIDS[target.key];
-  if (!grid) {
-    target.clearCell();
-    card.message(title, `No card grid for the ${target.body.name} yet (ROADMAP 3.7 + 3.16).`);
-    return;
-  }
-  card.loading(title, lat, lon, subtitle);
-  try {
-    const c = await grid.cardAt(lat, lon);
-    if (request !== cardRequest) return;
-    if (!c) {
-      card.message(title, 'No data for this cell.');
-      return;
-    }
-    target.showCell(c.h3);
-    card.show(title, lat, lon, c, {
-      subtitle,
-      footer: 'Hover a value to see its source. The best Earth analogs are on the right.',
-    });
-    lastTarget = { values: c.values, h3: c.h3, lat, lon, body: target.body.name, key: target.key };
-    // think first (Earth search, hexagons, analog #1), then animate both globes together
-    const flyEarth = await runMatch({ fly: false });
-    if (request !== cardRequest) return;
-    const view = frameView(target, c.h3, [cardEl]);
-    hexPx = view.px; // Earth frames its hexagon at the same size on screen
-    flyView(target, view);
-    flyEarth?.();
-  } catch (err) {
-    console.error(err);
-    if (request === cardRequest) card.message(title, `Could not load the card: ${err.message}`);
-  }
-}
-
-// --- Earth: card grid (H3 res 6, ~6.5 km) + search over every analog cell -------------------------
-const EARTH_GRID = new CardGrid('tierra');
-const matcher = new EarthMatcher();
-const pruebaSel = document.getElementById('prueba');
-const status = document.getElementById('earth-status');
-const earthPane = document.getElementById('earth').closest('.pane');
-const resultsEl = document.getElementById('earth-results');
-const earthCardEl = document.getElementById('earth-card');
-const stripEl = document.getElementById('earth-compare');
-resultsEl.style.setProperty('--ramp', RAMP_CSS);
-let lastTarget = null; // card of the selected Mars / Moon cell
-let lastRank = null;   // EarthMatcher.rank() result for it
+let lastSource = null;    // card of the clicked (left) cell: { values, h3, lat, lon, key, name }
+let lastRank = null;      // Matcher.rank() result for it
+let lastCandidate = null; // shown right cell: { lat, lon, name }
+let zone = null;          // search zone on the right body, or null = whole body
+let customZone = null;    // last box drawn by the user
+let hexPx = null;         // on-screen size of the last framed left hexagon (px)
+let sourceRequest = 0;
 let matchRequest = 0;
-let earthRequest = 0;
-let zone = null;       // Earth search zone ({ key, label, south, north, west, east }) or null = whole Earth
-let hexPx = null;      // on-screen size of the last framed target hexagon (px)
+let candRequest = 0;
 
-const results = createMatchPanel(resultsEl, {
-  onPick: (b) => b && showEarthCell(b, { rank: lastRank.best.indexOf(b) }),
+const cardLeft = createCardPanel(cardLeftEl, { onClose: clearAll });
+const cardRight = createCardPanel(cardRightEl, {
+  onClose: () => {
+    cardRight.hide();
+    dock.hide();
+    right.clearCell();
+    right.clearSelection();
+    results.select(-1);
+  },
+});
+const results = createResultsBar(resultsEl, {
+  onPick: (b) => b && showCandidateAt(b, { rank: lastRank.best.indexOf(b) }),
   onClose: clearMatch,
 });
-const earthCard = createCardPanel(earthCardEl, {
-  onClose: () => {
-    earthCard.hide();
-    strip.hide();
-    layoutEarth();
-    earth.clearCell();
-    earth.clearSelection();
-  },
-});
-const strip = createCompareStrip(stripEl, {
-  onClose: () => {
-    strip.hide();
-    layoutEarth();
-  },
-});
+const dock = createScoreDock(dockEl, { onClose: () => dock.hide() });
 
-/** Panels of the Earth pane start below the comparison strip when it is shown. */
-function layoutEarth() {
-  const top = stripEl.hidden ? null : `${stripEl.offsetTop + stripEl.offsetHeight + 8}px`;
-  if (top) earthPane.style.setProperty('--panel-top', top);
-  else earthPane.style.removeProperty('--panel-top');
+// The right card starts below the results bar; both cards stop above the score dock
+const paneRight = document.getElementById('pane-right');
+const panesEl = document.querySelector('.panes');
+function layout() {
+  if (resultsEl.hidden) paneRight.style.removeProperty('--right-top');
+  else paneRight.style.setProperty('--right-top', `${resultsEl.offsetTop + resultsEl.offsetHeight + 8}px`);
+  panesEl.style.setProperty('--dock-h', dockEl.hidden ? '0px' : `${dockEl.offsetHeight}px`);
 }
+new ResizeObserver(layout).observe(resultsEl);
+new ResizeObserver(layout).observe(dockEl);
 
 function setStatus(text) {
   status.hidden = !text;
   status.textContent = text ?? '';
 }
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Score colour: the shown range (threshold → best) stretched over the whole ramp. */
 function colorOf(score) {
@@ -128,89 +97,146 @@ function colorOf(score) {
   return rampColor((score - lo) / (hi - lo));
 }
 
-/**
- * Score Earth for the selected target cell and prepare everything (list, countries, hexagons, card of
- * #1). Returns a function that starts the Earth camera flight; with fly = true it is called at once.
- */
-async function runMatch({ fly = true } = {}) {
-  if (!lastTarget) return null;
-  const request = ++matchRequest;
-  const where = zone ? `inside ${zone.label}` : 'over the whole Earth';
-  results.loading(`Scoring every Earth search cell ${where}…`);
-  setStatus(!matcher.meta ? 'Loading the Earth search grid (3.5 MB)…'
-    : zone && !matcher.lat ? 'Locating the Earth search cells (first zone search only)…' : 'Finding the best Earth analogs…');
+// --- Names: country on Earth, nearest known site on Mars / the Moon ------------------------------
+async function placeName(body, lat, lon) {
+  if (body === 'earth') return (await countryAt(lat, lon).catch(() => null)) ?? 'at sea';
+  const R = RADIUS_KM[body];
+  let best = null;
+  for (const s of sites.targets.filter((t) => t.body === body)) {
+    const km = greatCircleDistance([lat, lon], [s.lat, s.lon], 'rads') * R;
+    if (!best || km < best.km) best = { name: s.name, km };
+  }
+  if (best && best.km < 30) return best.name;
+  if (best && best.km < R / 4) return `${Math.round(best.km / 10) * 10} km from ${best.name}`;
+  return NAME[body];
+}
+
+// --- Matchers (one per search body, the table is downloaded once) ---------------------------------
+const matchers = {};
+async function matcherFor(body) {
+  matchers[body] ??= Promise.all([loadTable(body, setStatus), loadScoringMeta()]).then(([t, m]) => new Matcher(t, m));
+  matchers[body].catch(() => { delete matchers[body]; });
+  return matchers[body];
+}
+
+async function fillTests() {
+  if (pruebaSel.options.length > 1) return;
+  const meta = await loadScoringMeta();
+  for (const [key, p] of Object.entries(meta.pruebas)) pruebaSel.add(new Option(p.label, key));
+}
+
+// --- 1. Click on the left globe → its card, the search on the right, then the animation -----------
+async function showSourceAt(lat, lon, title = null, subtitle = null) {
+  const request = ++sourceRequest;
+  const key = left.key;
+  const fallback = `${NAME[key]} · selected point`;
+  cardLeft.loading(title ?? fallback, lat, lon, subtitle);
   try {
-    await matcher.load();
-    fillTests();
+    const [c, name] = await Promise.all([GRIDS[key].cardAt(lat, lon), title ? title : placeName(key, lat, lon)]);
+    if (request !== sourceRequest) return;
+    if (!c) {
+      cardLeft.message(title ?? fallback, 'No data for this cell.');
+      return;
+    }
+    left.showCell(c.h3);
+    cardLeft.show(title ?? name, lat, lon, c, {
+      subtitle: subtitle ?? NAME[key],
+      footer: `Hover a value to see its source. The best analogs on ${NAME[right.key]} are on the right.`,
+    });
+    lastSource = { values: c.values, h3: c.h3, lat, lon, key, name: title ?? name };
+    // think first: the whole search, the hexagons and analog #1 are ready before anything moves
+    const found = await runMatch({ animate: false });
+    if (request !== sourceRequest) return;
+    await sleep(READ_PAUSE_MS);
+    if (request !== sourceRequest) return;
+    animate([
+      { globe: left, h3: c.h3, panels: leftPanels() },
+      found?.h3 && !zone ? { globe: right, h3: found.h3, panels: rightPanels() } : null,
+    ]);
+    if (zone) right.flyToZone(zone, FLY_S);
+  } catch (err) {
+    console.error(err);
+    if (request === sourceRequest) cardLeft.message(title ?? fallback, `Could not load the card: ${err.message}`);
+  }
+}
+
+/**
+ * 2. Score the right body for the clicked cell and prepare everything (list, names, hexagons, card of
+ * #1 + score). Returns { h3 } of analog #1. With animate = true (test or zone changed) the right
+ * camera then flies on its own.
+ */
+async function runMatch({ animate: fly = true } = {}) {
+  if (!lastSource) return null;
+  const request = ++matchRequest;
+  const body = right.key;
+  const where = zone ? `inside ${zone.label}` : `over the whole ${NAME[body]}`;
+  results.loading(`Scoring every cell ${where}…`);
+  setStatus(isTableLoaded(body) ? `Finding the best analogs on ${NAME[body]}…` : `Loading ${NAME[body]}…`);
+  try {
+    const matcher = await matcherFor(body);
+    await fillTests();
     if (request !== matchRequest) return null;
-    await new Promise((r) => setTimeout(r, 30)); // let the panels paint before the heavy loop
-    const res = matcher.rank(lastTarget.values, lastTarget.key, pruebaSel.value, { zone });
+    setStatus(zone && !matcher.table.lat ? 'Locating the cells of the zone (first zone search only)…'
+      : `Finding the best analogs on ${NAME[body]}…`);
+    await sleep(30); // let the panels paint before the heavy loop
+    const res = matcher.rank(lastSource.values, lastSource.key, pruebaSel.value, { zone });
     if (request !== matchRequest) return null;
-    lastRank = res;
+    lastRank = { ...res, matcher };
     if (!res.best.length) {
-      earth.clearHexes();
-      earth.clearRanks();
-      earthCard.hide();
-      strip.hide();
-      layoutEarth();
+      right.clearHexes();
+      right.clearRanks();
+      cardRight.hide();
+      dock.hide();
       results.loading(zone && !res.n
-        ? `No analog search cell inside ${zone.label}: only deserts, polar ice and arid open land are searched. Pick another zone or draw a bigger area.`
-        : 'No Earth cell shares a variable with this cell.');
+        ? `No search cell inside ${zone.label}. Pick another zone or draw a bigger area.`
+        : `No cell of ${NAME[body]} shares a variable with this cell.`);
       setStatus('');
       return null;
     }
-    const names = await Promise.all(res.best.map((b) => countryAt(b.lat, b.lon).catch(() => null)));
-    res.best.forEach((b, k) => { b.country = names[k]; });
+    const names = await Promise.all(res.best.map((b) => placeName(body, b.lat, b.lon)));
+    res.best.forEach((b, k) => { b.name = names[k]; });
     if (request !== matchRequest) return null;
     const prueba = matcher.meta.pruebas[pruebaSel.value];
     results.show(res, {
-      body: lastTarget.body,
+      bodyName: NAME[body],
       colorOf,
       testNote: res.plan.note,
       validity: prueba?.test_validity,
       zoneLabel: zone?.label,
     });
-    await earth.showHexes(res.top.map((i) => ({ h3: matcher.h3(i), color: colorOf(res.score[i]) })));
+    await right.showHexes(res.top.map((i) => ({ h3: matcher.table.h3(i), color: colorOf(res.score[i]) })));
     if (request !== matchRequest) return null;
-    earth.setRanks(res.best.map((b, k) => ({
+    right.setRanks(res.best.map((b, k) => ({
       lat: b.lat, lon: b.lon, text: `#${k + 1} · ${b.score.toFixed(0)}`, color: colorOf(b.score), payload: b,
     })));
-    const h3 = await showEarthCell(res.best[0], { rank: 0, move: 'none' });
+    const h3 = await showCandidateAt(res.best[0], { rank: 0, animate: false });
     setStatus('');
     if (request !== matchRequest) return null;
-    const go = () => {
-      if (zone) earth.flyToZone(zone, 2);
-      else if (h3) flyView(earth, frameView(earth, h3, earthPanels(), hexPx));
-    };
-    if (fly) go();
-    return go;
+    if (fly) {
+      if (zone) right.flyToZone(zone, FLY_S);
+      else if (h3) animate([{ globe: right, h3, panels: rightPanels() }]);
+    }
+    return { h3 };
   } catch (err) {
     console.error(err);
     if (request === matchRequest) {
-      results.loading(`Could not search Earth: ${err.message}`);
+      results.loading(`Could not search ${NAME[body]}: ${err.message}`);
       setStatus('');
     }
     return null;
   }
 }
 
-function fillTests() {
-  if (pruebaSel.options.length > 1) return;
-  for (const [key, p] of Object.entries(matcher.meta.pruebas)) {
-    pruebaSel.add(new Option(p.label, key));
-  }
-}
-
-// Short names for the comparison strip
-const STRIP_SHORT = {
+// Short names for the score dock
+const SHORT_VAR = {
   slope_deg: 'Slope', roughness_deg: 'Rough.', t_mean_K: 'Mean T', t_max_K: 'Max T', t_min_K: 'Min T',
   t_night_K: 'Night T', precip_mm_year: 'Rain', ice_depth_m: 'Ice', dust_aod: 'Dust', sun_elev_max_deg: 'Sun',
 };
 const ENV = ['outside the search zone', 'polar ice', 'desert', 'arid open land'];
 
-/** Comparison of an Earth cell with the selected target cell (same formula as the ranking). */
+/** Comparison of a right cell with the clicked cell (same formula as the ranking). */
 function compareWith(c) {
-  const plan = lastRank.plan;
+  const { plan, matcher } = lastRank;
   const meta = matcher.meta;
   const sc = scoreCell(meta, plan, (name) => c.values[name]);
   const ring = matcher.neighbourMean(c.h3, lastRank.score);
@@ -221,166 +247,96 @@ function compareWith(c) {
     rows: Object.keys(vars).map((name) => ({
       name,
       label: meta.variables[name].label,
-      short: STRIP_SHORT[name] ?? name,
-      unit: matcher.cols[name]?.unit ?? meta.variables[name].unit,
+      short: SHORT_VAR[name] ?? name,
+      unit: matcher.table.cols[name]?.unit ?? meta.variables[name].unit,
       target: plan.target[name],
       earth: c.values[name],
       note: sc.notes[name],
     })),
   }));
-  return { index, cell: sc.index, ring, dims, body: lastTarget.body, color: colorOf(index), colorOf };
+  return { index, cell: sc.index, ring, dims, color: colorOf(index), colorOf };
 }
 
 /**
- * Card of an Earth cell (+ the comparison strip when a target cell is selected). Everything is
- * computed before the camera moves. move: 'frame' (fly down onto the hexagon, same on-screen size as
- * on the target body) or 'none'. Returns the cell's H3 id.
+ * Card of a cell of the right globe (+ the score dock when a left cell is selected). Everything is
+ * computed before the camera moves; then (animate) the slow two-step approach. Returns the H3 id.
  */
-async function showEarthCell({ lat, lon }, { rank = -1, title = null, move = 'frame' } = {}) {
-  const request = ++earthRequest;
-  const fallback = rank >= 0 ? `Analog #${rank + 1}` : 'Earth · selected point';
-  earthCard.loading(title ?? fallback, lat, lon);
+async function showCandidateAt({ lat, lon }, { rank = -1, title = null, animate: fly = true } = {}) {
+  const request = ++candRequest;
+  const body = right.key;
+  const fallback = rank >= 0 ? `Analog #${rank + 1}` : `${NAME[body]} · selected point`;
+  cardRight.loading(title ?? fallback, lat, lon);
+  results.select(rank);
   try {
-    const [c, country] = await Promise.all([EARTH_GRID.cardAt(lat, lon), countryAt(lat, lon).catch(() => null)]);
-    if (request !== earthRequest) return null;
+    const [c, name] = await Promise.all([GRIDS[body].cardAt(lat, lon), placeName(body, lat, lon)]);
+    if (request !== candRequest) return null;
     if (!c) {
-      earthCard.message(title ?? fallback, 'No data for this cell.');
+      cardRight.message(title ?? fallback, 'No data for this cell.');
       return null;
     }
-    const where = country ?? 'at sea';
-    const heading = title ?? (rank >= 0 ? `Analog #${rank + 1} · ${where}` : country ?? 'Earth · selected point');
-    const env = ENV[c.values.env] ?? '';
-    earth.showCell(c.h3);
-    if (lastRank && lastTarget) strip.show({ ...compareWith(c), place: country ?? 'This Earth cell' });
-    else strip.hide();
-    layoutEarth();
-    earthCard.show(heading, lat, lon, c, {
-      subtitle: [title ? country : null, env].filter(Boolean).join(' · '),
-      footer: c.values.in_mask === 1 ? 'Inside the analog search zone. Hover a value to see its source.'
-        : 'Outside the search zone (vegetation, water or cities): not ranked, shown for reference.',
+    const heading = title ?? (rank >= 0 ? `Analog #${rank + 1} · ${name}` : name);
+    right.showCell(c.h3);
+    const env = body === 'earth' ? ENV[c.values.env] ?? '' : '';
+    cardRight.show(heading, lat, lon, c, {
+      subtitle: [NAME[body], title ? name : null, env].filter(Boolean).join(' · '),
+      footer: body !== 'earth' ? 'Hover a value to see its source.'
+        : c.values.in_mask === 1 ? 'Inside the analog search zone. Hover a value to see its source.'
+          : 'Outside the search zone (vegetation, water or cities): not ranked, shown for reference.',
     });
-    if (move === 'frame') flyView(earth, frameView(earth, c.h3, earthPanels(), hexPx));
+    lastCandidate = { lat, lon, name: title ?? name };
+    if (lastRank && lastSource) {
+      dock.show({
+        ...compareWith(c),
+        source: { name: lastSource.name, body: NAME[lastSource.key] },
+        candidate: { name: title ?? name, body: NAME[body] },
+      });
+    } else {
+      dock.hide();
+    }
+    if (fly) animate([{ globe: right, h3: c.h3, panels: rightPanels() }]);
     return c.h3;
   } catch (err) {
     console.error(err);
-    if (request === earthRequest) earthCard.message(title ?? fallback, `Could not load the Earth card: ${err.message}`);
+    if (request === candRequest) cardRight.message(title ?? fallback, `Could not load the card: ${err.message}`);
     return null;
   }
 }
 
-const earthPanels = () => [stripEl, resultsEl, earthCardEl];
-
 function clearMatch() {
   matchRequest++;
+  candRequest++;
   lastRank = null;
+  lastCandidate = null;
   results.hide();
-  earthCard.hide();
-  strip.hide();
-  layoutEarth();
-  earth.clearHexes();
-  earth.clearRanks();
-  earth.clearCell();
+  cardRight.hide();
+  dock.hide();
+  right.clearHexes();
+  right.clearRanks();
+  right.clearCell();
   setStatus('');
 }
 
-// --- Earth search zone: a region from the menu or a box the user drags on the Earth globe --------
-let customZone = null; // last box drawn by the user
-
-function setZone(z) {
-  zone = z;
-  zoneMenu.set(z?.key ?? null, z?.label);
-  if (z) {
-    earth.showZone(z);
-    if (!lastTarget) earth.flyToZone(z);
-  } else {
-    earth.clearZone();
-  }
-  runMatch();
+function clearAll() {
+  sourceRequest++;
+  cardLeft.hide();
+  lastSource = null;
+  clearMatch();
+  right.clearSelection();
+  left.clearSelection();
 }
 
-function zoneByKey(key) {
-  if (!key) return null;
-  if (key === 'custom') return customZone;
-  const z = ZONES.find((x) => x.key === key);
-  return z ? makeZone(z) : null;
-}
+// --- Camera: data first, then out to a regional view, pause, and down onto the hexagon ------------
+const READ_PAUSE_MS = 700;  // read the data before anything moves
+const OUT_S = 2.6;          // pull out to the regional view
+const LOOK_PAUSE_MS = 800;  // look where on the globe we are
+const FLY_S = 3.0;          // descend onto the hexagon
+const CELL_FILL = 0.55;     // the hexagon spans ~55 % of the free part of the globe
+// Regional view: altitude ~ the body's radius × this, so a continent-sized area is visible
+const REGION_ALT = 0.7;
+let animToken = 0;
 
-async function drawZone() {
-  zoneMenu.drawing(true);
-  setStatus('Drag a box on Earth: the search will only look inside it · Esc cancels');
-  const box = await earth.drawBox();
-  zoneMenu.drawing(false);
-  setStatus('');
-  if (!box) {
-    zoneMenu.set(zone?.key ?? null, zone?.label); // cancelled: keep the previous zone
-    if (zone) earth.showZone(zone);
-    return;
-  }
-  const z = makeZone(box);
-  customZone = { ...z, key: 'custom', label: `Area ${zoneText(z)}` };
-  zoneMenu.setCustom(customZone);
-  setZone(customZone);
-}
-
-const zoneMenu = createZoneMenu(document.getElementById('zone'), {
-  onSelect: (key) => setZone(zoneByKey(key)),
-  onDraw: drawZone,
-});
-
-// --- Place search: sites, known analogs, zones or typed coordinates -----------------------------
-const BODY_LABEL = { mars: 'Mars', moon: 'Moon' };
-const siteSub = (s) => `${BODY_LABEL[s.body] ?? ''} · ${s.type ?? 'site'}`;
-
-function placeEntries() {
-  return [
-    ...sites.targets.map((s) => ({
-      kind: 'site', body: s.body, label: s.name, sub: siteSub(s),
-      words: `${s.id ?? ''} ${(s.features ?? []).join?.(' ') ?? ''}`, data: s,
-    })),
-    ...sites.analogs.map((a) => ({
-      kind: 'analog', body: 'earth', label: a.name,
-      sub: `${a.country} · analog of ${String(a.analog_of ?? '').replace(';', ' & ')}`,
-      words: `${a.environment ?? ''}`, data: a,
-    })),
-    ...ZONES.map((z) => ({
-      kind: 'zone', body: 'earth', label: z.label, sub: 'Earth · search only in this zone', words: z.words, data: z,
-    })),
-  ];
-}
-
-async function goToPlace({ kind, body, data }) {
-  if (kind === 'zone') return setZone(makeZone(data));
-  if (kind === 'analog' || (kind === 'coords' && body === 'earth')) {
-    if (kind === 'analog') earth.selectSite(`analog:${data.name}`, { fly: false });
-    else earth.setMarker(data.lat, data.lon);
-    return showEarthCell(data, { title: kind === 'analog' ? data.name : null });
-  }
-  // Mars / Moon: switch the left globe if needed, then open the cell card (it starts the search)
-  showTarget(body);
-  if (kind === 'site') {
-    target.selectSite(`target:${data.id ?? data.name}`, { fly: false });
-    return showCardAt(data.lat, data.lon, data.name, siteSub(data));
-  }
-  target.setMarker(data.lat, data.lon);
-  return showCardAt(data.lat, data.lon, `${target.body.name} · searched point`);
-}
-
-const placeSearch = createPlaceSearch(document.getElementById('place-search'), document.getElementById('place-results'), {
-  entries: placeEntries,
-  onChoose: goToPlace,
-  currentBody: () => target?.key ?? 'mars',
-});
-
-earth.onPick(({ lat, lon }) => showEarthCell({ lat, lon }));
-earth.onSiteSelect((site) => showEarthCell(site, { title: site.name }));
-earth.onRankSelect((b) => showEarthCell(b, { rank: lastRank?.best.indexOf(b) ?? -1 }));
-pruebaSel.addEventListener('change', () => runMatch());
-matcher.load().then(fillTests).catch(() => {}); // fill the test list early (the table is cached)
-(window.requestIdleCallback ?? setTimeout)(() => preloadCountries());
-
-// --- Camera: fly straight down onto an H3 cell, framed in the part of the globe the panels leave free
-const CELL_FILL = 0.55; // the hexagon spans ~55 % of the free part of the globe
-const FLIGHT_S = 1.8;
+const leftPanels = () => [cardLeftEl, dockEl];
+const rightPanels = () => [resultsEl, cardRightEl, dockEl];
 
 /**
  * Largest free rectangle of the canvas (CSS px, relative to it) once the visible panels are taken
@@ -391,7 +347,8 @@ function freeArea(canvas, panels) {
   const boxes = panels.filter((el) => el && !el.hidden).map((el) => {
     const r = el.getBoundingClientRect();
     return { l: r.left - canvas.left, t: r.top - canvas.top, r: r.right - canvas.left, b: r.bottom - canvas.top };
-  }).filter((p) => p.r > 0 && p.l < canvas.width && p.b > 0 && p.t < canvas.height);
+  }).filter((p) => p.r > 0 && p.l < canvas.width && p.b > 0 && p.t < canvas.height)
+    .map((p) => ({ l: Math.max(0, p.l), r: Math.min(canvas.width, p.r), t: Math.max(0, p.t), b: Math.min(canvas.height, p.b) }));
   let best = { x0: 0, x1: canvas.width, y0: 0, y1: canvas.height, m: -1 };
   for (let mask = 0; mask < 1 << boxes.length; mask++) {
     let x0 = 0;
@@ -416,17 +373,16 @@ function freeArea(canvas, panels) {
 }
 
 /**
- * Camera view looking straight down onto an H3 cell of `globe`, centred in the free part of the
- * canvas. The hexagon spans CELL_FILL of that part, or `px` pixels if given (so Earth matches the
- * size of the target hexagon), never more than 90 % of it. Returns { destination, orientation, px }.
+ * Camera view looking straight down onto an H3 cell, centred in the free part of the canvas.
+ * Either at a given `altitude` (m) or zoomed so the hexagon spans CELL_FILL of the free part (or
+ * `px` pixels, so both globes show it at the same size), never more than 90 % of it.
  */
-function frameView(globe, h3, panels, px = null) {
+function frameView(globe, h3, panels, { px = null, altitude = null } = {}) {
   const { viewer } = globe;
   const ell = globe.body.ellipsoid;
   const latType = globe.body.latitudeType; // H3 lat/lon use the body's convention (planetocentric on Mars)
   const toXYZ = (la, lo, h = 0) => latLonToCartesian(la, lo, ell, latType, h);
   const [lat, lon] = cellToLatLng(h3);
-  // Hexagon size on the ground: largest centre-to-vertex distance, ×2
   const centre = toXYZ(lat, lon);
   const radius = Math.max(...cellToBoundary(h3).map(([la, lo]) => Cesium.Cartesian3.distance(centre, toXYZ(la, lo))));
   const diameter = 2 * radius;
@@ -435,11 +391,16 @@ function frameView(globe, h3, panels, px = null) {
   const canvas = { left: rect.left, top: rect.top, width: rect.width, height: rect.height };
   const free = freeArea(canvas, panels);
   const room = Math.min(free.w, free.h);
-  const size = Math.min(px ?? CELL_FILL * room, 0.9 * room); // hexagon size on screen (px)
-
-  // Camera height so that `diameter` metres cover `size` pixels
-  const mPerPx = diameter / size;
-  const height = (mPerPx * canvas.height) / (2 * Math.tan(viewer.camera.frustum.fovy / 2));
+  const k = 2 * Math.tan(viewer.camera.frustum.fovy / 2);
+  let mPerPx;
+  let size = null;
+  if (altitude) {
+    mPerPx = (altitude * k) / canvas.height;
+  } else {
+    size = Math.min(px ?? CELL_FILL * room, 0.9 * room); // hexagon size on screen (px)
+    mPerPx = diameter / size;
+  }
+  const height = altitude ?? (mPerPx * canvas.height) / k;
 
   // Shift the camera so the cell lands in the middle of the free part, not under a panel
   const dx = (canvas.width / 2 - free.x) * mPerPx;   // metres east
@@ -448,88 +409,248 @@ function frameView(globe, h3, panels, px = null) {
   const camLon = lon + Cesium.Math.toDegrees(dx / (R * Math.max(0.05, Math.cos(Cesium.Math.toRadians(lat)))));
   const camLat = Math.max(-89.9, Math.min(89.9, lat + Cesium.Math.toDegrees(dy / R)));
   return {
-    // same latitude convention as the cell, raised along the surface normal → looking straight down
     destination: toXYZ(camLat, camLon, height),
     orientation: { heading: 0, pitch: -Cesium.Math.PI_OVER_TWO, roll: 0 },
     px: size,
+    height,
   };
 }
 
-function flyView(globe, { destination, orientation }) {
-  globe.viewer.camera.cancelFlight();
-  globe.viewer.camera.flyTo({
-    destination,
-    orientation,
-    duration: FLIGHT_S,
-    easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+function flyView(globe, { destination, orientation }, seconds) {
+  return new Promise((resolve) => {
+    globe.viewer.camera.cancelFlight();
+    globe.viewer.camera.flyTo({
+      destination,
+      orientation,
+      duration: seconds,
+      easingFunction: Cesium.EasingFunction.CUBIC_IN_OUT,
+      complete: resolve,
+      cancel: resolve,
+    });
   });
 }
 
-function clearAll() {
-  cardRequest++;
-  card.hide();
-  lastTarget = null;
-  clearMatch();
-  earth.clearSelection();
-  target.clearSelection();
+/** Is the camera already low and over this cell? Then skip the regional step. */
+function alreadyNear(globe, h3, regionAlt) {
+  const cam = globe.viewer.camera.positionCartographic;
+  if (!cam || cam.height > regionAlt * 1.1) return false;
+  const [lat, lon] = cellToLatLng(h3);
+  const R = globe.body.ellipsoid.maximumRadius;
+  const d = greatCircleDistance([lat, lon], [Cesium.Math.toDegrees(cam.latitude), Cesium.Math.toDegrees(cam.longitude)], 'rads') * R;
+  return d < regionAlt;
 }
 
-function applyRelief() {
-  earth.setRelief(reliefBox.checked);
-  target.setRelief(reliefBox.checked);
-  reliefLabel.classList.toggle('disabled', !target.hasRelief);
-  reliefLabel.title = target.hasRelief ? '' : `No relief layer for the ${target.body.name} yet`;
-}
-
-function showTargetSites() {
-  target.setSites(sites.targets.filter((s) => s.body === target.key), 'target');
-}
-
-function showTarget(bodyKey) {
-  if (!target || target.key !== bodyKey) {
-    target?.destroy();
-    target = { ...createGlobe('target', bodyKey), key: bodyKey };
-    showTargetSites();
-    clearAll();
-    target.onPick(({ lat, lon }) => showCardAt(lat, lon, `${target.body.name} · selected point`));
-    target.onSiteSelect((site) => showCardAt(site.lat, site.lon, site.name, siteSub(site)));
+/**
+ * The slow two-step approach for one or two globes at once: out to a regional view centred on the
+ * cell, a pause, then down onto the hexagon. The first item sets the hexagon size on screen; the
+ * others use the same size. A newer call stops an older one between steps.
+ */
+async function animate(items) {
+  const token = ++animToken;
+  const list = items.filter(Boolean);
+  const region = list.map(({ globe, h3, panels }) => {
+    const alt = globe.body.ellipsoid.maximumRadius * REGION_ALT;
+    return alreadyNear(globe, h3, alt) ? null : flyView(globe, frameView(globe, h3, panels, { altitude: alt }), OUT_S);
+  });
+  if (region.some(Boolean)) {
+    await Promise.all(region);
+    if (token !== animToken) return;
+    await sleep(LOOK_PAUSE_MS);
+    if (token !== animToken) return;
   }
-  targetLabel.textContent = target.body.name;
-  buttons.forEach((b) => b.classList.toggle('active', b.dataset.body === bodyKey));
+  const flights = list.map(({ globe, h3, panels }, k) => {
+    const view = frameView(globe, h3, panels, { px: k === 0 && globe === left ? null : hexPx });
+    if (globe === left) hexPx = view.px;
+    return flyView(globe, view, FLY_S);
+  });
+  await Promise.all(flights);
+}
+
+// --- Bodies on each side --------------------------------------------------------------------------
+const siteSub = (s) => `${NAME[s.body] ?? ''} · ${s.type ?? 'site'}`;
+
+function sitesFor(globe) {
+  if (globe.key === 'earth') {
+    globe.setSites(sites.analogs.map((a) => ({ ...a, id: a.name, subtitle: a.country })), 'analog');
+  } else {
+    globe.setSites(sites.targets.filter((s) => s.body === globe.key), 'target');
+  }
+}
+
+function makeGlobe(container, key, side) {
+  const g = { ...createGlobe(container, key), key };
+  sitesFor(g);
+  if (side === 'left') {
+    g.onPick(({ lat, lon }) => showSourceAt(lat, lon));
+    g.onSiteSelect((site) => showSourceAt(site.lat, site.lon, site.name, site.type ? siteSub({ ...site, body: key }) : site.country));
+  } else {
+    g.onPick(({ lat, lon }) => showCandidateAt({ lat, lon }));
+    g.onSiteSelect((site) => showCandidateAt(site, { title: site.name }));
+    g.onRankSelect((b) => showCandidateAt(b, { rank: lastRank?.best.indexOf(b) ?? -1 }));
+  }
+  return g;
+}
+
+/**
+ * Put `l` on the left and `r` on the right. Never the same body on both sides: picking on one side
+ * the body that is on the other side swaps them.
+ */
+function setBodies(l, r) {
+  if (l === r && left && right) {
+    if (l !== left.key) r = left.key;   // the left choice moved: the old left goes right
+    else l = right.key;                 // the right choice moved: the old right goes left
+  }
+  if (l === r) r = l === 'earth' ? 'mars' : 'earth';
+  if (left && right) clearAll();
+  if (left?.key !== l) {
+    left?.destroy();
+    left = makeGlobe('globe-left', l, 'left');
+  }
+  if (right?.key !== r) {
+    right?.destroy();
+    right = makeGlobe('globe-right', r, 'right');
+    zone = null;
+    zoneMenu.setBody(r);
+  }
+  leftButtons.forEach((b) => b.classList.toggle('active', b.dataset.body === l));
+  rightButtons.forEach((b) => b.classList.toggle('active', b.dataset.body === r));
+  leftLabel.textContent = `${NAME[l]} · click a point`;
+  rightLabel.textContent = `${NAME[r]} · analogs`;
   applyRelief();
 }
 
-buttons.forEach((b) => b.addEventListener('click', () => showTarget(b.dataset.body)));
-reliefBox.addEventListener('change', applyRelief);
+function applyRelief() {
+  left.setRelief(reliefBox.checked);
+  right.setRelief(reliefBox.checked);
+  const has = left.hasRelief || right.hasRelief;
+  reliefLabel.classList.toggle('disabled', !has);
+  reliefLabel.title = has ? '' : 'No relief layer for these bodies yet';
+}
 
-// Esc clears every selection: coordinate markers, highlighted sites, cell outline and card
+leftButtons.forEach((b) => b.addEventListener('click', () => setBodies(b.dataset.body, right.key)));
+rightButtons.forEach((b) => b.addEventListener('click', () => setBodies(left.key, b.dataset.body)));
+document.getElementById('swap').addEventListener('click', () => {
+  const next = lastCandidate; // the analog on screen becomes the clicked point on the other side
+  setBodies(right.key, left.key);
+  if (next) showSourceAt(next.lat, next.lon, next.name);
+});
+reliefBox.addEventListener('change', applyRelief);
+pruebaSel.addEventListener('change', () => runMatch());
+
+// --- Search zone on the right body: a region from the menu or a box dragged on the globe ---------
+function setZone(z) {
+  zone = z;
+  zoneMenu.set(z?.key ?? null, z?.label);
+  if (z) {
+    right.showZone(z);
+    if (!lastSource) right.flyToZone(z, FLY_S);
+  } else {
+    right.clearZone();
+  }
+  runMatch();
+}
+
+function zoneByKey(key) {
+  if (!key) return null;
+  if (key === 'custom') return customZone;
+  const z = (ZONES_BY_BODY[right.key] ?? []).find((x) => x.key === key);
+  return z ? makeZone(z) : null;
+}
+
+async function drawZone() {
+  zoneMenu.drawing(true);
+  setStatus(`Drag a box on ${NAME[right.key]}: the search will only look inside it · Esc cancels`);
+  const box = await right.drawBox();
+  zoneMenu.drawing(false);
+  setStatus('');
+  if (!box) {
+    zoneMenu.set(zone?.key ?? null, zone?.label); // cancelled: keep the previous zone
+    if (zone) right.showZone(zone);
+    return;
+  }
+  const z = makeZone(box);
+  customZone = { ...z, key: 'custom', label: `Area ${zoneText(z)}` };
+  zoneMenu.setCustom(customZone);
+  setZone(customZone);
+}
+
+const zoneMenu = createZoneMenu(document.getElementById('zone'), {
+  onSelect: (key) => setZone(zoneByKey(key)),
+  onDraw: drawZone,
+});
+
+// --- Place search: sites, known analogs, zones or typed coordinates -----------------------------
+function placeEntries() {
+  return [
+    ...sites.targets.map((s) => ({
+      kind: 'site', body: s.body, label: s.name, sub: siteSub(s),
+      words: `${s.id ?? ''} ${(s.features ?? []).join?.(' ') ?? ''}`, data: s,
+    })),
+    ...sites.analogs.map((a) => ({
+      kind: 'analog', body: 'earth', label: a.name,
+      sub: `${a.country} · analog of ${String(a.analog_of ?? '').replace(';', ' & ')}`,
+      words: `${a.environment ?? ''}`, data: a,
+    })),
+    ...Object.entries(ZONES_BY_BODY).flatMap(([body, list]) => list.map((z) => ({
+      kind: 'zone', body, label: z.label, sub: `${NAME[body]} · search only in this zone`, words: z.words, data: z,
+    }))),
+  ];
+}
+
+function goToPlace({ kind, body, data }) {
+  if (kind === 'zone') {
+    if (right.key !== body) setBodies(left.key === body ? right.key : left.key, body);
+    return setZone(makeZone(data));
+  }
+  const title = kind === 'coords' ? null : data.name;
+  const sub = kind === 'site' ? siteSub(data) : kind === 'analog' ? data.country : null;
+  const select = (g) => {
+    if (kind === 'coords') g.setMarker(data.lat, data.lon);
+    else g.selectSite(`${kind === 'analog' ? 'analog' : 'target'}:${data.id ?? data.name}`, { fly: false });
+  };
+  if (right.key === body && left.key !== body) {
+    select(right);
+    return showCandidateAt(data, { title });
+  }
+  if (left.key !== body) setBodies(body, right.key);
+  select(left);
+  return showSourceAt(data.lat, data.lon, title, sub);
+}
+
+const placeSearch = createPlaceSearch(document.getElementById('place-search'), document.getElementById('place-results'), {
+  entries: placeEntries,
+  onChoose: goToPlace,
+  bodies: () => [left.key, right.key, ['earth', 'mars', 'moon'].find((b) => b !== left.key && b !== right.key)],
+});
+
+// Esc clears every selection: coordinate markers, highlighted sites, cell outlines, cards and score
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') clearAll();
 });
 
-showTarget('mars');
+setBodies('mars', 'earth');
+fillTests().catch(() => {});
+(window.requestIdleCallback ?? setTimeout)(() => preloadCountries());
 
 loadSites()
   .then((data) => {
     sites = data;
-    showTargetSites();
-    earth.setSites(
-      data.analogs.map((a) => ({ ...a, id: a.name, subtitle: a.country })),
-      'analog',
-    );
+    sitesFor(left);
+    sitesFor(right);
     placeSearch.rebuild();
   })
   .catch((err) => console.error(err));
 
 // For debugging from the browser console
 window.Cesium = Cesium;
-window.CardGrid = CardGrid;
-window.showCardAt = (lat, lon, title = 'debug') => showCardAt(lat, lon, title);
 window.goToPlace = goToPlace;
-window.matcher = matcher;
+window.showSourceAt = showSourceAt;
+window.setBodies = setBodies;
 window.globes = {
-  earth,
-  get target() {
-    return target;
+  get left() {
+    return left;
+  },
+  get right() {
+    return right;
   },
 };

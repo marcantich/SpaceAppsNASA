@@ -1,17 +1,23 @@
-// Earth matcher (ROADMAP 4.9): scores EVERY Earth search cell against the card of the clicked
-// Mars / Moon cell, in the browser, with the formula of scoring.js (= src/analogs/similarity.py):
-// soft note per variable, mean per dimension, weighted mean of dimensions; the ranking then mixes
-// each candidate with its 6 neighbours so homogeneous areas come first.
+// Global comparator (ROADMAP 4.9): scores EVERY cell of the search body (Earth, Mars or the Moon)
+// against the card of the clicked cell of the other body, in the browser, with the formula of
+// scoring.js (= src/analogs/similarity.py): soft note per variable, mean per dimension, weighted mean of
+// dimensions; the ranking then mixes each candidate with its 6 neighbours (homogeneous areas first).
 //
-// Data: data/tierra/match.json + match.bin.gz (src/analogs/earth_grid.py, write_match_table):
-// only the analog search cells (deserts, polar ice, arid open land; ~1.4 M H3 res-6 cells) and only
-// the compared columns, in ascending H3 order, ids as two uint32 blocks (high, low).
-import { cellToLatLng, gridDisk, greatCircleDistance } from 'h3-js';
+// Search tables (all from data already in app/data/, nothing new is exported):
+//   Earth       data/tierra/match.json + match.bin.gz: only the analog search cells (deserts, polar ice,
+//               arid open land; ~1.4 M H3 res-6 cells) and only the compared columns
+//   Mars, Moon  the planet-wide card grids (data/marte, data/luna: one gzip per H3 base cell, the same
+//               files the cards use), every cell, only the compared columns kept in memory
+// Both keep the cells in ascending H3 order with the ids as two uint32 arrays (high, low), so a cell
+// is found by binary search.
+import { cellToChildren, cellToLatLng, getRes0Cells, getBaseCellNumber, gridDisk, greatCircleDistance, isPentagon } from 'h3-js';
 import { zoneContains, zoneSizeKm } from './zones.js';
 import { areaIndex, makePlan, noteOf, scoreCell } from './scoring.js';
 
-const BASE = `${import.meta.env.BASE_URL}data/tierra/`;
+const DATA = `${import.meta.env?.BASE_URL ?? '/'}data/`; // (no Vite env when tested in Node)
 const NODATA = { u1: 255, u2: 65535 };
+const BYTES = { u1: 1, u2: 2 };
+const FOLDER = { earth: 'tierra', mars: 'marte', moon: 'luna' };
 
 async function gunzip(buffer) {
   const u8 = new Uint8Array(buffer);
@@ -23,36 +29,24 @@ async function gunzip(buffer) {
 /** H3 id string → [high, low] uint32 halves. */
 const split = (h3) => [parseInt(h3.slice(0, -8), 16), parseInt(h3.slice(-8), 16)];
 
-export class EarthMatcher {
-  constructor() {
-    this.ready = null;
-  }
+// --- Scoring settings: variables, dimensions, tests (configs/*.yaml → tierra/match.json) ----------
+let metaPromise = null;
+export function loadScoringMeta() {
+  metaPromise ??= fetch(`${DATA}tierra/match.json`).then((r) => {
+    if (!r.ok) throw new Error(`Could not load the scoring settings (HTTP ${r.status})`);
+    return r.json();
+  });
+  return metaPromise;
+}
 
-  /** Download and decode the match table once (~3.5 MB). */
-  load() {
-    if (!this.ready) {
-      this.ready = (async () => {
-        const meta = await (await fetch(`${BASE}match.json`)).json();
-        const raw = await gunzip(await (await fetch(`${BASE}match.bin.gz`)).arrayBuffer());
-        const n = meta.n_cells;
-        let off = 0;
-        const hi = new Uint32Array(raw.slice(off, off + 4 * n)); off += 4 * n;
-        const lo = new Uint32Array(raw.slice(off, off + 4 * n)); off += 4 * n;
-        const cols = {};
-        for (const c of meta.columns) {
-          const bytes = c.dtype === 'u1' ? 1 : 2;
-          cols[c.name] = { ...c, arr: c.dtype === 'u1' ? new Uint8Array(raw, off, n) : new Uint16Array(raw.slice(off, off + 2 * n)) };
-          off += bytes * n;
-        }
-        this.meta = meta;
-        this.n = n;
-        this.hi = hi;
-        this.lo = lo;
-        this.cols = cols;
-        return this;
-      })();
-    }
-    return this.ready;
+// --- A search table: cells (ascending H3) × compared columns ---------------------------------------
+class Table {
+  constructor(body, n, hi, lo, cols) {
+    this.body = body;
+    this.n = n;
+    this.hi = hi;
+    this.lo = lo;
+    this.cols = cols; // name → { arr, scale, offset, dtype, unit, label }
   }
 
   h3(i) {
@@ -77,11 +71,12 @@ export class EarthMatcher {
 
   value(name, i) {
     const c = this.cols[name];
+    if (!c) return NaN;
     const q = c.arr[i];
     return q === NODATA[c.dtype] ? NaN : q * c.scale + c.offset;
   }
 
-  /** Centre lat/lon of every search cell (computed once, on the first zone search; ~11 MB). */
+  /** Centre lat/lon of every cell (computed once, on the first zone search). */
   coords() {
     if (!this.lat) {
       const lat = new Float32Array(this.n);
@@ -97,7 +92,7 @@ export class EarthMatcher {
     return { lat: this.lat, lon: this.lon };
   }
 
-  /** 1 for the search cells inside the zone (cached per zone). */
+  /** 1 for the cells inside the zone (cached per zone). */
   zoneMask(zone) {
     const id = `${zone.south},${zone.north},${zone.west},${zone.east}`;
     if (this._zone?.id !== id) {
@@ -114,26 +109,147 @@ export class EarthMatcher {
     }
     return this._zone;
   }
+}
 
-  /** prueba = key of configs/pruebas.yaml or '' for "all shared variables". */
-  plan(targetValues, bodyKey, prueba) {
-    return makePlan(this.meta, targetValues, bodyKey, prueba, (name) => !!this.cols[name]);
+/** Earth: the analog search cells only (data/tierra/match.bin.gz). */
+async function loadEarthTable(onProgress) {
+  const meta = await loadScoringMeta();
+  onProgress?.('Loading the Earth search grid (3.5 MB)…');
+  const raw = await gunzip(await (await fetch(`${DATA}tierra/match.bin.gz`)).arrayBuffer());
+  const n = meta.n_cells;
+  let off = 0;
+  const hi = new Uint32Array(raw.slice(off, off + 4 * n)); off += 4 * n;
+  const lo = new Uint32Array(raw.slice(off, off + 4 * n)); off += 4 * n;
+  const cols = {};
+  for (const c of meta.columns) {
+    cols[c.name] = { ...c, arr: c.dtype === 'u1' ? new Uint8Array(raw, off, n) : new Uint16Array(raw.slice(off, off + 2 * n)) };
+    off += BYTES[c.dtype] * n;
   }
+  return new Table('earth', n, hi, lo, cols);
+}
 
-  /** Index of search cell i (with the dimension scores and notes). */
-  scoreOf(plan, i) {
-    return scoreCell(this.meta, plan, (name) => this.value(name, i));
+/**
+ * Ids of the children of a base cell at `res`, ascending: computed from the digits (k-th child =
+ * k written in base 7) for hexagon base cells, from h3-js for the 12 pentagons (they lack some).
+ */
+function childIds(base, res, count, hi, lo, at) {
+  const root = getRes0Cells().find((c) => getBaseCellNumber(c) === base);
+  if (isPentagon(root) || count !== 7 ** res) {
+    const kids = cellToChildren(root, res).sort();
+    kids.forEach((c, k) => {
+      const [h, l] = split(c);
+      hi[at + k] = h;
+      lo[at + k] = l;
+    });
+    return;
+  }
+  // H3 bits: mode 1 (bit 59), resolution (52–55), base cell (45–51), 15 digits × 3 bits (unused = 7)
+  const head = 2 ** 27 + res * 2 ** 20 + base * 2 ** 13; // the high 32 bits above the digits
+  for (let k = 0; k < count; k++) {
+    let digits = 0; // the 45 digit bits, as a plain number (< 2^45: exact in a double)
+    let x = k;
+    for (let d = res; d >= 1; d--) {
+      digits += (x % 7) * 8 ** (15 - d);
+      x = Math.floor(x / 7);
+    }
+    for (let d = res + 1; d <= 15; d++) digits += 7 * 8 ** (15 - d);
+    hi[at + k] = head + Math.floor(digits / 2 ** 32);
+    lo[at + k] = digits % 2 ** 32;
+  }
+}
+
+/** Mars / Moon: every cell of the card grid, only the columns in `names`. */
+async function loadGridTable(body, names, onProgress) {
+  const folder = FOLDER[body];
+  const index = await (await fetch(`${DATA}${folder}/index.json`)).json();
+  const res = index.h3_resolution;
+  const regions = Object.entries(index.regions).map(([b, r]) => ({ base: Number(b), ...r }))
+    .sort((a, b) => a.base - b.base); // base cell order = global ascending H3 order
+  const n = regions.reduce((s, r) => s + r.n_cells, 0);
+  const wanted = index.columns.filter((c) => names.includes(c.name));
+  const hi = new Uint32Array(n);
+  const lo = new Uint32Array(n);
+  const cols = Object.fromEntries(wanted.map((c) => [c.name, { ...c, arr: c.dtype === 'u1' ? new Uint8Array(n) : new Uint16Array(n) }]));
+  let at = 0;
+  for (const r of regions) {
+    r.at = at;
+    at += r.n_cells;
+  }
+  let done = 0;
+  const label = body === 'mars' ? 'Mars' : 'the Moon';
+  const mb = (regions.reduce((s, r) => s + (r.bytes ?? 0), 0) / 1e6).toFixed(1);
+  onProgress?.(`Loading ${label} (${mb} MB, once)…`);
+  const work = async (r) => {
+    const raw = await gunzip(await (await fetch(`${DATA}${folder}/${r.file}`)).arrayBuffer());
+    let off = 0;
+    for (const c of index.columns) {
+      const size = BYTES[c.dtype] * r.n_cells;
+      if (cols[c.name]) {
+        const src = c.dtype === 'u1' ? new Uint8Array(raw, off, r.n_cells) : new Uint16Array(raw.slice(off, off + size));
+        cols[c.name].arr.set(src, r.at);
+      }
+      off += size;
+    }
+    childIds(r.base, res, r.n_cells, hi, lo, r.at);
+    done++;
+    if (done % 10 === 0) onProgress?.(`Loading ${label}: ${Math.round((100 * done) / regions.length)} %`);
+  };
+  const queue = [...regions];
+  await Promise.all(Array.from({ length: 8 }, async () => {
+    while (queue.length) await work(queue.shift());
+  }));
+  return new Table(body, n, hi, lo, cols);
+}
+
+const tables = {};
+/** Search table of a body (loaded once, then cached). */
+export async function loadTable(body, onProgress) {
+  if (!tables[body]) {
+    tables[body] = (async () => {
+      if (body === 'earth') return loadEarthTable(onProgress);
+      const meta = await loadScoringMeta();
+      return loadGridTable(body, Object.keys(meta.variables), onProgress);
+    })();
+    tables[body].catch(() => { delete tables[body]; });
+  }
+  return tables[body];
+}
+
+export const isTableLoaded = (body) => !!tables[body];
+
+// --- Matcher: one search table + the scoring settings ---------------------------------------------
+export class Matcher {
+  constructor(table, meta) {
+    this.table = table;
+    this.meta = meta;
+    this.body = table.body;
   }
 
   /**
-   * Mean index of the neighbours (ring 1, ~20 km around) of an H3 cell; cells outside the search
-   * zone count 0 (they are vegetation, water or cities: not part of an analog area).
+   * prueba = key of configs/pruebas.yaml or '' for "all shared variables". Only variables that the
+   * search body really has are compared (no rain on Mars / the Moon: it is not a column there).
+   */
+  plan(sourceValues, sourceBody, prueba) {
+    // a variable that is constant on the search body (zero_on_target: no rain on Mars or the Moon)
+    // would score every cell alike: it is not compared, even if the grid carries the column
+    const constant = (name) => this.meta.zero_on_target?.[name]?.includes(this.body);
+    return makePlan(this.meta, sourceValues, sourceBody, prueba, (name) => !!this.table.cols[name] && !constant(name));
+  }
+
+  /** Index of table cell i (with the dimension scores and notes). */
+  scoreOf(plan, i) {
+    return scoreCell(this.meta, plan, (name) => this.table.value(name, i));
+  }
+
+  /**
+   * Mean index of the 6 neighbours (ring 1) of an H3 cell; cells not in the table (outside Earth's
+   * search zone: vegetation, water, cities) count 0.
    */
   neighbourMean(h3, score) {
     const ring = gridDisk(h3, 1).filter((c) => c !== h3);
     let sum = 0;
     for (const c of ring) {
-      const j = this.find(c);
+      const j = this.table.find(c);
       if (j >= 0 && score[j] > 0) sum += score[j];
     }
     return ring.length ? sum / ring.length : NaN;
@@ -143,27 +259,32 @@ export class EarthMatcher {
    * Score all cells, then rank the best ones (or only those inside `zone`, a lat/lon box).
    * Returns { plan, score (cell index, -1 = no shared variable), top: best `topN` cells by cell index
    * (for the map), best: up to `nBest` sites at least `minKm` apart ranked by the area index,
-   * threshold, n: cells searched, zone, minKm }.
+   * threshold, n: cells searched, zone, minKm, body }.
    */
-  rank(targetValues, bodyKey, prueba, { topN = 6000, nBest = 6, minKm = 400, zone = null } = {}) {
-    const plan = this.plan(targetValues, bodyKey, prueba);
-    const n = this.n;
-    const inZone = zone ? this.zoneMask(zone) : null;
-    if (zone) minKm = Math.max(5, Math.min(minKm, zoneSizeKm(zone) / 5));
+  rank(sourceValues, sourceBody, prueba, { topN = 6000, nBest = 6, minKm = 400, zone = null } = {}) {
+    const t = this.table;
+    const plan = this.plan(sourceValues, sourceBody, prueba);
+    const n = t.n;
+    const inZone = zone ? t.zoneMask(zone) : null;
+    // spacing of the results: smaller bodies and zones get closer sites
+    const R = { earth: 6371, mars: 3390, moon: 1737 }[this.body] ?? 6371;
+    minKm *= R / 6371;
+    if (zone) minKm = Math.min(minKm, zoneSizeKm(zone) * (R / 6371) / 5);
+    minKm = Math.max(5, minKm);
 
     // one 256-entry note table per u1 variable: the per-cell loop is then just lookups
     const dims = Object.values(plan.dims).map(({ weight, vars }) => ({
       weight,
       vars: Object.entries(vars).map(([name, w]) => {
-        const c = this.cols[name];
+        const c = t.cols[name];
         const spec = this.meta.variables[name];
-        const t = plan.target[name];
+        const target = plan.target[name];
         let lut = null;
         if (c.dtype === 'u1') {
           lut = new Float32Array(256);
-          for (let q = 0; q < 256; q++) lut[q] = q === 255 ? NaN : noteOf(spec, t, q * c.scale + c.offset);
+          for (let q = 0; q < 256; q++) lut[q] = q === 255 ? NaN : noteOf(spec, target, q * c.scale + c.offset);
         }
-        return { w, arr: c.arr, lut, c, spec, t };
+        return { w, arr: c.arr, lut, c, spec, target };
       }),
     }));
 
@@ -172,12 +293,13 @@ export class EarthMatcher {
     for (let i = 0; i < n; i++) {
       let num = 0;
       let den = 0;
+      let any = false;
       for (const d of dims) {
         let dn = 0;
         let dd = 0;
         for (const v of d.vars) {
           const q = v.arr[i];
-          const note = v.lut ? v.lut[q] : (q === NODATA[v.c.dtype] ? NaN : noteOf(v.spec, v.t, q * v.c.scale + v.c.offset));
+          const note = v.lut ? v.lut[q] : (q === NODATA[v.c.dtype] ? NaN : noteOf(v.spec, v.target, q * v.c.scale + v.c.offset));
           if (note === note) { // not NaN
             dn += v.w * note;
             dd += v.w;
@@ -185,10 +307,11 @@ export class EarthMatcher {
         }
         if (dd > 0) {
           num += (d.weight * dn) / dd;
-          den += d.weight;
+          any = true;
         }
+        den += d.weight; // a dimension with no data at all counts 0 (what was not measured is not rewarded)
       }
-      const s = den > 0 ? (100 * num) / den : -1;
+      const s = any && den > 0 ? (100 * num) / den : -1;
       score[i] = s;
       if (s >= 0 && (!inZone || inZone.mask[i])) hist[Math.round(s * 10)]++;
     }
@@ -204,7 +327,7 @@ export class EarthMatcher {
 
     // ranking: the cell mixed with its 6 neighbours (homogeneous areas first)
     const cand = top.slice(0, 3000).map((i) => {
-      const h3 = this.h3(i);
+      const h3 = t.h3(i);
       const ring = this.neighbourMean(h3, score);
       return { i, h3, cell: score[i], ring, area: areaIndex(this.meta, score[i], ring) };
     });
@@ -212,8 +335,8 @@ export class EarthMatcher {
     const best = [];
     for (const c of cand) {
       const [lat, lon] = cellToLatLng(c.h3);
-      if (best.every((b) => greatCircleDistance([lat, lon], [b.lat, b.lon], 'km') >= minKm)) {
-        best.push({ ...c, lat, lon, score: c.area, env: this.value('env', c.i), ...this.scoreOf(plan, c.i) });
+      if (best.every((b) => greatCircleDistance([lat, lon], [b.lat, b.lon], 'km') * (R / 6371) >= minKm)) {
+        best.push({ ...c, lat, lon, score: c.area, env: t.value('env', c.i), ...this.scoreOf(plan, c.i) });
         if (best.length === nBest) break;
       }
     }
@@ -223,7 +346,7 @@ export class EarthMatcher {
       if (k >= 750) histogram.ge75 += hist[k];
       histogram.ge50 += hist[k];
     }
-    return { plan, score, top, best, threshold, histogram, n: inZone ? inZone.count : n, zone, minKm };
+    return { plan, score, top, best, threshold, histogram, n: inZone ? inZone.count : n, zone, minKm, body: this.body };
   }
 }
 

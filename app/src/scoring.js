@@ -5,6 +5,8 @@
 //                 matrix[target][earth]                          classes (water ice)
 //   dimension_d = Σ w_v · note_v / Σ w_v                         over its variables present on both sides
 //   index       = 100 · Σ W_d · dimension_d / Σ W_d              W_d = largest weight of its variables
+//                 (a dimension with no data at all in that cell counts 0: unmeasured is not rewarded)
+//   Not compared: variables the search body lacks, and those constant there (no rain on Mars / Moon)
 //   ranking     = (1 − area_weight) · index + area_weight · mean index of the 6 neighbour cells
 
 const key = (v) => String(Number(v)); // 0.5 → "0.5", 3 → "3" (same keys as the Python export)
@@ -79,12 +81,11 @@ export function scoreCell(meta, plan, value) {
       }
     }
     dims[d] = dd ? (100 * dn) / dd : NaN;
-    if (dd) {
-      num += (weight * dn) / dd;
-      den += weight;
-    }
+    if (dd) num += (weight * dn) / dd;
+    den += weight; // a dimension with no data at all counts 0
   }
-  return { index: den ? (100 * num) / den : NaN, dims, notes };
+  const any = Object.values(dims).some(Number.isFinite);
+  return { index: any && den ? (100 * num) / den : NaN, dims, notes };
 }
 
 /** Ranking index from the cell's own index and the mean of its neighbours (missing → 0). */

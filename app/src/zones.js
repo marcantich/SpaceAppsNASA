@@ -1,4 +1,4 @@
-// Earth search zones: limit the analog search to one region (toolbar "Zone").
+// Search zones: limit the analog search to one region of the search body (toolbar "Zone").
 // A zone is a lat/lon box in degrees; west > east means it crosses the 180° meridian.
 // Broad, easy-to-name regions; `group: 'other'` ones go under "Other zones" in the menu.
 // `words` = extra search terms for the place search box.
@@ -30,6 +30,34 @@ export const ZONES = [
   { key: 'iceland', label: 'Iceland', group: 'other', south: 63, north: 67, west: -25, east: -13,
     words: 'askja' },
 ];
+
+// Mars (planetocentric latitude, east longitude) and the Moon: broad regions to search in
+const ZONES_MARS = [
+  { key: 'm_equator', label: 'Equatorial belt (±30°)', south: -30, north: 30, west: -180, east: 180,
+    words: 'equator gale jezero meridiani gusev' },
+  { key: 'm_north', label: 'Northern lowlands', south: 30, north: 75, west: -180, east: 180,
+    words: 'utopia arcadia acidalia phoenix plains ice' },
+  { key: 'm_south', label: 'Southern highlands', south: -60, north: -10, west: -180, east: 180,
+    words: 'highlands cratered noachian' },
+  { key: 'm_npole', label: 'North polar region', south: 75, north: 90, west: -180, east: 180, words: 'pole cap' },
+  { key: 'm_spole', label: 'South polar region', south: -90, north: -75, west: -180, east: 180, words: 'pole cap' },
+  { key: 'm_tharsis', label: 'Tharsis volcanoes', group: 'other', south: -20, north: 40, west: -140, east: -80,
+    words: 'olympus volcano' },
+  { key: 'm_hellas', label: 'Hellas basin', group: 'other', south: -55, north: -25, west: 50, east: 90, words: 'basin' },
+];
+const ZONES_MOON = [
+  { key: 'l_spole', label: 'South polar region (Artemis)', south: -90, north: -80, west: -180, east: 180,
+    words: 'artemis shackleton ice base' },
+  { key: 'l_npole', label: 'North polar region', south: 80, north: 90, west: -180, east: 180, words: 'pole' },
+  { key: 'l_near', label: 'Nearside, Apollo belt', south: -30, north: 30, west: -60, east: 60,
+    words: 'apollo maria near side' },
+  { key: 'l_far', label: 'Farside', south: -60, north: 60, west: 100, east: -100, words: 'far side chang e' },
+  { key: 'l_mid', label: 'Mid latitudes (30–80°)', group: 'other', south: -80, north: -30, west: -180, east: 180,
+    words: 'highlands' },
+];
+
+/** Predefined search zones of each body. */
+export const ZONES_BY_BODY = { earth: ZONES, mars: ZONES_MARS, moon: ZONES_MOON };
 
 /** Normalise a box: clamp latitudes, order south/north, longitudes in [-180, 180]. */
 export function makeZone({ key = 'custom', label = 'Custom area', south, north, west, east }) {

@@ -13,6 +13,7 @@ Tres pasos (el ejemplo completo con números está en tests/test_similarity.py):
 
 2. Nota por DIMENSIÓN (terrain, thermal, water, sky…): media ponderada de las notas de sus
    variables disponibles. Así tres temperaturas cuentan como una dimensión, no como tres votos.
+   Una dimensión sin NINGÚN dato en esa celda cuenta 0 (no se premia lo que no se ha medido).
 
 3. Índice de 0 a 100 = media ponderada de las dimensiones disponibles. Peso de cada dimensión =
    el mayor peso que la prueba (configs/pruebas.yaml) da a sus variables (1 si no hay prueba).
@@ -86,6 +87,7 @@ def analog_index(scores: pd.DataFrame, weights: dict, dimensions: dict | None = 
     dims = {k: (dimensions or {}).get(k) or k for k in w.index}
     num = pd.Series(0.0, index=scores.index)
     den = pd.Series(0.0, index=scores.index)
+    measured = pd.Series(False, index=scores.index)
     for dim in dict.fromkeys(dims.values()):
         names = [k for k in w.index if dims[k] == dim]
         s = scores[names]
@@ -95,8 +97,12 @@ def analog_index(scores: pd.DataFrame, weights: dict, dimensions: dict | None = 
         has = d_den > 0
         W = float(dw.max())                        # peso de la dimensión = su mayor peso
         num += np.where(has, W * d_num / d_den.where(has, 1.0), 0.0)
-        den += np.where(has, W, 0.0)
-    return 100.0 * num / den.replace(0.0, np.nan)
+        # con dimensiones, una dimensión SIN NINGÚN dato en esa celda cuenta 0 (no se premia lo que no
+        # se ha medido); sin dimensiones (fórmula antigua), la variable que falta no cuenta
+        den += W if dimensions else np.where(has, W, 0.0)
+        measured |= has
+    idx = 100.0 * num / den.replace(0.0, np.nan)
+    return idx.where(measured)                     # sin ningún dato comparable: NaN
 
 
 def dimensions_of(variables: dict) -> dict:
