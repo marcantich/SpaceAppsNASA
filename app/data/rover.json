@@ -1,0 +1,184 @@
+{
+  "_note": "Rover test planner (hand-written config, read by app/src/rover.js). Each part = the card variables it depends on + the margin (±) it tolerates. margin null = the tolerance of configs/variables.yaml. All margins and caps are OUR ASSUMPTIONS [supuesto]: change them here, the app recomputes.",
+  "model": {
+    "file": "rover/perseverance.glb",
+    "name": "Mars 2020 Perseverance",
+    "deploy_until_s": 10,
+    "credit": "3D model: NASA/JPL-Caltech (NASA 3D Resources, github.com/nasa/NASA-3D-Resources)"
+  },
+  "rules": {
+    "field": "at least one Earth search cell has EVERY variable of the part within ± margin of the target cell",
+    "partial": "only within ± 2 × margin, or a variable is missing, or physics caps it (gravity, thin air)",
+    "lab": "no Earth cell even within ± 2 × margin, or the part needs vacuum",
+    "index": "100 × (field + 0.5 × partial) / parts"
+  },
+  "parts": [
+    {
+      "id": "wheels",
+      "name": "Wheels & suspension",
+      "short": "Wheels",
+      "nodes": [
+        "Wheels_objs",
+        "suspension"
+      ],
+      "anchor": {
+        "frac": [
+          0.04,
+          0.55,
+          0.9
+        ]
+      },
+      "variables": {
+        "slope_deg": null,
+        "roughness_deg": null
+      },
+      "missing_on_earth": [
+        "rock abundance on the surface"
+      ],
+      "caps": {
+        "mars": {
+          "max": "partial",
+          "why": "Mars gravity is 0.38 g: at full Earth weight the wheels sink and slip differently. NASA drives a stripped-down 'Scarecrow' rover that weighs on Earth what the real one weighs on Mars."
+        },
+        "moon": {
+          "max": "partial",
+          "why": "Lunar gravity is 0.17 g: at full Earth weight the wheels sink and slip differently, so the field test needs a lightened rover."
+        }
+      },
+      "story": "Spirit got stuck in soft sand in 2009 and never drove again. Curiosity's wheels were punctured by sharp rocks.",
+      "lab": "lightened test rover or a weight off-loading rig"
+    },
+    {
+      "id": "cameras",
+      "name": "Mast cameras & navigation",
+      "short": "Cameras",
+      "nodes": [
+        "Cylinder",
+        "hazcams_front",
+        "hazcams_front_cover",
+        "hazcams_rear",
+        "hazcams_rear_cover_l",
+        "hazcams_rear_cover_r",
+        "hazcams_rear_wiring"
+      ],
+      "anchor": {
+        "node": "head"
+      },
+      "variables": {
+        "sun_elev_max_deg": null,
+        "roughness_deg": null
+      },
+      "caps": {
+        "moon": {
+          "max": "partial",
+          "why": "No air on the Moon: shadows are pitch black and there is no sky glow. Earth's atmosphere always softens them."
+        }
+      },
+      "story": {
+        "mars": "The rover drives itself from its stereo cameras: the height of the Sun decides how long the shadows are and what the cameras can see.",
+        "moon": "Near the lunar poles the Sun never climbs more than a few degrees above the horizon: shadows are kilometres long and hide the hazards."
+      },
+      "lab": "dark hall with a single low lamp (lighting test bed)"
+    },
+    {
+      "id": "drill",
+      "name": "Robotic arm & coring drill",
+      "short": "Drill",
+      "nodes": [
+        "arm.001",
+        "arm.003",
+        "arm_cable_etc",
+        "arm_01_joint",
+        "arm_02_joint"
+      ],
+      "anchor": {
+        "node": "turret_obj"
+      },
+      "variables": {
+        "ice_depth_m": null,
+        "silica_wt_pct": 8
+      },
+      "optional": [
+        "silica_wt_pct"
+      ],
+      "missing_label": {
+        "silica_wt_pct": "rock type (silica)"
+      },
+      "caps": {
+        "moon": {
+          "max": "partial",
+          "why": "Vacuum: there is no air to cool the bit or to carry the cuttings away."
+        }
+      },
+      "story": "Perseverance's first core (August 2021) came up empty: the rock crumbled to powder inside the tube.",
+      "lab": "cold vacuum chamber with frozen regolith simulant"
+    },
+    {
+      "id": "thermal",
+      "name": "Power source & thermal control",
+      "short": "Thermal",
+      "nodes": [
+        "rtg"
+      ],
+      "anchor": {
+        "node": "rtg"
+      },
+      "variables": {
+        "t_max_K": null,
+        "t_min_K": null,
+        "t_night_K": null
+      },
+      "caps": {
+        "moon": {
+          "max": "lab",
+          "why": "Vacuum: heat leaves only by radiation. In Earth's air, convection changes the whole heat balance."
+        },
+        "mars": {
+          "max": "partial",
+          "why": "Mars air has about 0.6 % of Earth's pressure: far less convective cooling than at any Earth field site."
+        }
+      },
+      "story": {
+        "mars": "Mars nights fall below -80 °C: heaters and the waste heat of the power source keep the electronics alive until morning.",
+        "moon": "India's Pragyan rover never woke up after its first lunar night (2023)."
+      },
+      "lab": "thermal-vacuum chamber"
+    },
+    {
+      "id": "dust",
+      "name": "Body, seals & optics (dust)",
+      "short": "Dust",
+      "nodes": [
+        "Body",
+        "Body_Parts",
+        "Body_Parts.001",
+        "Body.002",
+        "Body.003",
+        "lab",
+        "antenna_hg",
+        "antenna_uhf",
+        "antenna_lg",
+        "RIMFAX",
+        "box",
+        "Name_Chips"
+      ],
+      "anchor": {
+        "node": "antenna_hg"
+      },
+      "variables": {
+        "dust_aod": null
+      },
+      "caps": {
+        "moon": {
+          "max": "lab",
+          "why": "The Moon has no airborne dust: its dust is sharp, electrically charged and clings in vacuum. No field site on Earth reproduces it."
+        }
+      },
+      "story": {
+        "mars": "The 2018 global dust storm ended Opportunity's mission. Dust also coats optics and creeps into joints.",
+        "moon": "Apollo crews found lunar dust everywhere: it jammed joints, scratched visors and wore through the outer layers of their suits."
+      },
+      "lab": "dust chamber with regolith simulant"
+    }
+  ]
+}

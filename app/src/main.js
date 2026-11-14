@@ -20,6 +20,7 @@ import { areaIndex, scoreCell } from './scoring.js';
 import { ZONES_BY_BODY, makeZone, zoneText } from './zones.js';
 import { createPlaceSearch, createZoneMenu } from './places.js';
 import { countryAt, preloadCountries } from './countries.js';
+import { createRover } from './rover.js'; // [rover]
 
 const NAME = { earth: 'Earth', mars: 'Mars', moon: 'Moon' };
 const RADIUS_KM = { earth: 6371, mars: 3390, moon: 1737 };
@@ -87,6 +88,28 @@ function setStatus(text) {
 }
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// --- [rover] Second view, "Rover test planner" (rover.js), opened from the view menu (the title in
+// the toolbar). While it is open, runMatch() hands the clicked cell to it instead of searching analogs.
+const rover = createRover({
+  left: () => left,
+  right: () => right,
+  source: () => lastSource,
+  zone: () => zone,
+  setBodies: (l, r) => setBodies(l, r),
+  showEarthCell: (site, opts) => showCandidateAt(site, opts),
+  clearEarthCell: () => {
+    candRequest++;
+    cardRight.hide();
+    right.clearCell();
+  },
+  clearMatch: () => clearMatch(),
+  runMatch: () => runMatch(),
+  rebuildPlaces: () => placeSearch.rebuild(),
+  // the clicked hexagon moves out from under the 3D rover when that view opens
+  reframe: () => lastSource && animate([{ globe: left, h3: lastSource.h3, panels: leftPanels() }]),
+  setStatus,
+});
 
 /** Score colour: the shown range (threshold → best) stretched over the whole ramp. */
 function colorOf(score) {
@@ -167,6 +190,7 @@ async function showSourceAt(lat, lon, title = null, subtitle = null) {
  */
 async function runMatch({ animate: fly = true } = {}) {
   if (!lastSource) return null;
+  if (rover.active) return rover.update(); // [rover] the rover view plans tests instead
   const request = ++matchRequest;
   const body = right.key;
   const where = zone ? `inside ${zone.label}` : `over the whole ${NAME[body]}`;
@@ -307,6 +331,7 @@ function clearMatch() {
   candRequest++;
   lastRank = null;
   lastCandidate = null;
+  rover.reset(); // [rover]
   results.hide();
   cardRight.hide();
   dock.hide();
@@ -335,8 +360,8 @@ const CELL_FILL = 0.55;     // the hexagon spans ~55 % of the free part of the g
 const REGION_ALT = 0.7;
 let animToken = 0;
 
-const leftPanels = () => [cardLeftEl, dockEl];
-const rightPanels = () => [resultsEl, cardRightEl, dockEl];
+const leftPanels = () => [cardLeftEl, dockEl, ...rover.panels.left];              // [rover] + its panels
+const rightPanels = () => [resultsEl, cardRightEl, dockEl, ...rover.panels.right];
 
 /**
  * Largest free rectangle of the canvas (CSS px, relative to it) once the visible panels are taken
@@ -594,7 +619,7 @@ function placeEntries() {
     ...Object.entries(ZONES_BY_BODY).flatMap(([body, list]) => list.map((z) => ({
       kind: 'zone', body, label: z.label, sub: `${NAME[body]} · search only in this zone`, words: z.words, data: z,
     }))),
-  ];
+  ].filter(rover.allowsPlace); // [rover] the rover view only offers Earth zones
 }
 
 function goToPlace({ kind, body, data }) {
@@ -646,6 +671,7 @@ window.Cesium = Cesium;
 window.goToPlace = goToPlace;
 window.showSourceAt = showSourceAt;
 window.setBodies = setBodies;
+window.rover = rover; // [rover]
 window.globes = {
   get left() {
     return left;

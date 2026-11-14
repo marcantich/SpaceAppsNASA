@@ -46,6 +46,40 @@ nota_k  = matriz[objetivo_k][tierra_k], o igual → 1 / distinto → 0   (categ�
 
 Comprobación: con el ejemplo de [`tests/test_similarity.py`](../tests/test_similarity.py), la versión de la app tiene que dar 37,5 / 82,5 / 77,5.
 
+## 🚙 Planificador de ensayos del rover (segunda vista: menú del título → "Rover test planner")
+
+**Cómo se abre:** el título de la barra ("Analogs ▾") es un menú con las dos vistas. "Analogs" es el buscador de análogos tal cual; "Rover test planner" enseña **solo lo del rover** (se esconden la barra de resultados, el panel de índice, el selector "Test" y el intercambio de cuerpos; a la izquierda queda Marte o la Luna y a la derecha siempre la Tierra). También se abre directo con `#rover` al final de la dirección. El punto clicado se conserva al cambiar de vista.
+
+**Qué responde:** mandas un rover al punto que has clicado en Marte o la Luna → **dónde de la Tierra se puede probar cada pieza**, dónde se prueba el rover entero, y qué no se puede probar en ningún sitio (va al laboratorio).
+
+| Fichero | Qué hace |
+|---|---|
+| [`data/rover.json`](data/rover.json) | **La configuración, escrita a mano:** las piezas, las variables de la ficha de las que depende cada una, su margen (±), los límites por la física (gravedad, vacío) y qué nodos del modelo 3D forman cada pieza |
+| [`src/rover.js`](src/rover.js) | El menú de vistas, el cálculo (`RoverPlanner`) y el panel. Usa la misma tabla de la Tierra que el buscador (`loadTable('earth')` de `match.js`): no descarga nada nuevo |
+| [`src/main.js`](src/main.js) | Solo el enganche: las líneas marcadas con `// [rover]` (crear la vista, pasarle el punto clicado en vez de buscar análogos, y contar sus paneles al encuadrar la cámara) |
+| [`src/rover3d.js`](src/rover3d.js) | El rover 3D con piezas clicables (three.js). Solo se descarga al abrir el planificador |
+| `data/rover/perseverance.glb` | Modelo 3D de Perseverance, **NASA/JPL-Caltech**, del repositorio [NASA 3D Resources](https://github.com/nasa/NASA-3D-Resources) (sin copyright; hay que citar la fuente). `data/rover/draco/` = descompresor del modelo (viene con three.js) |
+
+**El método (una "caja" por pieza):**
+
+```
+d = máx_k |tierra_k − objetivo_k| / margen_k        (el eslabón más débil manda)
+
+✔ campo        hay celdas de la Tierra con d ≤ 1  (todas sus variables dentro del margen)
+◐ con reservas solo hay celdas con d ≤ 2, o falta una variable, o la física lo limita (gravedad, aire tenue)
+✖ laboratorio  ninguna celda con d ≤ 2, o la pieza necesita vacío
+
+índice de ensayabilidad = 100 · (campo + ½ · con reservas) / piezas
+```
+
+- Si `margen` es `null` en `rover.json`, se usa la `tolerance` de `configs/variables.yaml` (no el `half_diff` de la nota suave del buscador: aquí hace falta un límite duro, "dentro o fuera").
+- **Todos los márgenes y límites son [supuesto] nuestros.** Se cambian en `rover.json` y la app recalcula sola.
+- "Rover entero": celdas donde pasan más piezas a la vez. "Campaña": el menor número de sitios que cubren todas las piezas (empieza en el mejor y añade el más cercano que cubra lo que falta).
+- Respeta el filtro "Earth zone": sirve para preguntar "¿qué puedo probar dentro de esta región?".
+- Comprobado en el navegador: Jezero 70 %, Shackleton 30 % (control térmico y polvo, solo laboratorio).
+
+**Pendiente:** el taladro solo compara el hielo: falta el tipo de roca en la tabla de búsqueda de la Tierra (la sílice ya está en la malla, no en `match.bin.gz`), y las rocas en superficie no existen como dato de la Tierra.
+
 ## Opciones de librería (decidir el sábado)
 
 | Opción | Pros | Contras |

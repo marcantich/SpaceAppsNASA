@@ -1,0 +1,494 @@
+/* Rover test planner (rover.js + rover3d.js). Kept apart from style.css on purpose. */
+
+/* ---- View menu: the app title (toolbar, left) opens the list of views ---------------------------- */
+.view-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.view-menu h1 {
+  margin: 0;
+}
+
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;          /* the h1 font: the title looks as before, plus a caret */
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.view-btn .caret {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.view-btn:hover,
+.view-btn[aria-expanded='true'] {
+  border-color: var(--accent);
+}
+
+body.rover-tab .view-btn {
+  border-color: var(--accent);
+  background: rgb(226 103 58 / 0.14);
+}
+
+.view-menu .menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  width: 340px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgb(16 20 31 / 0.98);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
+}
+
+.view-menu .menu[hidden] {
+  display: none;
+}
+
+.view-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 6px;
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgb(255 255 255 / 0.03);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.view-opt:hover {
+  border-color: var(--accent);
+}
+
+.view-opt.on {
+  border-color: var(--accent);
+  background: rgb(226 103 58 / 0.12);
+}
+
+.view-opt svg {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.view-opt.on svg {
+  color: var(--accent);
+}
+
+.view-opt span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.view-opt b {
+  font-weight: 600;
+}
+
+.view-opt small {
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+/* ---- Rover view: only the rover. The analog-only controls and panels leave the screen ----------- */
+body.rover-tab .bodies .lbl,
+body.rover-tab #swap,
+body.rover-tab #right-body,
+body.rover-tab #left-body [data-body='earth'],
+body.rover-tab .test,
+body.rover-tab #results,
+body.rover-tab #dock {
+  display: none;
+}
+
+body.rover-tab .bodies::before {
+  content: 'Send a rover to';
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* the right pane is where the rover is tested (the label text is set by main.js: swap it here) */
+body.rover-tab #right-label {
+  font-size: 0;
+}
+
+body.rover-tab #right-label::after {
+  content: 'Earth · where to test it';
+  font-size: 14px;
+}
+
+/* Earth cell card: on the left edge of the Earth pane (the plan takes the right edge) */
+body.rover-tab #card-right {
+  left: 12px;
+  right: auto;
+  top: 46px;
+  max-height: calc(100% - 46px - 24px);
+}
+
+/* card of the clicked cell: stops above the 3D rover */
+body.rover-tab .card.side-left {
+  max-height: calc(100% - 46px - min(430px, 60%) - 52px);
+}
+
+/* 3D rover: bottom-left of the left pane (the body the rover goes to) */
+.rover-view {
+  position: absolute;
+  left: 12px;
+  bottom: 40px;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  width: min(500px, 60%);
+  height: min(430px, 60%);
+  min-width: 250px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgb(10 13 22 / 0.78), rgb(10 13 22 / 0.5));
+  backdrop-filter: blur(3px);
+  overflow: hidden;
+}
+
+.rover-view[hidden] {
+  display: none;
+}
+
+.rover-view header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 12px 0;
+  font-size: 13px;
+}
+
+.rover-view header span,
+.rover-view footer {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.rover-view footer {
+  padding: 0 12px 6px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rover-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.rover-stage canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.rover-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* part labels pinned on the model */
+.rover-label {
+  --c: #9aa3b8;
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 9px 2px 3px;
+  border: 1px solid var(--c);
+  border-radius: 999px;
+  background: rgb(16 20 31 / 0.88);
+  color: var(--text);
+  font: 600 11px/1.5 system-ui, sans-serif;
+  white-space: nowrap;
+  cursor: pointer;
+  will-change: transform;
+}
+
+.rover-label i {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--c);
+  color: #10141f;
+  font-style: normal;
+  font-size: 10px;
+}
+
+.rover-label:hover,
+.rover-label.sel {
+  background: var(--c);
+  color: #10141f;
+}
+
+.rover-label.dim {
+  opacity: 0.45;
+}
+
+/* plan panel: right edge of the Earth pane, below the home button */
+.card.rover-panel {
+  width: min(330px, calc(100% - 24px));
+  max-height: calc(100% - 56px - 24px);
+}
+
+.rover-panel .rv-msg {
+  margin: 8px 0 2px;
+  color: var(--muted);
+}
+
+/* lists of proposed sites */
+.rv-ranks {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+}
+
+.rv-ranks li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 5px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rv-ranks li:hover,
+.rv-ranks li:focus {
+  border-color: var(--line);
+  background: rgb(255 255 255 / 0.06);
+  outline: none;
+}
+
+.rover-panel .legend {
+  margin: 4px 0 2px;
+}
+
+.rv-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 6px 0 8px;
+  font-size: 12px;
+}
+
+.rv-head > b {
+  display: inline-flex;
+  justify-content: center;
+  align-items: baseline;
+  flex: none;
+  min-width: 62px;
+  height: 46px;
+  padding-top: 9px;
+  border-radius: 10px;
+  color: #10141f;
+  font-size: 24px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-head > b small {
+  font-size: 13px;
+}
+
+.rv-head strong {
+  font-size: 13px;
+}
+
+.rv-parts {
+  list-style: none;
+  margin: 0 0 6px;
+  padding: 0;
+}
+
+.rv-parts li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rv-parts li:hover,
+.rv-parts li:focus {
+  background: rgb(255 255 255 / 0.06);
+  outline: none;
+}
+
+.rv-parts li.sel {
+  border-color: var(--line);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.rv-parts li > i {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  color: #10141f;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.rv-parts li > i.all {
+  background: #7fd1ff;
+}
+
+.rv-detail {
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.rv-detail h3 {
+  margin-top: 8px;
+}
+
+.rv-story {
+  margin: 4px 0 6px;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.rv-table {
+  width: 100%;
+  margin: 4px 0;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rv-table th {
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 11px;
+  text-align: right;
+}
+
+.rv-table td {
+  padding: 2px 0 2px 6px;
+  text-align: right;
+}
+
+.rv-table td:first-child {
+  padding-left: 0;
+  color: var(--muted);
+  text-align: left;
+}
+
+.rv-notes,
+.rv-lab {
+  margin: 6px 0;
+  padding-left: 16px;
+  font-size: 12px;
+}
+
+.rv-notes li {
+  margin-bottom: 3px;
+  color: #ffd98a;
+}
+
+.rv-chip {
+  display: inline-block;
+  margin: 1px 3px 1px 0;
+  padding: 0 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+}
+
+.rv-chip.ok {
+  background: rgb(79 209 123 / 0.2);
+  color: #8ff0b0;
+}
+
+.rv-chip.no {
+  background: rgb(255 255 255 / 0.07);
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.rv-btn {
+  width: 100%;
+  margin: 8px 0 2px;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgb(127 209 255 / 0.1);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.rv-btn:hover {
+  background: rgb(127 209 255 / 0.2);
+}
+
+@media (max-width: 760px) {
+  .view-menu .menu {
+    width: min(340px, calc(100vw - 24px));
+  }
+
+  /* globes stacked: the rover on top of the left pane, the cards stay at the bottom of each pane */
+  .rover-view {
+    top: 40px;
+    bottom: auto;
+    left: 8px;
+    width: calc(100% - 16px);
+    min-width: 0;
+    height: 36%;
+  }
+
+  body.rover-tab .card.side-left {
+    max-height: 40%;
+  }
+
+  body.rover-tab #card-right {
+    display: none;
+  }
+}

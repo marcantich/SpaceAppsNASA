@@ -74,7 +74,22 @@ SpaceAppsNASA/
 
 Todo el flujo se lanza con `python scripts/run_pipeline.py`. Hoy se para en el paso 1, que está pendiente. Mientras tanto, `python scripts/make_mock_data.py` llena `app/data/` con **datos falsos** en el mismo formato, para que la app pueda avanzar.
 
-## Puesta en marcha
+## 🚀 Abrir la app (en tu ordenador)
+
+Necesitas [Node.js](https://nodejs.org) (versión 18 o más). Desde la carpeta del repo, en la terminal:
+
+```powershell
+cd app
+npm install      # solo la primera vez (o si cambia app/package.json)
+npm run dev      # arranca la app
+```
+
+Abre **http://localhost:5173** en el navegador. Pulsa *Moon* o *Mars*, clica cualquier punto y la Tierra se colorea con sus análogos. Para pararla: `Ctrl + C` en la terminal.
+
+- Si el puerto 5173 está ocupado (otra app abierta), la terminal te dice el que usa (5174, 5175…).
+- Atajo que además abre el navegador solo: `cd app` y después `npx vite --open`.
+
+## Puesta en marcha (Python, para regenerar los datos)
 
 ```bash
 python -m venv .venv
