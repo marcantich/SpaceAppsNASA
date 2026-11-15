@@ -494,7 +494,8 @@ export function createRover(api) {
   }
 
   function summaryOf(p) {
-    return `Limiting factor: ${limitingFactor(p).label}`;
+    const place = p.sites[0]?.place;
+    return `Limiting factor: ${limitingFactor(p).label}${place ? ` · best in ${place}` : ''}`;
   }
 
   function factorDetail(p) {
