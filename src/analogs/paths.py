@@ -1,26 +1,26 @@
-"""Rutas del proyecto. Importar desde aquí en vez de escribir rutas a mano.
+"""Project paths. Import them from here instead of writing paths by hand.
 
-Los datos pesados viven FUERA del repo (no caben en git y OneDrive los bloquea).
-La carpeta de datos (DATA) se busca en este orden:
-  1. variable de entorno ANALOGS_DATA_DIR
-  2. (Windows) la misma variable guardada con `setx`, aunque la terminal se abriera antes
-  3. ~/SpaceAppsData   (C:\\Users\\<tú>\\SpaceAppsData): basta con copiar la carpeta ahí
-  4. <repo>/data       (lo antiguo, por compatibilidad)
-Dentro de DATA siempre: raw/<earth|moon|mars>/<carpeta>/, interim/, processed/, LEEME.md
+Heavy data live OUTSIDE the repository (they do not fit in git and OneDrive locks them).
+The data folder (DATA) is looked for in this order:
+  1. environment variable ANALOGS_DATA_DIR
+  2. (Windows) the same variable saved with `setx`, even if the terminal was opened before
+  3. ~/SpaceAppsData   (C:\\Users\\<you>\\SpaceAppsData): just copy the folder there
+  4. <repo>/data       (the old location, kept for compatibility)
+Inside DATA, always: raw/<earth|moon|mars>/<folder>/, interim/, processed/, LEEME.md
 """
 import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 
-# --- Entrada pequeña (en git) ---
-CATALOGS = ROOT / "data" / "catalogs"   # sitios objetivo (Luna/Marte) y análogos conocidos
-CONFIGS = ROOT / "configs"              # variables.yaml (qué se compara) y pruebas.yaml (pesos)
+# --- Small inputs (in git) ---
+CATALOGS = ROOT / "data" / "catalogs"   # target sites (Moon / Mars) and known analogs
+CONFIGS = ROOT / "configs"              # variables.yaml (what is compared) and pruebas.yaml (weights)
 
-# --- Datos pesados (NO en git) ---
+# --- Heavy data (NOT in git) ---
 def _data_dir() -> Path:
-    """ANALOGS_DATA_DIR del proceso; si no está (terminal abierta antes de definirla con setx),
-    se lee la variable de usuario de Windows directamente del registro."""
+    """ANALOGS_DATA_DIR of the process; if it is not set (terminal opened before defining it with
+    setx), the Windows user variable is read straight from the registry."""
     value = os.environ.get("ANALOGS_DATA_DIR")
     if not value and os.name == "nt":
         try:
@@ -36,13 +36,13 @@ def _data_dir() -> Path:
 
 
 DATA = _data_dir()
-RAW = DATA / "raw"              # paso 1: tal cual se descarga  (earth/, moon/, mars/)
-INTERIM = DATA / "interim"      # paso 2: recortado y remuestreado
-PROCESSED = DATA / "processed"  # paso 3: fichas (una fila por sitio o hexágono)
+RAW = DATA / "raw"              # step 1: as downloaded  (earth/, moon/, mars/)
+INTERIM = DATA / "interim"      # step 2: cropped and resampled
+PROCESSED = DATA / "processed"  # step 3: cards (one row per site or hexagon)
 
-# --- Salida ---
-APP_DATA = ROOT / "app" / "data"    # paso 4: el índice que lee la app
-OUTPUTS = ROOT / "outputs"          # para personas: figuras, mapas, validación
+# --- Output ---
+APP_DATA = ROOT / "app" / "data"    # step 4: the index the app reads
+OUTPUTS = ROOT / "outputs"          # for people: figures, maps, validation
 FIGURES = OUTPUTS / "figures"
 MAPS = OUTPUTS / "maps"
 VALIDATION = OUTPUTS / "validation"

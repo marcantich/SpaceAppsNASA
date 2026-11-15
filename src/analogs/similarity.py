@@ -1,42 +1,42 @@
-"""MOTOR: ¿cuánto se parece cada sitio de la Tierra a un sitio objetivo de la Luna o Marte?
+"""ENGINE: how much does each Earth site resemble a target site on the Moon or Mars?
 
-Tres pasos (el ejemplo completo con números está en tests/test_similarity.py):
+Three steps (the full example with numbers is in tests/test_similarity.py):
 
-1. Nota por variable, de 0 a 1 (configs/variables.yaml):
-       con half_diff (nota suave):  nota = 1 / (1 + (|x_objetivo − x_tierra| / half_diff)²)
-                                    → 0,5 con una diferencia de half_diff; nunca llega a 0, así que
-                                      sigue ordenando aunque la Tierra no alcance el valor objetivo
-       con matrix (clases):         nota = matrix[objetivo][tierra]   (p. ej. clases de hielo)
-       solo tolerance (antigua):    nota = max(0, 1 − |Δ| / tolerance)
-       categórica:                  nota = matrix[objetivo][tierra]   (sin matriz: igual = 1, distinto = 0)
-   Si falta el dato en la Tierra o en el objetivo, esa nota queda vacía (NaN).
+1. Note per variable, from 0 to 1 (configs/variables.yaml):
+       with half_diff (soft note):  note = 1 / (1 + (|x_target − x_earth| / half_diff)²)
+                                    → 0.5 at a difference of half_diff; it never reaches 0, so it
+                                      keeps ranking even when Earth cannot reach the target value
+       with matrix (classes):       note = matrix[target][earth]   (e.g. ice classes)
+       only tolerance (old):        note = max(0, 1 − |Δ| / tolerance)
+       categorical:                 note = matrix[target][earth]   (no matrix: equal = 1, different = 0)
+   If the value is missing on Earth or on the target, that note stays empty (NaN).
 
-2. Nota por DIMENSIÓN (terrain, thermal, water, sky…): media ponderada de las notas de sus
-   variables disponibles. Así tres temperaturas cuentan como una dimensión, no como tres votos.
-   Una dimensión sin NINGÚN dato en esa celda cuenta 0 (no se premia lo que no se ha medido).
+2. Note per DIMENSION (terrain, thermal, water, sky…): weighted mean of the notes of its
+   available variables. This way three temperatures count as one dimension, not as three votes.
+   A dimension with NO data at all in that cell counts 0 (what was not measured is not rewarded).
 
-3. Índice de 0 a 100 = media ponderada de las dimensiones disponibles. Peso de cada dimensión =
-   el mayor peso que la prueba (configs/pruebas.yaml) da a sus variables (1 si no hay prueba).
-   Sin dimensiones (variables sin `dimension`), cada variable es su propia dimensión: la fórmula
-   antigua, media ponderada de las notas.
+3. Index from 0 to 100 = weighted mean of the available dimensions. Weight of each dimension =
+   the largest weight the test (configs/pruebas.yaml) gives to its variables (1 without a test).
+   Without dimensions (variables with no `dimension`), each variable is its own dimension: the
+   old formula, a weighted mean of the notes.
 
-(La web añade un 4.º paso solo para ordenar: mezcla el índice de la celda con el de sus 6 vecinas,
-`scoring.area_weight`, para premiar zonas homogéneas; ver app/src/scoring.js.)
+(The web app adds a 4th step only for ranking: it mixes the index of the cell with that of its 6
+neighbours, `scoring.area_weight`, to reward homogeneous areas; see app/src/scoring.js.)
 
-El índice es un ÍNDICE DE ANALOGÍA, no una probabilidad (no está calibrado contra nada).
-La app usa exactamente la misma fórmula (app/src/scoring.js) sobre las fichas de app/data/.
+The index is an ANALOGY INDEX, not a probability (it is not calibrated against anything).
+The app uses exactly the same formula (app/src/scoring.js) on the cards of app/data/.
 """
 import numpy as np
 import pandas as pd
 
 
 def _class_key(v) -> str:
-    """0.5 → '0.5', 3.0 → '3', 10 → '10' (claves de las matrices de clases, igual que en la web)."""
+    """0.5 → '0.5', 3.0 → '3', 10 → '10' (keys of the class matrices, the same as in the web app)."""
     return format(float(v), "g")
 
 
 def note_numeric(spec: dict, target: float, earth: pd.Series) -> pd.Series:
-    """Nota (0–1) de una variable numérica: matriz de clases, nota suave o lineal antigua."""
+    """Note (0–1) of a numeric variable: class matrix, soft note or old linear note."""
     if spec.get("matrix"):
         matrix = {_class_key(k): {_class_key(c): float(v) for c, v in r.items()} for k, r in spec["matrix"].items()}
         row = matrix.get(_class_key(target), {})
@@ -50,11 +50,11 @@ def note_numeric(spec: dict, target: float, earth: pd.Series) -> pd.Series:
 
 
 def variable_scores(target: dict, cells: pd.DataFrame, variables: dict) -> pd.DataFrame:
-    """Nota (0–1) de cada variable para cada celda de la Tierra.
+    """Note (0–1) of each variable for each Earth cell.
 
-    target:    ficha del objetivo, p. ej. {"slope_deg": 8, "rock_abundance_pct": 15, ...}
-    cells:     una fila por celda de la Tierra, una columna por variable
-    variables: el bloque "variables" de configs/variables.yaml
+    target:    card of the target, e.g. {"slope_deg": 8, "rock_abundance_pct": 15, ...}
+    cells:     one row per Earth cell, one column per variable
+    variables: the "variables" block of configs/variables.yaml
     """
     scores = {}
     for name, spec in variables.items():
@@ -62,7 +62,7 @@ def variable_scores(target: dict, cells: pd.DataFrame, variables: dict) -> pd.Da
             continue
         t = target.get(name)
         if t is None or (isinstance(t, float) and np.isnan(t)):
-            continue  # el objetivo no tiene esta variable (p. ej. polvo en la Luna)
+            continue  # the target does not have this variable (e.g. dust on the Moon)
 
         col = cells[name]
         if spec.get("type", "numeric") == "numeric":
@@ -76,10 +76,10 @@ def variable_scores(target: dict, cells: pd.DataFrame, variables: dict) -> pd.Da
 
 
 def analog_index(scores: pd.DataFrame, weights: dict, dimensions: dict | None = None) -> pd.Series:
-    """Índice de analogía (0–100).
+    """Analog index (0–100).
 
-    dimensions: {variable: dimensión} (de variables.yaml). Sin él, cada variable es su propia
-    dimensión y el índice es la media ponderada de las notas disponibles (fórmula antigua).
+    dimensions: {variable: dimension} (from variables.yaml). Without it, each variable is its own
+    dimension and the index is the weighted mean of the available notes (old formula).
     """
     w = pd.Series({k: v for k, v in weights.items() if k in scores.columns and v > 0}, dtype=float)
     if w.empty:
@@ -95,23 +95,23 @@ def analog_index(scores: pd.DataFrame, weights: dict, dimensions: dict | None = 
         d_num = (s.fillna(0.0) * dw).sum(axis=1)
         d_den = (s.notna() * dw).sum(axis=1)
         has = d_den > 0
-        W = float(dw.max())                        # peso de la dimensión = su mayor peso
+        W = float(dw.max())                        # weight of the dimension = its largest weight
         num += np.where(has, W * d_num / d_den.where(has, 1.0), 0.0)
-        # con dimensiones, una dimensión SIN NINGÚN dato en esa celda cuenta 0 (no se premia lo que no
-        # se ha medido); sin dimensiones (fórmula antigua), la variable que falta no cuenta
+        # with dimensions, a dimension with NO data at all in that cell counts 0 (what was not
+        # measured is not rewarded); without dimensions (old formula), a missing variable does not count
         den += W if dimensions else np.where(has, W, 0.0)
         measured |= has
     idx = 100.0 * num / den.replace(0.0, np.nan)
-    return idx.where(measured)                     # sin ningún dato comparable: NaN
+    return idx.where(measured)                     # no comparable data at all: NaN
 
 
 def dimensions_of(variables: dict) -> dict:
-    """{variable: dimensión} de configs/variables.yaml (solo las que la tienen)."""
+    """{variable: dimension} from configs/variables.yaml (only those that have one)."""
     return {k: v["dimension"] for k, v in variables.items() if v.get("dimension")}
 
 
 def rank(target: dict, cells: pd.DataFrame, variables: dict, weights: dict, top: int = 10) -> pd.DataFrame:
-    """Las `top` celdas más parecidas, con su índice y la nota de cada variable."""
+    """The `top` most similar cells, with their index and the note of each variable."""
     scores = variable_scores(target, cells, variables)
     out = cells.join(scores.add_prefix("score_"))
     out["index"] = analog_index(scores, weights, dimensions_of(variables))

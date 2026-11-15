@@ -1,4 +1,4 @@
-"""Permite importar el paquete `analogs` (en src/) desde los tests."""
+"""Lets the tests import the `analogs` package (in src/)."""
 import sys
 from pathlib import Path
 

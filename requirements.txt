@@ -1,34 +1,34 @@
-# Provisional: se ajusta cuando se decida el stack.
+# Python packages of the data pipeline (not needed to run the web app).
 
-# --- Tablas y números ---
+# --- Tables and numbers ---
 numpy
 pandas
-pyarrow            # leer/escribir .parquet (las fichas)
-pyyaml             # leer configs/
+pyarrow            # read / write .parquet (the card grids)
+pyyaml             # read configs/
 
-# --- Datos geográficos (rásters, puntos, malla) ---
+# --- Geographic data (rasters, points, grid) ---
 rasterio
 rioxarray
 xarray
 geopandas
-h3                 # malla hexagonal de igual área
-pyhdf              # leer HDF4 (MODIS: MCD12C1, MOD11C3…)
-h5py               # leer HDF5 (GPM IMERG, SMAP…)
-h3ronpy            # opcional: asigna millones de píxeles a hexágonos ~3× más rápido (moon.py lo usa si está)
+h3                 # equal-area hexagonal grid
+pyhdf              # read HDF4 (MODIS: MCD12C1, MYD11C3…)
+h5py               # read HDF5 (GPM IMERG, NASA Ames Mars GCM)
+h3ronpy            # assigns millions of pixels to hexagons ~3× faster (earth_grid.py needs it; moon.py uses it if present)
 
-# --- Descargar de los portales ---
-earthaccess        # NASA Earthdata (con tu Earthdata Login)
+# --- Download from the archives ---
+earthaccess        # NASA Earthdata (with your Earthdata Login)
 pystac-client      # Copernicus Data Space (STAC)
 requests
 tqdm
 truststore         # use the OS certificate store (fixes SSL errors behind proxies/antivirus)
 
-# --- Análisis y gráficos ---
+# --- Analysis and plots ---
 scikit-learn
 scipy              # netCDF reader and interpolation (mars_climate.py, rover_route)
 matplotlib
 plotly
 
-# --- Trabajo ---
+# --- Work ---
 jupyterlab
 pytest

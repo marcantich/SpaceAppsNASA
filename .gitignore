@@ -1,17 +1,17 @@
-# --- Datos pesados (se comparten por Drive, no por git) ---
+# --- Heavy data (shared through the team drive, not through git) ---
 data/raw/**
 data/interim/**
 data/processed/**
 !data/**/
 !data/**/.gitkeep
 !data/**/README.md
-# Las LISTAS de lo descargado sí van a git (para reproducir y comparar), los datos no
+# The LISTS of what was downloaded do go to git (to reproduce and compare); the data do not
 !data/raw/**/MANIFEST.csv
 !data/raw/**/LISTADO_*.csv
-# Las FICHAS (resúmenes por sitio, KB) sí van a git; los intermedios grandes (parquet) van por el Drive
+# The CARDS (summaries per site, KB) do go to git; the large intermediates (parquet) go through the drive
 !data/processed/*.csv
 
-# Formatos ráster/científicos grandes en cualquier sitio
+# Large raster / scientific formats anywhere
 *.tif
 *.tiff
 *.img
@@ -32,7 +32,7 @@ venv/
 *.egg-info/
 .pytest_cache/
 
-# --- HTML generado al previsualizar los .md con LaTeX ---
+# --- HTML generated when previewing the .md files with LaTeX ---
 docs/**/*.html
 
 # --- Node / frontend ---
@@ -42,12 +42,12 @@ dist/
 build/
 .next/
 
-# --- Entorno y secretos ---
+# --- Environment and secrets ---
 .env
 *.key
 credentials*.json
 
-# --- SO / editores ---
+# --- OS / editors ---
 .DS_Store
 Thumbs.db
 desktop.ini
@@ -55,7 +55,7 @@ desktop.ini
 !.vscode/extensions.json
 .idea/
 
-# --- Vídeos pesados de la presentación ---
+# --- Heavy videos of the presentation ---
 presentation/**/*.mp4
 presentation/**/*.mov
 # Slide decks: too large for git (the pitch is 127 MB; GitHub refuses files over 100 MB).
