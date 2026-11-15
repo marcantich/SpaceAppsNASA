@@ -706,6 +706,22 @@ export function createRoute(api) {
       paintRegions();
       regionSel.value = 'custom';
     },
+    /** Esc: start again, as in the other views — no route, no profile, no results (the region choice stays). */
+    reset() {
+      if (!state.on) return;
+      state.profileRequest++;
+      clearTimeout(state.timer);
+      state.points = [];
+      state.preset = null;
+      state.profile = null;
+      state.error = null;
+      state.busy = false;
+      $(draw, '.preset').value = '';
+      clearResults();
+      paintTarget();
+      summary();
+      paintChart();
+    },
     /** main.js recreated a globe (the left body changed): the drawn route belonged to the old one. */
     bodiesChanged() {
       ents.left = [];
