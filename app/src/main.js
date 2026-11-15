@@ -21,6 +21,7 @@ import { ZONES_BY_BODY, makeZone, zoneText } from './zones.js';
 import { createPlaceSearch, createZoneMenu } from './places.js';
 import { countryAt, preloadCountries } from './countries.js';
 import { createRover } from './rover.js'; // [rover]
+import { createRoute } from './route.js'; // [route]
 import { slopeAt } from './slopetiles.js';
 
 /** Pixel-level value under the point (only Mars has data tiles so far: slope at ~0.9 km). */
@@ -95,7 +96,15 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // --- [rover] Second view, "Rover test planner" (rover.js), opened from the view menu (the title in
 // the toolbar). While it is open, runMatch() hands the clicked cell to it instead of searching analogs.
+// [route] Third view, "Route replica" (route.js): draw a route on the left globe, find it on Earth.
+const route = createRoute({
+  left: () => left,
+  right: () => right,
+  setBodies: (l, r) => setBodies(l, r),
+  setStatus,
+});
 const rover = createRover({
+  route, // [route]
   left: () => left,
   right: () => right,
   source: () => lastSource,
@@ -243,8 +252,10 @@ async function runMatch({ animate: fly = true } = {}) {
     setStatus('');
     if (request !== matchRequest) return null;
     if (fly) {
-      if (zone) right.flyToZone(zone, FLY_S);
-      else if (h3) animate([{ globe: right, h3, panels: rightPanels() }]);
+      // Always go to the best match, also inside a zone (before, a zone search stopped at the
+      // whole-zone view and the best analog had to be found by hand).
+      if (h3) animate([{ globe: right, h3, panels: rightPanels() }]);
+      else if (zone) right.flyToZone(zone, FLY_S);
     }
     return { h3 };
   } catch (err) {
@@ -514,11 +525,12 @@ function makeGlobe(container, key, side) {
   const g = { ...createGlobe(container, key), key };
   sitesFor(g);
   if (side === 'left') {
-    g.onPick(({ lat, lon }) => showSourceAt(lat, lon));
-    g.onSiteSelect((site) => showSourceAt(site.lat, site.lon, site.name, site.type ? siteSub({ ...site, body: key }) : site.country));
+    g.onPick(({ lat, lon }) => (route.active ? route.pickLeft({ lat, lon }) : showSourceAt(lat, lon))); // [route]
+    g.onSiteSelect((site) => (route.active ? route.pickLeft(site) // [route]
+      : showSourceAt(site.lat, site.lon, site.name, site.type ? siteSub({ ...site, body: key }) : site.country)));
   } else {
-    g.onPick(({ lat, lon }) => showCandidateAt({ lat, lon }));
-    g.onSiteSelect((site) => showCandidateAt(site, { title: site.name }));
+    g.onPick(({ lat, lon }) => (route.active ? route.pickRight({ lat, lon }) : showCandidateAt({ lat, lon }))); // [route]
+    g.onSiteSelect((site) => (route.active ? route.pickRight(site) : showCandidateAt(site, { title: site.name }))); // [route]
     g.onRankSelect((b) => showCandidateAt(b, { rank: lastRank?.best.indexOf(b) ?? -1 }));
   }
   return g;
@@ -557,6 +569,7 @@ function setBodies(l, r) {
   leftLabel.textContent = `${NAME[l]} · click a point`;
   rightLabel.textContent = `${NAME[r]} · analogs`;
   applyRelief();
+  if (changed) route.bodiesChanged(); // [route]
 }
 
 function applyRelief() {
@@ -687,6 +700,7 @@ window.goToPlace = goToPlace;
 window.showSourceAt = showSourceAt;
 window.setBodies = setBodies;
 window.rover = rover; // [rover]
+window.route = route; // [route]
 window.globes = {
   get left() {
     return left;

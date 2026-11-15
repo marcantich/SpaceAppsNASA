@@ -200,6 +200,16 @@ export function createZoneMenu(root, { onSelect, onDraw }) {
     if (show) render();
     menu.hidden = !show;
     btn.setAttribute('aria-expanded', String(show));
+    if (show) {
+      // Keep the whole menu on screen: it hangs from the button's right edge, so when the toolbar
+      // wraps and the button ends up on the left, the menu would stick out of the window.
+      menu.style.transform = '';
+      const r = menu.getBoundingClientRect();
+      const margin = 8;
+      const dx = r.left < margin ? margin - r.left
+        : r.right > window.innerWidth - margin ? window.innerWidth - margin - r.right : 0;
+      if (dx) menu.style.transform = `translateX(${Math.round(dx)}px)`;
+    }
   };
 
   btn.addEventListener('click', () => toggle());

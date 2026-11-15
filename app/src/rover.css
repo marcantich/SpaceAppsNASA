@@ -148,16 +148,61 @@ body.rover-tab #card-right {
   max-height: calc(100% - 46px - 24px);
 }
 
-/* card of the clicked cell: stops above the 3D rover */
-body.rover-tab .card.side-left {
+/* card of the clicked cell: stops above the 3D rover while it is open */
+body.rover-tab.rover-open .card.side-left {
   max-height: calc(100% - 46px - min(430px, 60%) - 52px);
+}
+
+/* rover minimised: a small live thumbnail of the rover, bottom-right of the left pane; click = enlarge */
+.rover-view.min {
+  width: 132px;
+  height: 104px;
+  min-width: 0;
+  border-color: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 0.45);
+}
+
+.rover-view.min:hover,
+.rover-view.min:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.rover-view.min header,
+.rover-view.min footer,
+.rover-view.min .rover-label {
+  display: none;
+}
+
+.rover-view.min .rover-stage {
+  pointer-events: none;   /* the click enlarges the window instead of turning the model */
+}
+
+.rover-min-btn {
+  flex: none;
+  width: 24px;
+  height: 22px;
+  margin-left: 4px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: 700 14px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+
+.rover-min-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent);
 }
 
 /* 3D rover: bottom-left of the left pane (the body the rover goes to) */
 .rover-view {
   position: absolute;
-  left: 12px;
-  bottom: 40px;
+  right: 12px;
+  bottom: 48px;
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -178,10 +223,13 @@ body.rover-tab .card.side-left {
 .rover-view header {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
   gap: 8px;
-  padding: 7px 12px 0;
+  padding: 7px 8px 0 12px;
   font-size: 13px;
+}
+
+.rover-view header span {
+  margin-left: auto;
 }
 
 .rover-view header span,
@@ -478,7 +526,7 @@ body.rover-tab .card.side-left {
   .rover-view {
     top: 40px;
     bottom: auto;
-    left: 8px;
+    right: 8px;
     width: calc(100% - 16px);
     min-width: 0;
     height: 36%;

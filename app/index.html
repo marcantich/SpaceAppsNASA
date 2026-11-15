@@ -5,8 +5,27 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Earth Analogs — Moon & Mars</title>
     <link rel="stylesheet" href="/src/style.css" />
+    <link rel="stylesheet" href="/src/intro.css" /><!-- [intro] -->
   </head>
   <body>
+    <!-- [intro] Opening screen: shown at once; src/intro.js removes it when the user presses Enter or clicks / taps -->
+    <div id="intro" class="intro" role="status" aria-label="Loading the app">
+      <canvas class="intro-stars" aria-hidden="true"></canvas>
+      <div class="intro-bodies" aria-hidden="true">
+        <div class="intro-body"><div class="intro-globe moon" style="background-image: url('./data/intro/moon.jpg')"></div><span>Moon</span></div>
+        <div class="intro-body"><div class="intro-globe earth" style="background-image: url('./data/intro/earth.jpg')"></div><span>Earth</span></div>
+        <div class="intro-body"><div class="intro-globe mars" style="background-image: url('./data/intro/mars.jpg')"></div><span>Mars</span></div>
+      </div>
+      <div class="intro-text">
+        <h1>Earth Analogs</h1>
+        <p class="sub">Where on Earth can we rehearse the Moon and Mars?</p>
+        <p class="team">by <b>TRENCALOS</b></p>
+      </div>
+      <div class="intro-load">
+        <div class="intro-bar"><i></i></div>
+        <p>Loading the three worlds</p>
+      </div>
+    </div>
     <header class="toolbar">
       <h1>Analogs</h1>
       <div class="bodies">
@@ -68,6 +87,7 @@
       <div id="status" class="status" hidden></div>
     </main>
 
+    <script type="module" src="/src/intro.js"></script><!-- [intro] -->
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

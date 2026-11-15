@@ -41,7 +41,10 @@ export function createGlobe(container, bodyKey) {
   // No Cesium ion logo: the app uses no Cesium ion service (no token, no ion assets; checked: no
   // request to cesium.com) and the CesiumJS licence (Apache 2.0) does not require it. CesiumJS is
   // credited in the "Data attribution" list instead (and in CREDITS.md).
-  viewer.cesiumWidget.creditContainer.querySelector('.cesium-credit-logoContainer')?.remove();
+  // Hidden, NOT removed: Viewer.destroy() calls removeChild on this node, and if it is gone it throws
+  // and the new globe is never built (switching Mars → Moon froze the app).
+  const ionLogo = viewer.cesiumWidget.creditContainer.querySelector('.cesium-credit-logoContainer');
+  if (ionLogo) ionLogo.style.display = 'none';
   viewer.creditDisplay.addStaticCredit(new Cesium.Credit(
     'Globe engine: <a href="https://cesium.com/platform/cesiumjs/" target="_blank" rel="noopener">CesiumJS</a> (Apache 2.0)', false));
   // Our own click handling replaces Cesium's default double-click "track entity"

@@ -1,0 +1,343 @@
+/* Route replica view (route.js). Kept apart from style.css and rover.css on purpose. */
+
+/* ---- only the route: the analog-only controls and panels leave the screen ---------------------- */
+body.route-tab .bodies .lbl,
+body.route-tab #swap,
+body.route-tab #right-body,
+body.route-tab #left-body [data-body='earth'],
+body.route-tab .test,
+body.route-tab .search,
+body.route-tab .zone,
+body.route-tab #results,
+body.route-tab #dock,
+body.route-tab #card-left,
+body.route-tab #card-right {
+  display: none;
+}
+
+body.route-tab .view-btn {
+  border-color: var(--accent);
+  background: rgb(226 103 58 / 0.14);
+}
+
+body.route-tab .bodies::before {
+  content: 'Route on';
+  color: var(--muted);
+  font-size: 12px;
+}
+
+body.route-tab #left-label,
+body.route-tab #right-label {
+  font-size: 0;
+}
+
+body.route-tab #left-label::after {
+  content: 'Click to draw the route';
+  font-size: 14px;
+}
+
+body.route-tab #right-label::after {
+  content: 'Earth · where to drive it';
+  font-size: 14px;
+}
+
+/* ---- the two panels ---------------------------------------------------------------------------- */
+.route-panel {
+  position: absolute;
+  top: 46px;
+  z-index: 3;
+  width: min(290px, calc(100% - 24px));
+  max-height: calc(100% - 46px - 250px);
+  overflow-y: auto;
+  padding: 10px 12px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(16 20 31 / 0.93);
+  font-size: 13px;
+}
+
+.route-panel[hidden] {
+  display: none;
+}
+
+.route-draw {
+  left: 12px;
+}
+
+.route-find {
+  right: 12px;
+}
+
+.route-panel header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.route-panel header span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.route-panel .hint,
+.route-panel .note,
+.route-panel .src,
+.route-panel .wait {
+  margin: 4px 0 8px;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.route-panel .hint b {
+  color: var(--text);
+}
+
+.route-panel label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 6px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.route-panel label span {
+  flex: 0 0 104px;
+}
+
+.route-panel select,
+.route-panel input {
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #0b0e17;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+.route-panel select {
+  flex: 1;
+}
+
+.route-panel input {
+  width: 62px;
+}
+
+.route-panel .row {
+  display: flex;
+  gap: 6px;
+  margin: 6px 0 8px;
+}
+
+.route-panel button {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.route-panel button:hover {
+  border-color: var(--accent);
+}
+
+.route-panel .go {
+  width: 100%;
+  margin-top: 6px;
+  padding: 8px 10px;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.route-panel .go:disabled {
+  border-color: var(--line);
+  background: transparent;
+  color: var(--muted);
+  cursor: default;
+}
+
+.route-panel dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 3px 10px;
+  margin: 8px 0 4px;
+}
+
+.route-panel dt {
+  color: var(--muted);
+}
+
+.route-panel dd {
+  margin: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.route-panel .warn,
+.route-panel .err {
+  margin: 6px 0;
+  color: #f2c14e;
+  font-size: 12px;
+}
+
+.route-panel .err {
+  color: #ff8f8f;
+}
+
+.route-panel .progress {
+  height: 4px;
+  margin-top: 8px;
+  border-radius: 2px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+.route-panel .progress[hidden] {
+  display: none;
+}
+
+.route-panel .progress i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.15s linear;
+}
+
+.route-panel .found {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: found;
+}
+
+.route-panel .found li {
+  counter-increment: found;
+  margin-top: 4px;
+}
+
+.route-panel .found button {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.route-panel .found button.on {
+  border-color: #4da3ff;
+  background: rgb(77 163 255 / 0.12);
+}
+
+.route-panel .found b::before {
+  content: '#' counter(found) ' ';
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.route-panel .found span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+/* ---- charts: bottom, across both globes --------------------------------------------------------- */
+.route-chart {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  z-index: 4;
+  width: min(940px, calc(100% - 24px));
+  padding: 8px 12px 6px;
+  transform: translateX(-50%);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(16 20 31 / 0.95);
+}
+
+.route-chart[hidden] {
+  display: none;
+}
+
+.route-chart header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+  font-size: 12px;
+}
+
+.route-chart .key {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.route-chart .key i {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+}
+
+.route-chart .stat {
+  color: var(--muted);
+}
+
+.route-chart .stat b {
+  color: var(--text);
+}
+
+.route-chart .plots {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.route-chart svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.route-chart svg text {
+  fill: var(--muted);
+  font-size: 10px;
+}
+
+.route-chart svg .t {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.route-chart svg .frame {
+  fill: rgb(255 255 255 / 0.03);
+  stroke: var(--line);
+}
+
+.route-chart svg .zero {
+  stroke: var(--muted);
+  stroke-dasharray: 3 3;
+  stroke-width: 0.6;
+}
+
+@media (max-width: 900px) {
+  .route-chart .plots {
+    grid-template-columns: 1fr;
+  }
+}
