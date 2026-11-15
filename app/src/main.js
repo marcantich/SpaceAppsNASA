@@ -187,11 +187,15 @@ async function showSourceAt(lat, lon, title = null, subtitle = null) {
     if (request !== sourceRequest) return;
     await sleep(READ_PAUSE_MS);
     if (request !== sourceRequest) return;
-    animate([
+    const flight = animate([
       { globe: left, h3: c.h3, panels: leftPanels() },
-      found?.h3 && !zone ? { globe: right, h3: found.h3, panels: rightPanels() } : null,
+      found?.h3 ? { globe: right, h3: found.h3, panels: rightPanels() } : null,
     ]);
-    if (zone) right.flyToZone(zone, FLY_S);
+    // no match to fly to: show the zone ([rover] the rover view flies to its own best test site)
+    if (zone && !found?.h3 && !rover.active) right.flyToZone(zone, FLY_S);
+    // [rover] once the camera has settled on the place, the rover window opens by itself
+    await flight;
+    if (request === sourceRequest && rover.active) rover.open();
   } catch (err) {
     console.error(err);
     if (request === sourceRequest) cardLeft.message(title ?? fallback, `Could not load the card: ${err.message}`);
@@ -205,7 +209,11 @@ async function showSourceAt(lat, lon, title = null, subtitle = null) {
  */
 async function runMatch({ animate: fly = true } = {}) {
   if (!lastSource) return null;
-  if (rover.active) return rover.update(); // [rover] the rover view plans tests instead
+  if (rover.active) { // [rover] the rover view plans tests instead; fly to its best test site
+    const plan = await rover.update();
+    if (fly && plan?.h3) animate([{ globe: right, h3: plan.h3, panels: rightPanels() }]);
+    return plan;
+  }
   const request = ++matchRequest;
   const body = right.key;
   const where = zone ? `inside ${zone.label}` : `over the whole ${NAME[body]}`;

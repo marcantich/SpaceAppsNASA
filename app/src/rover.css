@@ -148,12 +148,19 @@ body.rover-tab #card-right {
   max-height: calc(100% - 46px - 24px);
 }
 
-/* card of the clicked cell: stops above the 3D rover while it is open */
+/* card of the clicked cell: stops above the rover thumbnail (bottom-left), or above the 3D rover
+   while it is open */
+body.rover-tab .card.side-left {
+  max-height: calc(100% - 46px - 104px - 52px);
+}
+
+
 body.rover-tab.rover-open .card.side-left {
   max-height: calc(100% - 46px - min(430px, 60%) - 52px);
 }
 
-/* rover minimised: a small live thumbnail of the rover, bottom-right of the left pane; click = enlarge */
+/* rover minimised: a small live thumbnail of the rover, bottom-left of the left pane (the
+   camera frames the clicked hexagon on the right side of the pane); click = enlarge */
 .rover-view.min {
   width: 132px;
   height: 104px;
@@ -201,8 +208,8 @@ body.rover-tab.rover-open .card.side-left {
 /* 3D rover: bottom-left of the left pane (the body the rover goes to) */
 .rover-view {
   position: absolute;
-  right: 12px;
-  bottom: 48px;
+  left: 12px;
+  bottom: 40px;
   z-index: 3;
   display: flex;
   flex-direction: column;
@@ -526,7 +533,7 @@ body.rover-tab.rover-open .card.side-left {
   .rover-view {
     top: 40px;
     bottom: auto;
-    right: 8px;
+    left: 8px;
     width: calc(100% - 16px);
     min-width: 0;
     height: 36%;

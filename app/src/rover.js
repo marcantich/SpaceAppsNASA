@@ -387,7 +387,7 @@ export function createRover(api) {
   document.getElementById('pane-left').append(view);
   const stage = view.querySelector('.rover-stage');
 
-  // The rover window itself minimises to a small live thumbnail of the rover (bottom-right of the
+  // The rover window itself minimises to a small live thumbnail of the rover (bottom-left of the
   // left pane): click it to enlarge and pick the parts; the "–" button shrinks it again so the planet
   // can be seen and clicked. Starts minimised.
   const minBtn = view.querySelector('.rover-min-btn');
@@ -605,12 +605,11 @@ export function createRover(api) {
     const ready = hexes.length ? g.showHexes(hexes) : g.clearHexes();
     if (ranks.length) g.setRanks(ranks); else g.clearRanks();
     if (!ranks.length) return api.clearEarthCell();
-    if (fly) {
-      showSite(ranks[0].payload, title, { height: 2.2e6, fly: !res.zone });
-      if (res.zone) g.flyToZone(res.zone, FLY_S);
-    }
+    // card of the best site; with fly, the camera zooms onto its hexagon (same framing as the
+    // analog view). Without fly the caller (main.js) flies there together with the left globe.
+    const h3 = await api.showEarthCell(ranks[0].payload, { title, animate: fly });
     await ready; // the coloured cells are built in web workers
-    return undefined;
+    return h3;
   }
 
   async function select(id, { fly = true } = {}) {
@@ -618,7 +617,7 @@ export function createRover(api) {
     state.selected = id === 'all' || part(id) ? id : 'all';
     render();
     paintRover();
-    await paintEarth(fly);
+    return paintEarth(fly);
   }
 
   async function showCampaign(holder) {
@@ -687,7 +686,8 @@ export function createRover(api) {
       if (request !== state.request) return null;
       state.result = res;
       api.setStatus('');
-      await select(state.selected);
+      const h3 = await select(state.selected, { fly: false });
+      return request === state.request && h3 ? { h3 } : null; // main.js flies to this hexagon
     } catch (err) {
       console.error(err);
       if (request === state.request) {
@@ -695,7 +695,7 @@ export function createRover(api) {
         renderMessage(`Could not build the plan: ${esc(err.message)}`);
       }
     }
-    return null; // (main.js: nothing for the analog camera to fly to)
+    return null;
   }
 
   /** The selection was cleared (Esc, closed card, bodies changed): back to the empty plan. */
@@ -776,6 +776,8 @@ export function createRover(api) {
     /** Place-search entries offered in the current view (the rover is always tested on Earth). */
     allowsPlace: (e) => state.tab === 'analogs' || e.kind !== 'zone' || e.body === 'earth',
     setTab,
+    /** Enlarge the rover window (main.js: once the clicked place is in focus). */
+    open: () => { if (active()) setRoverOpen(true); },
     update,
     reset,
     select,
