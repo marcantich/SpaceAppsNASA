@@ -119,6 +119,12 @@ python scripts/make_mock_data.py   # datos FALSOS en app/data/ para empezar la a
 | Motor | |
 | App | |
 
+## Next steps
+
+**Use Mars' Earth twins to learn when a rover's "no traces of past life found" really means something,
+and when it only means our instruments can't see well enough.** How we would do it, and the next
+parameters to add (radiation at the surface): [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md).
+
 ## Licence and credits
 
 Code: [MIT](LICENSE). Data, imagery, the 3D model and the libraries keep their own licences and credits:
