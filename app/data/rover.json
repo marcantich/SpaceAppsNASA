@@ -38,10 +38,12 @@
       "caps": {
         "mars": {
           "max": "partial",
+          "factor": "Gravity",
           "why": "Mars gravity is 0.38 g: at full Earth weight the wheels sink and slip differently. NASA drives a stripped-down 'Scarecrow' rover that weighs on Earth what the real one weighs on Mars."
         },
         "moon": {
           "max": "partial",
+          "factor": "Gravity",
           "why": "Lunar gravity is 0.17 g: at full Earth weight the wheels sink and slip differently, so the field test needs a lightened rover."
         }
       },
@@ -71,6 +73,7 @@
       "caps": {
         "moon": {
           "max": "partial",
+          "factor": "Atmospheric light scattering",
           "why": "No air on the Moon: shadows are pitch black and there is no sky glow. Earth's atmosphere always softens them."
         }
       },
@@ -107,6 +110,7 @@
       "caps": {
         "moon": {
           "max": "partial",
+          "factor": "Vacuum and drill cooling",
           "why": "Vacuum: there is no air to cool the bit or to carry the cuttings away."
         }
       },
@@ -131,10 +135,12 @@
       "caps": {
         "moon": {
           "max": "lab",
+          "factor": "Vacuum and heat transfer",
           "why": "Vacuum: heat leaves only by radiation. In Earth's air, convection changes the whole heat balance."
         },
         "mars": {
           "max": "partial",
+          "factor": "Atmospheric pressure",
           "why": "Mars air has about 0.6 % of Earth's pressure: far less convective cooling than at any Earth field site."
         }
       },
@@ -171,6 +177,7 @@
       "caps": {
         "moon": {
           "max": "lab",
+          "factor": "Dust in vacuum",
           "why": "The Moon has no airborne dust: its dust is sharp, electrically charged and clings in vacuum. No field site on Earth reproduces it."
         }
       },

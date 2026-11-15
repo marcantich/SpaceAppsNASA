@@ -16,6 +16,7 @@
 //   • testability index = 100 · (field + ½ · partial) / parts.
 // It reuses the Earth search table of match.js (1.37 M search cells), so nothing new is downloaded.
 import './rover.css';
+import { limitingFactor } from './rover-limits.js';
 import { cellToLatLng, greatCircleDistance } from 'h3-js';
 import { SHORT } from './card.js';
 import { inkOn, isTableLoaded, loadScoringMeta, loadTable, rampColor, RAMP_CSS } from './match.js';
@@ -158,14 +159,23 @@ export class RoverPlanner {
       }
       let n1 = 0;
       let n2 = 0;
+      let closestIndex = -1;
+      let closestDistance = Infinity;
       for (let i = 0; i < n; i++) {
         if (inZone && !inZone[i]) d[i] = Infinity;
         else if (d[i] <= 1 + EPS) n1++;
         else if (d[i] <= 2 + EPS) n2++;
+        if (d[i] < closestDistance) {
+          closestDistance = d[i];
+          closestIndex = i;
+        }
       }
       let status = n1 ? 'field' : n2 ? 'partial' : 'lab';
       if (status === 'field' && (cap?.max === 'partial' || missing.length || noTarget.length)) status = 'partial';
-      return { ...res, d, n1, n2: n1 + n2, limit: n1 ? 1 : 2, status };
+      const closest = closestIndex < 0 ? null : {
+        earth: Object.fromEntries(used.map((u) => [u.name, m.value(u.name, closestIndex)])),
+      };
+      return { ...res, d, closest, n1, n2: n1 + n2, limit: n1 ? 1 : 2, status };
     });
 
     // Overall closeness of each cell to the whole rover (0–1): used to break ties, so the site
@@ -484,12 +494,17 @@ export function createRover(api) {
   }
 
   function summaryOf(p) {
-    if (p.status === 'lab') {
-      return p.cap?.max === 'lab' ? 'needs vacuum → lab' : state.result.zone ? 'not inside this zone' : 'nowhere on Earth → lab';
-    }
-    if (p.status === 'nodata') return 'no value in this cell';
-    const s = p.sites[0];
-    return `${num(p.limit === 1 ? p.n1 : p.n2)} cells${p.limit === 2 ? ' (close: 2× margin)' : ''}${s?.place ? ` · best in ${s.place}` : ''}`;
+    return `Limiting factor: ${limitingFactor(p).label}`;
+  }
+
+  function factorDetail(p) {
+    const f = limitingFactor(p);
+    if (f.why) return `<p><b>Limiting factor: ${esc(f.label)}.</b> ${esc(f.why)}</p>`;
+    const u = f.variable;
+    return `<p><b>Limiting factor: ${esc(f.label)}.</b> At the closest comparable terrain in the search area:
+      target ${fmtValue(u, u.target)} vs Earth ${fmtValue(u, f.earth)};
+      ${Math.round(f.ratio * 100)} % of the allowed margin (± ${u.margin}${u.unit ? ` ${esc(u.unit)}` : ''}).
+      ${f.ratio > 1 + EPS ? 'Exceeds the test margin.' : 'Within the test margin.'}</p>`;
   }
 
   function siteList(sites, text) {
@@ -530,11 +545,8 @@ export function createRover(api) {
       const s = p.sites[0];
       html += `<table class="rv-table"><tr><th></th><th>target</th><th>margin</th><th>${s ? 'Earth #1' : ''}</th></tr>${p.used.map((u) => `<tr>
         <td>${esc(u.label)}</td><td>${fmtValue(u, u.target)}</td><td>± ${u.margin}</td><td>${s ? fmtValue(u, s.earth[u.name]) : ''}</td></tr>`).join('')}</table>`;
-      html += p.n1
-        ? `<p><b>${num(p.n1)}</b> Earth cells (~${num(Math.round(p.n1 * 36.1))} km²) have every value inside the margin.</p>`
-        : p.n2 ? `<p>No Earth cell inside the margin; <b>${num(p.n2)}</b> inside twice the margin (close, not the same).</p>`
-          : `<p>No search cell even inside twice the margin${state.result.zone ? ` in ${esc(state.result.zone.label)}: try the whole Earth` : ': Earth does not have this'}.</p>`;
     }
+    html += factorDetail(p);
     const notes = [];
     if (p.cap) notes.push(esc(p.cap.why));
     for (const x of p.missing) notes.push(`Not compared: ${esc(x)} (no Earth data in the search table).`);
