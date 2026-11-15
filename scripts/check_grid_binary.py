@@ -22,7 +22,15 @@ def main(body: str, parquet: str) -> int:
     folder = APP_DATA / body
     idx = json.loads((folder / "index.json").read_text(encoding="utf-8"))
     names = [c["name"] for c in idx["columns"]]
-    df = pd.read_parquet(parquet, columns=["h3", *names]).set_index("h3")
+    import pyarrow.parquet as pq
+    have = set(pq.read_schema(parquet).names)
+    df = pd.read_parquet(parquet, columns=["h3", *[n for n in names if n in have]])
+    missing = [n for n in names if n not in have]
+    if missing and body == "marte":
+        # computed at export time (analogs.mars_climate), not stored in the grid: recompute the same way
+        from analogs.mars_climate import add_mars_climate, cell_latlon
+        df = add_mars_climate(df, *cell_latlon(df["h3"]))
+    df = df.set_index("h3")
     res0 = {h3i.get_base_cell_number(c): c for c in h3i.get_res0_cells()}
     worst = dict.fromkeys(names, 0.0)
     clipped = dict.fromkeys(names, 0)

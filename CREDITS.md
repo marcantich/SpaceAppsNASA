@@ -34,6 +34,7 @@ and `configs/variables.yaml` (`sources`).
 
 | Body | Products |
 |---|---|
+| Mars (climate extras) | NASA Ames Mars Climate Modeling Center, FV3-based Mars GCM Beta Output Release 1 (doi:[10.25966/rjgg-r639](https://doi.org/10.25966/rjgg-r639)): winds, wind stress, surface albedo. Solar energy model: Appelbaum & Flood, *Solar radiation on Mars*, NASA TM-102299 (1989) and updates TM-103623 / TM-105216 (net flux Table III as transcribed in the `marsrad` package, used as data only) |
 | Mars | MGS MOLA MEGDR (128 px/° tiles and polar maps), MGS TES thermal inertia (Putzig & Mellon 2007), MGS TES atmospheric retrievals MY26 (Montabone et al.), MRO MCS DDR MY31, Mars Odyssey GRS element maps and NS/HEND neutron products, SWIM 2.0 ice consistency maps (Subsurface Water Ice Mapping project, swim.psi.edu) |
 | Moon | LRO LOLA GDR (ldem_64 and shots per cell), LRO Diviner (global cumulative products, polar resource products), Lunar Prospector GRS, NASA PGDA south-pole products, LROC pits atlas |
 | Earth | NOAA ETOPO 2022 (15″), MODIS Aqua MYD11C3 land surface temperature, MODIS MCD12C1 land cover, MODIS MOD10CM snow cover, GPM IMERG monthly v07, MERRA-2 M2TMNXAER aerosols, ECOSTRESS ECO_L3G_WPS |

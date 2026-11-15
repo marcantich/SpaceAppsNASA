@@ -7,7 +7,8 @@ const SECTIONS = [
   ['Terrain', ['elevation_m', 'slope_deg', 'roughness_deg', 'mola_measured_frac', 'lola_measured_frac',
     'rock_abundance_pct']],
   ['Climate & light', ['t_mean_K', 't_max_K', 't_min_K', 't_night_K', 'dust_aod', 'p_surf_Pa',
-    'sun_elev_max_deg', 'psr_frac', 'precip_mm_year', 'snow_cover_pct']],
+    'sun_elev_max_deg', 'solar_kwh_m2_sol', 'wind_mean_m_s', 'wind_stress_mPa', 'psr_frac',
+    'precip_mm_year', 'snow_cover_pct']],
   ['Ice & composition', ['ice_depth_m', 'ice_frac_1m', 'grs_h2o_wt_pct', 'ns_epithermal_cps', 'grs_cl_wt_pct',
     'thermal_inertia_day_SI', 'feo_wt_pct', 'tio2_wt_pct', 'silica_wt_pct', 'th_ppm']],
   ['Subsurface', ['caves', 'pit_dist_km']],
@@ -36,6 +37,9 @@ export const SHORT = {
   grs_cl_wt_pct: 'Chlorine',
   ns_epithermal_cps: 'Neutrons (low = more H)',
   thermal_inertia_day_SI: 'Thermal inertia',
+  solar_kwh_m2_sol: 'Solar energy (panel)',
+  wind_mean_m_s: 'Mean wind (≥)',
+  wind_stress_mPa: 'Wind stress',
   // Moon
   lola_measured_frac: 'Laser coverage (QC)',
   t_min_K: 'Min temperature',
@@ -307,6 +311,8 @@ export function createCardPanel(el, { onClose } = {}) {
      * card = CardGrid.cardAt() result.
      * opts.subtitle = second line under the title (site type, country…)
      * opts.footer   = text at the bottom of "More info"
+     * opts.point    = pixel value at the clicked point (slopetiles.js slopeAt()), shown under the
+     *                 cell's slope: { slope, measured, km, source }
      */
     show(title, lat, lon, card, opts = {}) {
       const cols = Object.fromEntries(card.columns.map((c) => [c.name, c]));
@@ -318,7 +324,14 @@ export function createCardPanel(el, { onClose } = {}) {
                 <dd title="${esc(col.unit ? `Unit: ${col.unit} · ` : '')}Source: ${esc(col.source)}">${text}</dd>
                 <dd class="src" title="Source: ${esc(col.source)}">${src ? tag(src) : ''}</dd>`;
       };
-      const summary = SUMMARY.filter((k) => cols[k]).map(row).join('');
+      // slope at the clicked point (~0.9 km pixel) right under the cell's median slope
+      const p = opts.point;
+      const pointRow = p && Number.isFinite(p.slope)
+        ? `<dt class="point" title="Slope of the ~${p.km} km pixel under the click (the line above is the median of the whole cell)">↳ at this point</dt>
+           <dd title="Unit: ° · Source: ${esc(p.source)}">${p.slope.toFixed(1)} °</dd>
+           <dd class="src" title="${p.measured ? 'At least one MOLA laser shot in this pixel' : 'No laser shot here: interpolated between MOLA ground tracks (smoother than reality)'}">${tag(p.measured ? 'laser' : 'interp.')}</dd>`
+        : '';
+      const summary = SUMMARY.filter((k) => cols[k]).map((k) => row(k) + (k === 'slope_deg' ? pointRow : '')).join('');
       const sections = SECTIONS.map(([name, keys]) => {
         const rows = keys.filter((k) => cols[k]).map(row).join('');
         return rows ? `<section><h3>${name}</h3><dl>${rows}</dl></section>` : '';

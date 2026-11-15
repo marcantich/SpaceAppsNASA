@@ -94,6 +94,10 @@ MARS_WEB_COLUMNS: dict[str, tuple[str, float, float, str, str]] = {
     "ns_epithermal_cps":      ("u1", 0.05, 0.0, "counts/s", "Epithermal neutron flux (lower = more hydrogen)"),
     "elevation_m":            ("u2", 1.0, -10000.0, "m", "Elevation above the areoid (MOLA)"),
     "thermal_inertia_day_SI": ("u2", 1.0, 0.0, "J m⁻² K⁻¹ s⁻½", "Thermal inertia, day (TES)"),
+    # added at export time by analogs.mars_climate (no grid rebuild needed)
+    "solar_kwh_m2_sol":       ("u1", 0.02, 0.0, "kWh m⁻² sol⁻¹", "Solar energy on a horizontal panel, mean per sol over a year"),
+    "wind_mean_m_s":          ("u1", 0.1, 0.0, "m/s", "Mean near-surface wind speed (model; lower bound, 5-sol means)"),
+    "wind_stress_mPa":        ("u1", 0.5, 0.0, "mPa", "Mean surface wind stress (model)"),
 }
 
 MARS_SOURCES = {
@@ -116,6 +120,16 @@ MARS_SOURCES = {
     "thermal_inertia_day_SI": "MGS TES thermal inertia, Putzig & Mellon 2007 (PDS Geosciences)",
     "sun_elev_max_deg": "calculated, not measured: highest noon Sun elevation over a year, flat horizon: "
                         "90° − max(0, |lat| − 25.19°) (obliquity of Mars)",
+    "solar_kwh_m2_sol": "calculated, not measured: Appelbaum & Flood solar radiation model for Mars "
+                        "(NASA TM-102299, 1991 update TM-105216) with the cell's TES MY26 dust optical depth "
+                        "(annual mean) and NASA Ames MGCM surface albedo; horizontal panel, flat horizon, "
+                        "no dust storms",
+    "wind_mean_m_s": "model, not measured: NASA Ames FV3-based Mars GCM, Beta Output Release 1 "
+                     "(c48 reference simulation, 2°×2°, doi:10.25966/rjgg-r639); annual mean of the "
+                     "5-sol mean wind speed at the lowest model level (a lower bound: day/night "
+                     "reversals partly cancel)",
+    "wind_stress_mPa": "model, not measured: NASA Ames FV3-based Mars GCM, Beta Output Release 1 "
+                       "(2°×2°); annual mean surface wind stress (ρ·u*², independent of air density)",
 }
 
 
@@ -162,6 +176,9 @@ MARS_DISPLAY: dict[str, dict] = {
     "grs_cl_wt_pct": {"short_source": "GRS"},
     "ns_epithermal_cps": {"short_source": "GRS", "short_unit": "cps"},
     "thermal_inertia_day_SI": {"short_source": "TES", "short_unit": "tiu"},  # tiu = J m⁻² K⁻¹ s⁻½
+    "solar_kwh_m2_sol": {"short_source": "calc.", "short_unit": "kWh/m²/sol"},
+    "wind_mean_m_s": {"short_source": "MGCM"},
+    "wind_stress_mPa": {"short_source": "MGCM"},
 }
 
 

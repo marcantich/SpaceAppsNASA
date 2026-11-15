@@ -1,0 +1,19 @@
+{
+ "body": "marte",
+ "variable": "slope_deg",
+ "ppd": 64,
+ "tile_deg": 10,
+ "tile_px": 640,
+ "file": "t{row:02d}_{col:02d}.bin.gz",
+ "row": "floor((90 - lat) / tile_deg), 0 = 80\u201390\u00b0N",
+ "col": "floor((lon + 180) / tile_deg), 0 = 180\u2013170\u00b0W",
+ "pixel": "row-major from the north-west corner of the tile, ppd pixels per degree",
+ "encoding": "gzip; one byte per pixel: bits 0-6 = slope / 0.5 deg (127 = no data), bit 7 = 1 if at least one of the 2x2 MOLA 128 ppd pixels has a laser shot",
+ "step_deg": 0.5,
+ "nodata": 127,
+ "source": "MGS MOLA MEGDR 128 px/deg (PDS Geosciences): slope by central differences (~0.9 km baseline), median of 2x2 pixels \u2192 64 px/deg (~925 m); no data beyond \u00b187\u00b0",
+ "short_source": "MOLA",
+ "n_files": 648,
+ "bytes": 120761610,
+ "measured_frac": 0.5976811551499641
+}

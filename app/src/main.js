@@ -21,6 +21,10 @@ import { ZONES_BY_BODY, makeZone, zoneText } from './zones.js';
 import { createPlaceSearch, createZoneMenu } from './places.js';
 import { countryAt, preloadCountries } from './countries.js';
 import { createRover } from './rover.js'; // [rover]
+import { slopeAt } from './slopetiles.js';
+
+/** Pixel-level value under the point (only Mars has data tiles so far: slope at ~0.9 km). */
+const pointValue = (body, lat, lon) => (body === 'mars' ? slopeAt(lat, lon).catch(() => null) : null);
 
 const NAME = { earth: 'Earth', mars: 'Mars', moon: 'Moon' };
 const RADIUS_KM = { earth: 6371, mars: 3390, moon: 1737 };
@@ -155,7 +159,8 @@ async function showSourceAt(lat, lon, title = null, subtitle = null) {
   const fallback = `${NAME[key]} · selected point`;
   cardLeft.loading(title ?? fallback, lat, lon, subtitle);
   try {
-    const [c, name] = await Promise.all([GRIDS[key].cardAt(lat, lon), title ? title : placeName(key, lat, lon)]);
+    const [c, name, point] = await Promise.all([GRIDS[key].cardAt(lat, lon), title ? title : placeName(key, lat, lon),
+      pointValue(key, lat, lon)]);
     if (request !== sourceRequest) return;
     if (!c) {
       cardLeft.message(title ?? fallback, 'No data for this cell.');
@@ -164,6 +169,7 @@ async function showSourceAt(lat, lon, title = null, subtitle = null) {
     left.showCell(c.h3);
     cardLeft.show(title ?? name, lat, lon, c, {
       subtitle: subtitle ?? NAME[key],
+      point,
       footer: `Hover a value to see its source. The best analogs on ${NAME[right.key]} are on the right.`,
     });
     lastSource = { values: c.values, h3: c.h3, lat, lon, key, name: title ?? name };
@@ -292,7 +298,8 @@ async function showCandidateAt({ lat, lon }, { rank = -1, title = null, animate:
   cardRight.loading(title ?? fallback, lat, lon);
   results.select(rank);
   try {
-    const [c, name] = await Promise.all([GRIDS[body].cardAt(lat, lon), placeName(body, lat, lon)]);
+    const [c, name, point] = await Promise.all([GRIDS[body].cardAt(lat, lon), placeName(body, lat, lon),
+      pointValue(body, lat, lon)]);
     if (request !== candRequest) return null;
     if (!c) {
       cardRight.message(title ?? fallback, 'No data for this cell.');
@@ -303,6 +310,7 @@ async function showCandidateAt({ lat, lon }, { rank = -1, title = null, animate:
     const env = body === 'earth' ? ENV[c.values.env] ?? '' : '';
     cardRight.show(heading, lat, lon, c, {
       subtitle: [NAME[body], title ? name : null, env].filter(Boolean).join(' · '),
+      point,
       footer: body !== 'earth' ? 'Hover a value to see its source.'
         : c.values.in_mask === 1 ? 'Inside the analog search zone. Hover a value to see its source.'
           : 'Outside the search zone (vegetation, water or cities): not ranked, shown for reference.',

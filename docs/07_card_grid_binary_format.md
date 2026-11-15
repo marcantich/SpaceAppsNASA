@@ -203,3 +203,25 @@ They are **not** written into `app/data/objetivos.json` on purpose: that file be
 package (`config.json` + `objetivos.json` + `tierra.json`), and `scripts/build_comparator_data.py`
 rejects packages that mix real and mock files. When the Moon and Earth are real, the package can be
 regenerated as a whole.
+
+## 7. Pixel-level data tiles (Mars slope, ROADMAP 5.6)
+
+The card grid is the scale of the index (~9 km). On top of it, the card shows the **slope at the
+clicked point** from the ~0.9 km pixel under it, read from "data tiles" that are downloaded only
+around the click. They do not enter the index (which stays at the same scale on every body,
+decision 006).
+
+| | |
+|---|---|
+| Folder | `app/data/marte/slope64/` (`index.json` + `tRR_CC.bin.gz`) |
+| Made by | `python scripts/export_mars_slope_tiles.py` (~5 min, 648 tiles, 120.8 MB, needs the 16 MOLA 128 ppd tiles); code in `src/analogs/mars_slope_tiles.py` |
+| Grid | equirectangular, planetocentric latitude, east longitude −180…180, **64 px/deg** (~925 m), tiles of 10° × 10° = 640 × 640 px |
+| Tile name | `t{row:02d}_{col:02d}.bin.gz`, row = ⌊(90 − lat) / 10⌋ (0 = 80–90°N), col = ⌊(lon + 180) / 10⌋ (0 = 180–170°W); tiles with no data are not written (404 = no data) |
+| Pixel | gzip, one byte per pixel, row-major from the tile's north-west corner: bits 0–6 = slope / 0.5° (127 = no data), bit 7 = 1 if at least one of the 2×2 MOLA pixels has a laser shot |
+| Method | slope at every MOLA 128 ppd pixel by central differences (as the grid), median of 2×2 → 64 ppd; no data beyond ±87° |
+| Reader | `app/src/slopetiles.js` (`slopeAt(lat, lon)`), shown by `card.js` as "↳ at this point" under the cell's slope, tagged `laser` or `interp.` |
+
+Why 64 and not 128 px/deg: measured, the whole planet at 128 ppd is ~384 MB compressed (too much for
+the repository and GitHub Pages), 64 ppd ~105 MB, and near the equator most 128 ppd pixels are
+interpolated between MOLA ground tracks anyway. The same recipe can be used for other variables
+or bodies (e.g. LOLA slope on the Moon).
