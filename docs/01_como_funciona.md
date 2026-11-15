@@ -149,7 +149,7 @@ Es el corazón de la app. **Borrador para que Ciencia lo corrija.** Ya está en 
 - [ ] Pruebas específicas: lago Salda ↔ Jezero, Mistastin ↔ tierras altas lunares.
 
 **E. App**
-- [ ] Globo con **datos falsos** desde el primer minuto (`python scripts/make_mock_data.py`).
+- [x] Globo con datos desde el primer minuto (al principio falsos; hoy la app solo usa datos reales).
 - [ ] Selectores "qué probar" y "destino"; ficha con radar y valores.
 - [ ] Modo inverso: clic en la Tierra → Luna y Marte.
 - [ ] Desplegada con un enlace público.

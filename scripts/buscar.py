@@ -218,7 +218,7 @@ def mode_target(earth, variables, pruebas, targets):
     if targets.empty:
         print("\nTodavía no hay fichas de la Luna ni de Marte en data/processed/.\n"
               "Cuando copies los datos del pendrive: python scripts/importar_datos.py <zip o carpeta>\n"
-              "y después: python scripts/build_mars_features.py")
+              "y después: python scripts/build_mars_grid.py")
         return
     for k, r in targets.reset_index(drop=True).iterrows():
         print(f"  [{k}] {r['body']:5s} {r['name']}")

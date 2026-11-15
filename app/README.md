@@ -1,92 +1,81 @@
-# app/ — la app
+# app/ — the web app
 
-## Qué hace
+Static site (Vite 6 + CesiumJS + three.js): everything is computed in the browser from `app/data/`.
+The only live requests are the map imagery (NASA GIBS, NASA Solar System Treks, CTX mosaic, Sentinel-2
+cloudless: see [`CREDITS.md`](../CREDITS.md)).
 
-```
-① INICIO     la Tierra, la Luna y Marte en 3D, con texturas reales de NASA
-② FILTROS    ¿Qué quieres probar? [Ruedas ▾]   ¿Para dónde? [Marte · Jezero ▾]   [Buscar]
-③ VUELO      la cámara va al objetivo (Marte, Jezero) y lo marca
-④ RESULTADO  vuela a la Tierra, la colorea por índice (0–100) y baja sola al mejor match
-⑤ FICHA      clic → índice + nota de cada variable (valor Marte vs. valor Tierra, con unidades y fuente)
-              + bloque "no análogo" (gravedad, presión…) + validez de la prueba + fotos a la misma escala
-⑥ AL REVÉS   clic en cualquier punto de la Tierra → a qué sitio de la Luna o Marte se parece más
-```
-
-**Regla:** primero que funcione lo básico (Tierra coloreada + clic → ficha). Después, vuelos y animaciones.
-
-## De dónde saca los datos
-
-- **Los matches:** SOLO de `app/data/`. La app **nunca** descarga datos científicos de NASA.
-- **Los mapas y fotos:** en vivo desde los servidores de mapas (Worldview/GIBS para la Tierra, Moon Trek / Mars Trek para la Luna y Marte). Son públicos y no piden cuenta [verificar URLs de teselas].
-- **Sin servidor propio:** es una web estática (GitHub Pages / Vercel).
-
-## Formato de `app/data/` (el contrato entre el motor y la app)
-
-Lo escribe [`src/analogs/export.py`](../src/analogs/export.py). Para tener ya datos falsos: `python scripts/make_mock_data.py`.
-
-| Fichero | Contenido |
-|---|---|
-| `config.json` | `variables` (unidad, tolerancia, tipo), `pruebas` (pesos + frase de validez), `bodies` (gravedad, presión, día) y `operability` |
-| `objetivos.json` | `{"objetivos": [{id, name, body, lat, lon, type, features: {slope_deg: …, t_mean_K: …}}]}` |
-| `tierra.json` | `{"n_cells": N, "columns": {"cell_id": […], "lat": […], "lon": […], "slope_deg": […], …}}`, una lista por columna, `null` = sin dato |
-| `analogos_conocidos.json` | `{"analogos": [{name, country, lat, lon, analog_of, environment, notes}]}` |
-| `marte/index.json` + `marte/rNNN.bin.gz` | **Planet-wide card grid** (decision 007): every H3 res-5 cell of Mars, compact binary, one gzip file per H3 base cell (122). Format and how to do it for Earth/Moon: [`docs/07_card_grid_binary_format.md`](../docs/07_card_grid_binary_format.md). Read with `new CardGrid('marte')` → `cardAt(lat, lon)` ([`src/grid.js`](src/grid.js)) |
-
-`marte/objetivos.json`: **real** cards of the 12 Mars target sites (`features` = variables of `configs/variables.yaml`, `extras` = other card columns, `h3` = their cell). `objetivos.json` stays the mock package until the Moon and Earth are real (`scripts/build_comparator_data.py` rejects mixed real/mock files).
-
-Si llevan `"_aviso": "DATOS FALSOS…"`, la app debe enseñarlo bien visible.
-
-## La fórmula (tiene que ser IDÉNTICA a `src/analogs/similarity.py`)
-
-```
-nota_k  = max(0, 1 − |objetivo_k − tierra_k| / tolerancia_k)      (numérica)
-nota_k  = matriz[objetivo_k][tierra_k], o igual → 1 / distinto → 0   (categórica)
-índice  = 100 · Σ peso_k · nota_k / Σ peso_k     (solo variables con dato en los dos)
+```powershell
+cd app
+npm install      # first time, or when package.json changes
+npm run dev      # http://localhost:5173
+npm run build    # optional: static copy of the site in dist/
+npm test         # unit tests of the pure JS modules
 ```
 
-Comprobación: con el ejemplo de [`tests/test_similarity.py`](../tests/test_similarity.py), la versión de la app tiene que dar 37,5 / 82,5 / 77,5.
+## Three views (title menu, top left)
 
-## 🚙 Planificador de ensayos del rover (segunda vista: menú del título → "Rover test planner")
-
-**Cómo se abre:** el título de la barra ("Analogs ▾") es un menú con las dos vistas. "Analogs" es el buscador de análogos tal cual; "Rover test planner" enseña **solo lo del rover** (se esconden la barra de resultados, el panel de índice, el selector "Test" y el intercambio de cuerpos; a la izquierda queda Marte o la Luna y a la derecha siempre la Tierra). También se abre directo con `#rover` al final de la dirección. El punto clicado se conserva al cambiar de vista.
-
-**Qué responde:** mandas un rover al punto que has clicado en Marte o la Luna → **dónde de la Tierra se puede probar cada pieza**, dónde se prueba el rover entero, y qué no se puede probar en ningún sitio (va al laboratorio).
-
-| Fichero | Qué hace |
-|---|---|
-| [`data/rover.json`](data/rover.json) | **La configuración, escrita a mano:** las piezas, las variables de la ficha de las que depende cada una, su margen (±), los límites por la física (gravedad, vacío) y qué nodos del modelo 3D forman cada pieza |
-| [`src/rover.js`](src/rover.js) | El menú de vistas, el cálculo (`RoverPlanner`) y el panel. Usa la misma tabla de la Tierra que el buscador (`loadTable('earth')` de `match.js`): no descarga nada nuevo |
-| [`src/main.js`](src/main.js) | Solo el enganche: las líneas marcadas con `// [rover]` (crear la vista, pasarle el punto clicado en vez de buscar análogos, y contar sus paneles al encuadrar la cámara) |
-| [`src/rover3d.js`](src/rover3d.js) | El rover 3D con piezas clicables (three.js). Solo se descarga al abrir el planificador |
-| `data/rover/perseverance.glb` | Modelo 3D de Perseverance, **NASA/JPL-Caltech**, del repositorio [NASA 3D Resources](https://github.com/nasa/NASA-3D-Resources) (sin copyright; hay que citar la fuente). `data/rover/draco/` = descompresor del modelo (viene con three.js) |
-
-**El método (una "caja" por pieza):**
-
-```
-d = máx_k |tierra_k − objetivo_k| / margen_k        (el eslabón más débil manda)
-
-✔ campo        hay celdas de la Tierra con d ≤ 1  (todas sus variables dentro del margen)
-◐ con reservas solo hay celdas con d ≤ 2, o falta una variable, o la física lo limita (gravedad, aire tenue)
-✖ laboratorio  ninguna celda con d ≤ 2, o la pieza necesita vacío
-
-índice de ensayabilidad = 100 · (campo + ½ · con reservas) / piezas
-```
-
-- Si `margen` es `null` en `rover.json`, se usa la `tolerance` de `configs/variables.yaml` (no el `half_diff` de la nota suave del buscador: aquí hace falta un límite duro, "dentro o fuera").
-- **Todos los márgenes y límites son [supuesto] nuestros.** Se cambian en `rover.json` y la app recalcula sola.
-- "Rover entero": celdas donde pasan más piezas a la vez. "Campaña": el menor número de sitios que cubren todas las piezas (empieza en el mejor y añade el más cercano que cubra lo que falta).
-- Respeta el filtro "Earth zone": sirve para preguntar "¿qué puedo probar dentro de esta región?".
-- Comprobado en el navegador: Jezero 70 %, Shackleton 30 % (control térmico y polvo, solo laboratorio).
-
-**Pendiente:** el taladro solo compara el hielo: falta el tipo de roca en la tabla de búsqueda de la Tierra (la sílice ya está en la malla, no en `match.bin.gz`), y las rocas en superficie no existen como dato de la Tierra.
-
-## Opciones de librería (decidir el sábado)
-
-| Opción | Pros | Contras |
+| View | What it does | URL |
 |---|---|---|
-| **globe.gl** (three.js) | Globo 3D en pocas líneas; texturas propias (Luna, Marte); vuelo de cámara con una llamada [verificar API] | Menos control que Cesium |
-| **CesiumJS** | Muy potente, vuelos de cámara, muchos formatos | Cuesta más aprenderla |
-| **React + MapLibre** | Control total, mapas 2D/globo | Hace falta alguien cómodo con JS |
-| **Streamlit + pydeck** | Todo en Python, rápido | Menos vistoso; animaciones limitadas |
+| **Analogs** | Click any point of Mars, the Moon or Earth → card of its cell → every cell of the other body is scored → painted globe, ranked sites, score dock | default |
+| **Rover test planner** | Send a rover to the clicked Mars / Moon cell → where on Earth each part can be field-tested | `#rover` |
+| **Route replica** | Draw a route on Mars or the Moon (or load a real rover traverse) → a path on Earth with the same slopes | view menu |
 
-Texturas: NASA Blue Marble (Tierra), mosaicos de LRO (Luna) y Viking/MOLA (Marte) [verificar fuentes y licencias].
+## `src/`
+
+| File | What it is |
+|---|---|
+| `main.js` | Wires everything: the two globes, selection → card → search → camera. Lines marked `[rover]`, `[route]`, `[intro]` are the hooks of the other views |
+| `intro.js`, `intro.css` | Opening screen |
+| `globe.js` | One Cesium globe: layers, clicks, markers, hexagons, zones, camera |
+| `bodies.js` | Per-body configuration: ellipsoid, imagery layers, home view |
+| `coords.js` | Screen ↔ lat/lon (planetocentric on Mars and the Moon, geodetic on Earth) |
+| `grid.js` | Reads the card grids (`data/<body>/`): `new CardGrid('marte').cardAt(lat, lon)` |
+| `slopetiles.js` | Pixel-level Mars slope under the click (`data/marte/slope64/`) |
+| `card.js` | Card panel, results bar and score dock |
+| `scoring.js` | The analog index (same formula as `src/analogs/similarity.py`) |
+| `match.js` | Search tables and the ranking of every cell of a body |
+| `zones.js`, `places.js`, `countries.js` | Search zones, place search box, country names |
+| `data.js` | Loads the target sites (`<body>/objetivos.json`) and the known analogs |
+| `rover.js`, `rover3d.js`, `rover-limits.js`, `rover.css` | Rover test planner (config: `data/rover.json`) |
+| `route.js`, `routeSolver.js`, `route.css` | Route replica |
+
+## `data/` (what the app reads)
+
+| Path | Content | Written by |
+|---|---|---|
+| `marte/`, `luna/`, `tierra/` | Card grids: `index.json` + one `rNNN.bin.gz` per H3 base cell; `objetivos.json` = real cards of the target sites. Format: [`docs/07`](../docs/07_card_grid_binary_format.md) | `scripts/export_mars_web.py`, `export_moon_web.py`, `build_earth_grid.py` |
+| `tierra/match.json`, `match.bin.gz` | Scoring settings (variables, dimensions, tests) and the Earth search table | `build_earth_grid.py`, `export_scoring.py` |
+| `marte/slope64/` | Pixel-level Mars slope tiles | `scripts/export_mars_slope_tiles.py` |
+| `analogos_conocidos.json` | Known Earth analogs (from `data/catalogs/known_analogs.csv`) | `src/analogs/export.py` |
+| `rover.json`, `rover/` | Rover planner configuration (hand-written, all margins are assumptions) and the Perseverance 3D model (NASA/JPL-Caltech) | by hand |
+| `route/presets.json` | Real rover traverses for the Route view | `scripts/rover_route/make_presets.py` |
+| `intro/` | Small textures of the opening screen | `scripts/make_intro_textures.py` |
+
+## The index
+
+```
+note_v      = 1 / (1 + (|target − candidate| / half_diff)²)     1 when equal, 0.5 at half_diff, never 0
+              matrix[target][candidate]                         for classes (water ice)
+dimension_d = weighted mean of the notes of its variables with data
+index       = 100 · Σ W_d · dimension_d / Σ W_d                 W_d from the chosen test
+ranking     = 60 % the cell + 40 % the mean of its 6 neighbours
+```
+
+Only the variables with data on both sides are compared (the results bar says how many). Variables
+that are zero by nature (no rain on Mars or the Moon, no dust on the Moon) count as 0, so A → B and
+B → A give the same index. Settings: `configs/variables.yaml`, `configs/pruebas.yaml` →
+`python scripts/export_scoring.py`.
+
+## Rover test planner: the method
+
+```
+d = max_k |earth_k − target_k| / margin_k        (the weakest link decides)
+
+✔ field     some Earth cell has d ≤ 1  (every variable of the part inside its margin)
+◐ caveats   only cells with d ≤ 2, or a variable is missing, or physics caps it (gravity, thin air)
+✖ lab only  no cell with d ≤ 2, or the part needs vacuum
+
+testability index = 100 · (field + ½ · caveats) / parts
+```
+
+Margins and caps are our assumptions: edit `data/rover.json` and the app recomputes.

@@ -27,7 +27,7 @@ the browser** from small pre-computed files; no server.
 | Data folder | `src/analogs/paths.py`: `ANALOGS_DATA_DIR`, else `~/SpaceAppsData`, else `<repo>/data` (Adrià's machine: `<repo>/data`). Structure `raw/<earth|moon|mars>/…`, `interim/`, `processed/` — **not in git** |
 | Data the web reads | `app/data/` (in git): `marte/`, `luna/`, `tierra/` card grids + `match*.json`, `objetivos.json`, `config.json`, `rover.json` … |
 | Shared raw data | team Google Drive (zips made with `scripts/pack_data.py`); the Mars zips are in Adrià's `Downloads\spaceapps_mars_data` |
-| Deploy | `.github/workflows/deploy-app.yml` → GitHub Pages (**still needs the owner to enable Pages**, ROADMAP 0.8) |
+| Deploy | None: the project is run locally (the GitHub Pages workflow was removed on 2026-11-15) |
 
 ## 3. How the data flows (the core idea)
 
@@ -110,6 +110,7 @@ ranked analogs bar, Earth zone filter and drawn box, place search, **Rover test 
 - One ROADMAP task at a time, in the order he names; tick it in `ROADMAP.md` with a short "Done" note.
 - **Verify in the browser** (dev server) before saying something works; run `python -m pytest`
   (14 tests) and `npm run build`.
+- (2026-11-15: the old comparator prototype and its mock package were removed; the note below no longer applies.)
 - Never break the team's work: `scripts/build_comparator_data.py` + its tests require the mock package
   (`config.json` + `objetivos.json` + `tierra.json`) to be all-mock or all-real.
 - Adrià does commits/merges himself (he is learning git): prepare, explain, don't push unasked.

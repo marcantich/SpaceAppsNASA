@@ -1,6 +1,6 @@
 # Texto oficial completo del reto
 
-> Copiado de la web de Space Apps el 13/11/2026. El [brief inicial](referencia/brief_inicial.md) solo recogía el *Summary*;
+> Copiado de la web de Space Apps el 13/11/2026. El brief inicial solo recogía el *Summary*;
 > aquí están también **Background, Objectives y Potential Considerations**, que son las que dicen qué valoran.
 > Lo que implica para nosotros está en [`03_enfoque.md`](03_enfoque.md) §1.
 >

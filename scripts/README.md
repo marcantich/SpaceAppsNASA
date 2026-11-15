@@ -1,39 +1,59 @@
-# scripts/ — lo que se ejecuta
+# scripts/ — what is run
 
-Se ejecutan **desde la raíz del repo**, con el Python del entorno y un comando por línea (PowerShell 5.1 no tiene `&&`):
-`.venv\Scripts\python.exe scripts\<script>.py`. La lógica va en `src/analogs/`; aquí solo se llama en orden.
+Run them **from the repository root** with the Python of the environment, one command per line
+(PowerShell 5.1 has no `&&`): `.venv\Scripts\python.exe scripts\<script>.py`. The logic lives in
+`src/analogs/`; the scripts only call it in order.
 
-**Datos**: todo se lee y escribe en la carpeta de datos (`src/analogs/paths.py`: `ANALOGS_DATA_DIR` o `~/SpaceAppsData`),
-con la estructura `raw/<earth|moon|mars>/<carpeta>/`, `interim/`, `processed/`.
-Qué carpeta es qué: **`src/analogs/catalog.py`** (catálogo único). Guía completa (también para Claude): [`docs/08_datos_LEEME.md`](../docs/08_datos_LEEME.md).
+**Data:** everything is read from and written to the data folder (`src/analogs/paths.py`:
+`ANALOGS_DATA_DIR`, else `~/SpaceAppsData`, else `<repo>/data`), with the structure
+`raw/<earth|moon|mars>/<folder>/`, `interim/`, `processed/`. Which folder is what:
+`src/analogs/catalog.py`. Full data guide: [`docs/08_datos_LEEME.md`](../docs/08_datos_LEEME.md) (Spanish).
 
-## 0 · Gestionar los datos
-| Script | Qué hace | Estado |
-|---|---|---|
-| `inventario.py [--leeme]` | Qué datasets hay y cuáles faltan, GB, filas de cada tabla. Con `--leeme` escribe `<DATA>/LEEME.md` | ✅ |
-| `importar_datos.py <zip/carpeta> [--dry-run]` | Coloca en su sitio los datos de un pendrive (zip, carpeta de zips o carpeta) | ✅ |
-| `pack_data.py <earth\|moon\|mars\|tables> --out <carpeta>` | Hace los zips para pasar datos (`tables` = solo las fichas, ~0,3 GB) | ✅ |
-| `list_data.py` | Lista con huella SHA-256 de una carpeta de datos → `LISTADO_<nombre>.csv` (para comparar descargas) | ✅ |
+## 0 · Manage the data
 
-## 1 · Descargar
-| Script | Qué hace | Estado |
-|---|---|---|
-| `download_earth.py [mask dem temp polvo silice nieve] [--list]` | **Tierra** desde Earthdata/NOAA → `raw/earth/` (necesita `~/.netrc`) | ✅ |
-| `download_moon.py [--list]` | **Luna** (`docs/06_datos_luna.md`) → `raw/moon/` | ✅ |
-| `download_data.py [mola tes grs …] [--list]` | **Marte** (datasets en `src/analogs/download.py`) → `raw/mars/` | ✅ |
+| Script | What it does |
+|---|---|
+| `inventario.py [--leeme]` | Which datasets are present or missing, GB, rows of each table. `--leeme` writes `<DATA>/LEEME.md` |
+| `importar_datos.py <zip/folder> [--dry-run]` | Puts data from a USB stick or a zip in the right place |
+| `pack_data.py <earth\|moon\|mars\|tables> --out <folder>` | Makes the zips to share data (`tables` = only the cards) |
+| `list_data.py` | SHA-256 listing of a data folder → `LISTADO_<name>.csv` (to compare downloads) |
 
-## 2 · Procesar → fichas
-| Script | Qué hace | Estado |
-|---|---|---|
-| `build_earth_mask.py` | Máscara de la Tierra (desiertos, hielo, zonas áridas sí; mar, bosques, cultivos no) + mapa | ✅ |
-| `build_earth_features.py` | Fichas de la Tierra: `processed/fichas_tierra_005deg.parquet` (0,05°) y `_h3r5` (~17 km) | ✅ |
-| `build_mars_features.py` | Fichas de los sitios de Marte → `processed/fichas_objetivos_mars.parquet` | ⏳ borrador (tarea 3.5) |
-| *(falta)* `build_moon_features.py` | Fichas de los sitios de la Luna | ❌ por hacer |
+## 1 · Download → `raw/`
 
-## 3 · Usar
-| Script | Qué hace | Estado |
-|---|---|---|
-| `buscar.py [--malla h3r5]` | **Buscador en la terminal**: valores a mano, parecidos a un punto de la Tierra o a un sitio de la Luna/Marte, estadísticas | ✅ |
-| `make_mock_data.py` | Llena `app/data/` con **datos falsos** para la app | ✅ |
-| `build_comparator_data.py` | Adapta `app/data` al comparador | ✅ |
-| `run_pipeline.py` | Flujo completo con datos reales → `app/data/` | ⏳ pendiente |
+| Script | What it does |
+|---|---|
+| `download_data.py [mola tes grs …] [--list]` | **Mars** (datasets in `src/analogs/download.py`) |
+| `download_moon.py [--list]` | **Moon** (`docs/06_datos_luna.md`) |
+| `download_earth.py [mask dem temp polvo silice nieve] [--list]` | **Earth** from Earthdata / NOAA (needs `~/.netrc`) |
+
+Mars extras downloaded by hand (see `src/analogs/mars_climate.py`): NASA Ames Mars GCM output
+(`raw/mars/ames_mgcm_fv3beta/`) and the Appelbaum & Flood net flux tables (`raw/mars/appelbaum_flood/`).
+
+## 2 · Build the card grids → `processed/`
+
+| Script | What it does |
+|---|---|
+| `build_mars_grid.py` | Mars grid, H3 res 5 (~18 min) + cards of the 12 Mars sites |
+| `build_moon_grid.py` | Moon grid, H3 res 4 (~3 min) + cards of the 9 Moon sites |
+| `build_earth_mask.py` | Earth search mask (deserts, polar ice, arid open land) + map |
+| `build_earth_features.py` | Earth fields on the 0.05° mesh and H3 res 5 (used by `buscar.py`) |
+| `build_earth_grid.py` | Earth grid, H3 res 6; also writes `app/data/tierra/` and the search table |
+
+## 3 · Export to the web → `app/data/`
+
+| Script | What it does |
+|---|---|
+| `export_mars_web.py` | `app/data/marte/` (adds solar energy and winds) |
+| `export_mars_slope_tiles.py` | `app/data/marte/slope64/`: pixel-level slope tiles (~5 min, 121 MB) |
+| `export_moon_web.py` | `app/data/luna/` |
+| `export_scoring.py` | Rewrites the scoring block of `app/data/tierra/match.json` after changing `configs/*.yaml` |
+| `check_grid_binary.py <body> <parquet>` | Checks an export against its source (errors ≤ scale/2, no-data cells) |
+| `recode_grid_binary.py luna` | Rewrites a published grid with another column definition, without the parquet |
+| `make_intro_textures.py <folder>` | Small textures of the three bodies for the opening screen (`app/data/intro/`) |
+
+## 4 · Other tools
+
+| Script | What it does |
+|---|---|
+| `buscar.py [--malla h3r5]` | Search in the terminal (Spanish): by hand values, similar to a point of Earth or to a Moon / Mars site |
+| `rover_route/` | "Route replica" study: find on Earth a path with the slopes of a rover traverse (`prep_route` → `fetch_dem` → `match_route` / `free_route` → `plot_*`; `make_presets.py` writes `app/data/route/presets.json`). Run from inside that folder |

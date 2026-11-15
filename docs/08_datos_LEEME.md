@@ -98,7 +98,7 @@ Solo para **descargar** de Earthdata (no para usar estos datos): cuenta gratuita
 | 1c | `scripts\importar_datos.py <zip/carpeta>` | pendrive | `raw/`, `processed/` | En vez de descargar: copia lo que te pasen (sección 8) |
 | 2 | `scripts\build_earth_mask.py` | `mcd12c1`, `imerg_monthly` | `interim/earth_mask_005deg.npz`, `processed/earth_mask_h3r*.parquet`, `outputs/maps/earth_mask.png` | Decide **dónde se busca**: desiertos, hielo polar y zonas áridas sí; mar, bosques, cultivos, ciudades, humedales no |
 | 3 | `scripts\build_earth_features.py` | todo `raw/earth/` + máscara | `processed/fichas_tierra_005deg.parquet`, `processed/fichas_tierra_h3r5.parquet` | Calcula **todas las variables** en la malla de 0,05° y las agrega a hexágonos |
-| 4 | `scripts\build_mars_features.py` | `raw/mars/` | `processed/fichas_objetivos_mars.parquet` | Variables en cada sitio de Marte (`data/catalogs/target_sites.csv`) |
+| 4 | `scripts\build_mars_grid.py` | `raw/mars/` | `processed/mars_h3r5.parquet`, `processed/fichas_objetivos_mars.parquet` | Malla de fichas de todo Marte (H3 res 5) y fichas de los sitios (`data/catalogs/target_sites.csv`) |
 | 5 | `scripts\buscar.py [--malla h3r5]` | `processed/` | `outputs/validation/busqueda_*.csv` | **Buscador en la terminal**: valores a mano, parecidos a un punto de la Tierra o a un sitio de la Luna/Marte, estadísticas |
 
 Todos se lanzan **desde la raíz del repositorio** con `.venv\Scripts\python.exe scripts\<script>.py`.
@@ -186,7 +186,7 @@ Todos los datos son públicos (NASA, NOAA, USGS): se pueden compartir dentro del
 ## 10. Pendiente
 
 - **Luna**: escribir `src/analogs/moon.py` (Diviner GCP/PRP, LOLA a ~1 km, Lunar Prospector, pozos) → `fichas_objetivos_moon.parquet`. Faltan las **coordenadas de las 9 regiones del polo sur** (NASA 2024) en `data/catalogs/target_sites.csv`: sacarlas de los polígonos oficiales, no a ojo.
-- **Marte**: ejecutar `build_mars_features.py` con los datos importados; decidir si la pendiente se calcula con MOLA 128 px/° remuestreado a ~0,93 km (misma escala que la Tierra).
+- **Marte**: ejecutar `build_mars_grid.py` con los datos importados; decidir si la pendiente se calcula con MOLA 128 px/° remuestreado a ~0,93 km (misma escala que la Tierra).
 - **Tierra**: litología (GLiM) y permafrost (ESA CCI), fuera de Earthdata.
 - **Calidad de datos de la Tierra a revisar**:
   - la lluvia de IMERG sobrestima en desiertos hiperáridos (Atacama da 80–260 mm/año; lo real son unos pocos mm) [verificar];

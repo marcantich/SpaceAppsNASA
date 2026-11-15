@@ -1,13 +1,10 @@
-"""PASO 4: escribir el ÍNDICE que lee la app (app/data/).
+"""Step 3: write what the web app reads (app/data/).
 
-La app no descarga datos de NASA: solo lee estos ficheros, que pesan pocos MB.
-El formato está explicado en app/README.md. Lo usan tanto el flujo real
-(scripts/run_pipeline.py) como los datos falsos (scripts/make_mock_data.py).
+The app never downloads NASA science data: it only reads these files.
 
-    app/data/config.json              variables, pruebas y el bloque "no análogo" de cada cuerpo
-    app/data/objetivos.json           un objeto por sitio objetivo (Luna/Marte) con su ficha
-    app/data/tierra.json              la ficha de cada hexágono de la Tierra, por columnas
-    app/data/analogos_conocidos.json  análogos ya estudiados (para marcarlos y validar)
+    app/data/<body>/index.json + rNNN.bin.gz   card grids, compact binary (docs/07_card_grid_binary_format.md)
+    app/data/<body>/objetivos.json             cards of the target sites of that body
+    app/data/analogos_conocidos.json           known Earth analogs (data/catalogs/known_analogs.csv)
 """
 import json
 
@@ -32,35 +29,10 @@ def _write(name: str, payload) -> None:
         json.dump(payload, f, ensure_ascii=False, separators=(",", ":"))
 
 
-def write_index(targets: pd.DataFrame, earth: pd.DataFrame, variables_cfg: dict, pruebas: dict,
-                known_analogs: pd.DataFrame | None = None, mock: bool = False) -> None:
-    """Escribe los cuatro ficheros de app/data/.
-
-    targets: una fila por objetivo; columnas id, name, body, lat, lon, type + variables
-    earth:   una fila por hexágono; columnas cell_id, lat, lon + variables (+ operabilidad)
-    """
-    aviso = {"_aviso": "DATOS FALSOS generados por scripts/make_mock_data.py"} if mock else {}
-    var_names = [v for v in variables_cfg["variables"] if v in earth.columns or v in targets.columns]
-
-    _write("config.json", {**aviso,
-                           "variables": variables_cfg["variables"],
-                           "operability": variables_cfg.get("operability", {}),
-                           "bodies": variables_cfg["bodies"],
-                           "pruebas": pruebas})
-
-    meta = ["id", "name", "body", "lat", "lon", "type"]
-    objetivos = [{**{k: _clean(r[k]) for k in meta if k in r},
-                  "features": {v: _clean(r[v]) for v in var_names if v in r}}
-                 for r in targets.to_dict("records")]
-    _write("objetivos.json", {**aviso, "objetivos": objetivos})
-
-    _write("tierra.json", {**aviso,
-                           "n_cells": len(earth),
-                           "columns": {c: [_clean(x) for x in earth[c].tolist()] for c in earth.columns}})
-
-    if known_analogs is not None:
-        _write("analogos_conocidos.json",
-               {"analogos": [{k: _clean(v) for k, v in r.items()} for r in known_analogs.to_dict("records")]})
+def write_known_analogs(known_analogs: pd.DataFrame) -> None:
+    """Known Earth analogs (data/catalogs/known_analogs.csv) → app/data/analogos_conocidos.json."""
+    _write("analogos_conocidos.json",
+           {"analogos": [{k: _clean(v) for k, v in r.items()} for r in known_analogs.to_dict("records")]})
 
 
 # ======================================================================================
@@ -237,9 +209,8 @@ def write_grid_binary(df: pd.DataFrame, body: str, columns: dict, sources: dict,
 def write_mars_targets(targets: pd.DataFrame, variables_cfg: dict) -> None:
     """Real cards of the Mars target sites → app/data/marte/objetivos.json.
 
-    Kept apart from app/data/objetivos.json on purpose: that file is part of the mock package
-    (config + objetivos + tierra) and scripts/build_comparator_data.py rejects packages that mix
-    real and mock files. Same shape as objetivos.json, plus `extras` (other card columns) and `h3`.
+    One object per site: id, name, body, lat, lon, type, h3 (its cell), `features` (the variables of
+    configs/variables.yaml) and `extras` (the other card columns). The app reads the sites from here.
     """
     var_names = list(variables_cfg["variables"])
     extras = [c for c in MARS_WEB_COLUMNS if c not in var_names]

@@ -1,4 +1,4 @@
-// Loads the index written by the Python engine (app/data/, format in app/README.md).
+// Loads the target sites (Moon / Mars) and the known Earth analogs from app/data/.
 const BASE = `${import.meta.env.BASE_URL}data/`;
 
 async function getJson(name) {
@@ -7,15 +7,15 @@ async function getJson(name) {
   return res.json();
 }
 
-/** Target sites (Moon/Mars) and known Earth analogs. */
+/** Target sites (their real cards, written next to each body's grid) and known Earth analogs. */
 export async function loadSites() {
-  const [objetivos, analogos] = await Promise.all([
-    getJson('objetivos.json'),
+  const [moon, mars, analogos] = await Promise.all([
+    getJson('luna/objetivos.json'),
+    getJson('marte/objetivos.json'),
     getJson('analogos_conocidos.json'),
   ]);
   return {
-    targets: objetivos.objetivos, // [{ id, name, body, lat, lon, type, features }]
+    targets: [...moon.objetivos, ...mars.objetivos], // [{ id, name, body, lat, lon, type, h3, features, extras }]
     analogs: analogos.analogos, // [{ name, country, lat, lon, analog_of, environment, notes }]
-    mock: Boolean(objetivos._aviso),
   };
 }

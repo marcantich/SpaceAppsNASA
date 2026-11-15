@@ -5,7 +5,7 @@
 
 **Legend:** `app/` = the web app (Vite + CesiumJS) · `src/analogs/` = the engine and Python preprocessing · `app/data/` = the index the app reads (format in [`app/README.md`](app/README.md)).
 
-**Progress:** 29 / 62 tasks done.
+**Progress:** 57 / 69 tasks done (recounted 2026-11-15).
 
 > **Main goal (decision 007, proposal):** click **any point** of the Moon or Mars → the app finds the most similar place on Earth and flies there. So Mars and the Moon need a **global card grid**, not only the 21 target sites (tasks 3.4b, 3.5, 3.7, 3.16, 4.9).
 
@@ -20,7 +20,7 @@
 - [x] **0.5** Choose the grid: H3 hexagons at resolution 4 on Earth and a ~10 km "footprint" at the Moon and Mars target sites (see `docs/03_enfoque.md`, marked as an assumption).
 - [x] **0.6** Mock data so the app can move ahead: `python scripts/make_mock_data.py` → `app/data/` (flagged with `"_aviso"`).
 - [x] **0.7** Set up the Python environment (`.venv` + `pip install -r requirements.txt`) and check that `python -m pytest` passes: 8 passed. If `pip` fails with an SSL certificate error, add `--use-feature=truststore`.
-- [ ] **0.8** Enable GitHub Pages (Settings → Pages → Source: "GitHub Actions"; the repository owner must do this), merge the branch into `main` and check that the site is published.
+- [x] **0.8** ✅ Dropped 2026-11-15: the project is run locally only (the GitHub Pages workflow `.github/workflows/deploy-app.yml` was removed; how to run it: README). Original task: Enable GitHub Pages (Settings → Pages → Source: "GitHub Actions"; the repository owner must do this), merge the branch into `main` and check that the site is published.
 
 ## Phase 1 · The three globes (`app/`)
 
@@ -94,31 +94,31 @@
 - [x] **3.7** ✅ Done 2026-11-14 (2.5 min run): `data/processed/luna_h3r4.parquet` (288,122 hexagons, 31 MB → Drive), `luna_h3r4_columnas.csv` (unit/source/method of each column) and `fichas_objetivos_moon.csv` (9 sites with coordinates). Slope checked against the independent PGDA 800 m slope in 1,949 polar hexagons: r = 0.979, bias −0.4°. LOLA measured cells: median 69 % (Mars MOLA: 15–46 %). Build the **Moon card grid for the whole Moon** (decision 007) and the cards of the 9 Moon target sites. ⚠️ **Erratum:** H3 res 5 is ~9 km on Mars but only **~4.7 km on the Moon** (H3 cells are defined by angle; the Moon is small). The Moon uses **H3 res 4 (~131.7 km², ~12.3 km)**, the level closest to the Mars res-5 hexagons (~71.6 km², ~9.1 km); 288,122 cells. Same method as Mars (pixels inside the hexagon; high-pass only for roughness). Code: `src/analogs/moon.py` + `scripts/build_moon_grid.py`. Marc's kit covers the globe (Diviner GCP, LOLA `ldem_64`, Lunar Prospector) plus the south pole in detail (Diviner PRP, PGDA): see `docs/06_datos_luna.md`.
 
 ### 3C · Earth
-- [ ] **3.8** Build the H3 resolution-4 grid for Earth (land only).
-- [ ] **3.9** Copernicus DEM → slope and roughness per hexagon (same baseline as Mars and the Moon).
-- [ ] **3.10** MODIS LST and albedo → temperature and apparent thermal inertia (ATI).
-- [ ] **3.11** SMAP and JAXA snow/ice → soil moisture and ice.
-- [ ] **3.12** MODIS AOD → dust and aerosols.
+- [x] **3.8** ✅ Done (team, 2026-11-14/15) as **H3 res 6** (~6.5 km, 14.1 M cells; `src/analogs/earth_grid.py`), not res 4. Original task: Build the H3 resolution-4 grid for Earth (land only).
+- [x] **3.9** ✅ Done with **NOAA ETOPO 2022 15″** (~463 m, same baseline as MOLA / LOLA) instead of Copernicus DEM. Original task: Copernicus DEM → slope and roughness per hexagon (same baseline as Mars and the Moon).
+- [x] **3.10** ✅ Done with MODIS Aqua MYD11C3 (day / night climatology 2019–2023); no ATI. Original task: MODIS LST and albedo → temperature and apparent thermal inertia (ATI).
+- [x] **3.11** ✅ Done differently: rain from GPM IMERG, snow from MODIS MOD10CM, ice depth estimated (permanent ice + permafrost active layer). Original task: SMAP and JAXA snow/ice → soil moisture and ice.
+- [x] **3.12** ✅ Done with MERRA-2 dust optical depth (dust only) instead of MODIS AOD. Original task: MODIS AOD → dust and aerosols.
 
 ### 3D · Engine and export
 - [x] **3.13** Similarity formula in `src/analogs/similarity.py` with tests in `tests/test_similarity.py`.
-- [ ] **3.14** Fill `configs/variables.yaml` (units, tolerances) and `configs/pruebas.yaml` (weights per test type) with real values.
-- [ ] **3.15** Put every variable on the same scale on all bodies: compute it at the ~10 km site footprint (decision 006) and compare in physical units with tolerances (decision 003, not percentiles or z-scores per body).
-- [ ] **3.16** Export the real index to `app/data/` with `python scripts/run_pipeline.py`.
+- [x] **3.14** ✅ Done: `half_diff` with a written criterion per variable and the weights of 8 tests (all still assumptions). Original task: Fill `configs/variables.yaml` (units, tolerances) and `configs/pruebas.yaml` (weights per test type) with real values.
+- [x] **3.15** ✅ Done: slope and roughness at a ~460 m baseline on the three bodies, compared in physical units (soft note). Original task: Put every variable on the same scale on all bodies: compute it at the ~10 km site footprint (decision 006) and compare in physical units with tolerances (decision 003, not percentiles or z-scores per body).
+- [x] **3.16** ✅ Done for the three bodies with `export_mars_web.py`, `export_moon_web.py` and `build_earth_grid.py` (`run_pipeline.py` was a skeleton, removed in the 2026-11-15 clean-up). Original task: Export the real index to `app/data/` with `python scripts/run_pipeline.py`.
   ✅ **Mars part done (2026-11-14):** `python scripts/export_mars_web.py` → `app/data/marte/` (compact **binary**: quantized u1/u2 columns, gzip, one file per H3 base cell; 2,016,842 cells, 14 variables, **11 MB**, 68–106 KB per region) + real cards of the 12 Mars sites in `app/data/marte/objetivos.json` (kept out of the mock `objetivos.json`, which `build_comparator_data.py` requires to be all-mock or all-real). Reader `app/src/grid.js` (`CardGrid`, uses `h3-js`). Checked: `scripts/check_grid_binary.py` (all columns within scale/2, 0 no-data mismatches; 47 dust cells clipped at 2.54) and in the browser (same cells, order and values as Python). **Format + recipe for Earth and Moon: [`docs/07_card_grid_binary_format.md`](docs/07_card_grid_binary_format.md).** **Moon part done (2026-11-14):** `python scripts/export_moon_web.py` → `app/data/luna/` (H3 res 4, 288,122 cells, 20 variables, **2.9 MB**, 18–27 KB per region, `check_grid_binary.py` OK) + real cards of the 9 Moon sites in `app/data/luna/objetivos.json`. App: `main.js` loads `CardGrid('luna')`; `card.js` shows the Moon rows. Still to do: Earth (after 3.8–3.12). **New files for decision 007:** the Mars and Moon card grids at H3 res 5, one file per H3 base cell (e.g. `app/data/marte/<base_cell>.json`, `app/data/luna/<base_cell>.json`, ~600 KB each), in the same column format as `tierra.json`; update the data contract in `app/README.md` and `src/analogs/export.py`. Round values (or use a compact binary) to keep each file small.
 - [ ] **3.17** Validate: known analogs (Atacama, Río Tinto, Devon, Antarctica…) must rank high for their matching sites.
 
 ## Phase 4 · Integration (`app/`)
 
-- [ ] **4.1** Load `config.json`, `objetivos.json`, `tierra.json` and `analogos_conocidos.json` at startup.
-- [ ] **4.2** Port the `similarity.py` formula to JavaScript and check that it gives 37.5 / 82.5 / 77.5 on the test example.
-- [ ] **4.3** Filters: "What do you want to test?" (test → weights) and "Where?" (target site).
-- [ ] **4.4** When a target is chosen: the camera flies there, Earth is colored by index (0–100) and Earth flies to the best match.
-- [ ] **4.5** Match card: index, score per variable (target and Earth values, units and source), "not analog" block (gravity, pressure…) and test validity.
-- [ ] **4.6** Browse the 2nd, 3rd… best matches.
-- [ ] **4.7** Reverse direction: click on Earth → which Moon or Mars place it most resembles.
-- [ ] **4.8** Show a clearly visible warning when the data is mock (`_aviso`).
-- [ ] **4.9** **Main interaction (decision 007): click ANY point of the Moon or Mars** → find its H3 res 5 cell (lat/lon from 2.1 + `h3-js`) → download that region's file if not loaded yet → take its card → compute the index against every Earth cell in the browser → colour Earth, fly to the best match (2.4) and open the match card (4.5). Clicking a target site still uses that site's own footprint card. Needs 3.5, 3.7, 3.16 and 4.2.
+- [x] **4.1** ✅ Done: the app loads the card grids, `tierra/match.json`, `objetivos.json` and `analogos_conocidos.json` (`config.json` and `tierra.json` belong to the old prototype). Original task: Load `config.json`, `objetivos.json`, `tierra.json` and `analogos_conocidos.json` at startup.
+- [x] **4.2** ✅ Done: `app/src/scoring.js` (soft note by dimensions, docs/09). Original task: Port the `similarity.py` formula to JavaScript and check that it gives 37.5 / 82.5 / 77.5 on the test example.
+- [x] **4.3** ✅ Done: "Test" menu, place search and zones in the toolbar. Original task: Filters: "What do you want to test?" (test → weights) and "Where?" (target site).
+- [x] **4.4** ✅ Done. Original task: When a target is chosen: the camera flies there, Earth is colored by index (0–100) and Earth flies to the best match.
+- [x] **4.5** ✅ Done: card + score dock (the "not analog" block is in the rover planner caps). Original task: Match card: index, score per variable (target and Earth values, units and source), "not analog" block (gravity, pressure…) and test validity.
+- [x] **4.6** ✅ Done: results bar with the ranked sites. Original task: Browse the 2nd, 3rd… best matches.
+- [x] **4.7** ✅ Done: any body against any other (swap button). Original task: Reverse direction: click on Earth → which Moon or Mars place it most resembles.
+- [x] **4.8** ✅ No longer needed: the app only shows real data. Original task: Show a clearly visible warning when the data is mock (`_aviso`).
+- [x] **4.9** ✅ Done (parts 1 and 2), on the three bodies. Original task: **Main interaction (decision 007): click ANY point of the Moon or Mars** → find its H3 res 5 cell (lat/lon from 2.1 + `h3-js`) → download that region's file if not loaded yet → take its card → compute the index against every Earth cell in the browser → colour Earth, fly to the best match (2.4) and open the match card (4.5). Clicking a target site still uses that site's own footprint card. Needs 3.5, 3.7, 3.16 and 4.2.
   ✅ **Part 1 done (2026-11-14), Mars:** click any point (or a target site) → the H3 cell is outlined on the globe and a **card panel** shows its values grouped as Terrain / Climate / Ice & composition, with units and the source on hover (`app/src/card.js`, `showCell` in `globe.js`, `CardGrid` in `grid.js`). The camera then **flies straight down onto the hexagon and frames it** (`frameCell` in `main.js`: height chosen so the cell spans ~55 % of the free part of the globe, centred beside the card on wide screens or above it on phones; uses the body's latitude convention, planetocentric on Mars). `Esc` or × closes it. Moon shows "no card grid yet". Checked in the browser on desktop and phone layouts (Jezero rim, Perseverance site, Gale/Mount Sharp).
   **Part 2 to do:** compare with Earth and fly to the best match — needs the Earth card grid in the app (3.16 Earth: export `fichas_tierra_h3r5` with `write_grid_binary`, see `docs/07`) and 4.2 (formula in JS).
 - [x] **4.10** ✅ Done 2026-11-14: **Rover test planner** (second view of the app since 2026-11-15: the title in the toolbar is a view menu, "Analogs" / "Rover test planner", and `#rover` in the URL opens it directly; `app/src/rover.js`, `rover3d.js`, `rover.css`, config `app/data/rover.json`). A 3D rover (NASA's Perseverance model, clickable parts) is sent to the selected Mars / Moon cell. For each part (wheels, cameras, drill, thermal control, dust) the app checks every Earth search cell against a **box of margins** around the target values (all the part's variables inside ± margin → field test; only inside ± 2 × margin, a missing variable or a physics cap such as gravity → with caveats; nothing, or vacuum needed → lab only) and gives an **Earth testability index** = 100 · (field + ½ · caveats) / parts. Click a part → Earth is painted with the cells where it can be tested and flies to the best one; "Whole rover" → cells where most parts pass at once, plus a campaign (fewest sites that cover every part). Respects the Earth zone filter. Checked in the browser (dev and built app): Jezero 70 % (5 of 5 parts, thermal only at 2 × margin in Antarctica), Shackleton 30 % (thermal and dust are lab only; wheels in 169 Earth cells). Margins and caps are assumptions [supuesto], editable in `rover.json`. Details: `app/README.md`.
@@ -142,6 +142,6 @@
 - [ ] **6.2** Performance: limit tiles, test on laptop and phone.
 - [ ] **6.3** "Sources and method" section: PDS, Trek, GIBS, Copernicus, JAXA, CSA and the formula.
 - [ ] **6.4** Demo video in case the connection fails.
-- [ ] **6.5** Slides: problem → data → method → demo → limitations.
+- [x] **6.5** ✅ Done: `presentation/slides/Earth_Analogs_pitch.pptx`. Original task: Slides: problem → data → method → demo → limitations.
 - [ ] **6.6** Review the final Space Apps submission (app link, repository, video).
 - [x] **6.7** ✅ Done 2026-11-15: **no Spanish left in the interface.** Test names, test validity sentences, variable labels and criteria came from `configs/pruebas.yaml` and `configs/variables.yaml` (in Spanish); both files translated to English (comments too; keys such as `ruedas` kept, the app and data use them) and `app/data/tierra/match.json` regenerated with `python scripts/export_scoring.py`. Note: that script needs `h3ronpy` (`pip install -r requirements.txt`).

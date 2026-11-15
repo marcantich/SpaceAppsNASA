@@ -9,8 +9,8 @@ other). It paints the search globe by similarity, flies to the best analog and s
 every variable, its value on both sides and its source, plus an **analog index from 0 to 100** broken
 down by dimension (terrain, thermal, water & ice, sky & light). You can choose **what you want to
 test** (wheels, navigation, ice detection, solar power…), restrict the search to a zone of Earth, and
-open a second view, the **Rover test planner**, which says where on Earth each part of a rover could be
-field-tested.
+open two more views: the **Rover test planner**, which says where on Earth each part of a rover could be
+field-tested, and the **Route replica**, which finds on Earth a path with the slopes of a rover route.
 
 ## How it works
 
@@ -43,24 +43,62 @@ On Mars the card also shows the **slope at the clicked point** (~0.9 km pixel, r
 **solar energy for a horizontal panel** (NASA Appelbaum & Flood model) and the **mean wind and wind
 stress** (NASA Ames Mars GCM). Full list of sources: [`CREDITS.md`](CREDITS.md).
 
-## 🚀 Run the app on your computer
+## 🚀 Run it on your computer (from scratch)
 
-You need [Node.js](https://nodejs.org) 20 or newer. From the repository folder:
+The app runs **locally**: nothing to deploy and no account needed. Everything it needs is in this
+repository (~170 MB with the data); only the map imagery is loaded from the internet while you use it.
 
-```powershell
-cd app
-npm install      # first time only (or when app/package.json changes)
-npm run dev      # starts the app
+**1. Install two programs** (once):
+
+| Program | Where | Check it in a terminal |
+|---|---|---|
+| **Git** | [git-scm.com/downloads](https://git-scm.com/downloads) | `git --version` |
+| **Node.js 20 or newer** (LTS) | [nodejs.org](https://nodejs.org) | `node --version` |
+
+Default options in both installers are fine. On Windows, open a **new** terminal (PowerShell) after
+installing so the commands are found.
+
+**2. Download the project:**
+
+```bash
+git clone https://github.com/marcantich/SpaceAppsNASA.git
 ```
 
-Open **http://localhost:5173**. Pick the body to click on (Mars, Moon or Earth) and the body to search,
-click any point, and the other globe is painted with its analogs. `Esc` clears the selection. The title
-menu (top left) switches to the **Rover test planner** (or open `#rover`). Stop it with `Ctrl + C`.
+```bash
+cd SpaceAppsNASA/app
+```
 
-- If port 5173 is busy, the terminal shows the one it uses (5174, 5175…).
-- `npm run build` makes the static site in `app/dist/` (deployed to GitHub Pages by
-  `.github/workflows/deploy-app.yml`).
+(No Git? On the GitHub page: **Code → Download ZIP**, unzip it, and open a terminal in the `app` folder.)
 
+**3. Install the app's libraries** (once, ~1 minute):
+
+```bash
+npm install
+```
+
+**4. Start it:**
+
+```bash
+npm run dev
+```
+
+**5. Open [http://localhost:5173](http://localhost:5173)** in Chrome, Edge or Firefox. Press Enter on the
+opening screen, pick the body to click on (Mars, Moon or Earth) and the body to search, and click any
+point: the other globe is painted with its analogs. `Esc` clears the selection. The title menu (top
+left) opens the **Rover test planner** and the **Route replica**.
+
+To stop it: `Ctrl + C` in the terminal. Next time, only steps 4 and 5.
+
+**If something goes wrong:**
+
+| Problem | Fix |
+|---|---|
+| `npm` or `node` "not recognized" | Close the terminal and open a new one; if it persists, reinstall Node.js |
+| A red error about a missing import (`d3-geo`, `three`…) | Run `npm install` again (do it after every `git pull`) |
+| Port 5173 is busy | The terminal shows the address it used instead (5174, 5175…) |
+| The globes stay black | It needs an internet connection for the imagery; reload the page |
+
+Python is **not** needed to run the app, only to rebuild the data (next section).
 ## Regenerating the data (Python)
 
 ```bash
@@ -93,7 +131,7 @@ SpaceAppsNASA/
 ├── ROADMAP.md               task list, with what was done and how it was checked
 ├── CREDITS.md, LICENSE      data / imagery / library credits and the code licence
 ├── app/                     THE APP (Vite + CesiumJS + three.js)
-│   ├── src/                 globes, cards, scoring, search, rover planner
+│   ├── src/                 globes, cards, scoring, search, rover planner, route replica (see app/README.md)
 │   └── data/                what the app reads: marte/, luna/, tierra/ card grids, scoring settings,
 │                            Mars slope tiles, rover config and 3D model
 ├── configs/                 WHAT IS COMPARED
@@ -102,9 +140,11 @@ SpaceAppsNASA/
 ├── src/analogs/             Python: from NASA data to the card grids (one module per body + export)
 ├── scripts/                 what is run (download, build, export, check)
 ├── data/catalogs/           target sites (Moon / Mars) and known Earth analogs   [in git]
-├── docs/                    documentation (numbered in reading order; decisions/ = decision log)
-├── outputs/                 quick-look maps and validation outputs
-└── tests/                   Python tests
+├── docs/                    documentation (numbered in reading order; decisions/ = decision log;
+│                            NEXT_STEPS.md = what we would do next)
+├── presentation/            the pitch slides
+├── outputs/                 figures, quick-look maps and validation outputs
+└── tests/                   tests: Python (pytest) and JavaScript (npm test, from app/)
 ```
 
 Folder and key names in Spanish are kept on purpose (renaming them would touch the data files):

@@ -1,6 +1,6 @@
 """Mars: read the raw PDS products and extract the variables at each target site.
 
-    python scripts/build_mars_features.py
+    python scripts/build_mars_grid.py      (the grid builder, src/analogs/mars_grid.py, uses these readers)
 
 Inputs (data/raw/mars/, see scripts/download_data.py):
     mola_megdr_16ppd/      MOLA MEGDR topography, 16 px/deg

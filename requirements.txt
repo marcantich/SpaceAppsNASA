@@ -25,6 +25,7 @@ truststore         # use the OS certificate store (fixes SSL errors behind proxi
 
 # --- Análisis y gráficos ---
 scikit-learn
+scipy              # netCDF reader and interpolation (mars_climate.py, rover_route)
 matplotlib
 plotly
 

@@ -35,7 +35,7 @@ app/data/<body>/r121.bin.gz     region = H3 base cell 121
 
 ```json
 {
-  "_aviso": "",                      // non-empty = mock data, the app must show it
+  "_aviso": "",                      // always empty (kept for compatibility)
   "body": "marte",
   "h3_resolution": 5,
   "generated": "2026-11-14",
@@ -196,13 +196,10 @@ for the ice classes and for values not measured near the poles.
 ## 6. Target sites
 
 The real cards of each body's target sites go next to its grid, as readable JSON:
-`app/data/<body>/objetivos.json` (`write_mars_targets` for Mars), same shape as
-`app/data/objetivos.json` plus `extras` (the other card columns) and `h3` (their cell).
-
-They are **not** written into `app/data/objetivos.json` on purpose: that file belongs to the mock
-package (`config.json` + `objetivos.json` + `tierra.json`), and `scripts/build_comparator_data.py`
-rejects packages that mix real and mock files. When the Moon and Earth are real, the package can be
-regenerated as a whole.
+`app/data/<body>/objetivos.json` (`write_mars_targets` for Mars, `write_body_targets` for the Moon):
+one object per site with `id`, `name`, `body`, `lat`, `lon`, `type`, `h3` (its cell), `features`
+(the variables of `configs/variables.yaml`) and `extras` (the other card columns). The app reads the
+list of sites from these files (`app/src/data.js`).
 
 ## 7. Pixel-level data tiles (Mars slope, ROADMAP 5.6)
 
@@ -222,6 +219,6 @@ decision 006).
 | Reader | `app/src/slopetiles.js` (`slopeAt(lat, lon)`), shown by `card.js` as the card's **Slope** (tagged `laser` or `interp.`), with the cell's median on a second line "↳ whole cell" |
 
 Why 64 and not 128 px/deg: measured, the whole planet at 128 ppd is ~384 MB compressed (too much for
-the repository and GitHub Pages), 64 ppd ~105 MB, and near the equator most 128 ppd pixels are
+the repository), 64 ppd ~105 MB, and near the equator most 128 ppd pixels are
 interpolated between MOLA ground tracks anyway. The same recipe can be used for other variables
 or bodies (e.g. LOLA slope on the Moon).

@@ -13,7 +13,7 @@ parámetros en `configs/variables.yaml` (bloques `dimensions`, `scoring` y, por 
 | 3 | Tolerancias con criterio | Todas `[supuesto]` sin justificar; Sol 3° ataba la latitud; hielo binario | `half_diff` con `criterion` escrito (operativo, de medida o climático). Sol 10°. Hielo con matriz entre clases (≤ 1 m ↔ 1–5 m = 0,5…) |
 | 8 | Entorno de la celda | Solo la celda (6,5 km) | Ranking = 60 % la celda + 40 % la media de sus 6 vecinas (~20 km; las que no son zona de búsqueda cuentan 0). Premia zonas homogéneas donde cabe una campaña |
 
-`tolerance` se conserva para el comparador antiguo (`app/comparator.js`) y para variables sin `half_diff`.
+`tolerance` se conserva para variables sin `half_diff` y para los márgenes del planificador del rover.
 
 ## Punto 9 (estudio, NO aplicado): validar con análogos conocidos
 

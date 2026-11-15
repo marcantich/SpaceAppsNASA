@@ -1,6 +1,6 @@
 # Enfoque propuesto (PROPUESTA para el brainstorming)
 
-> Marc, 13/11/2026 (noche). Explica el *porqué* del método; el *cómo* está en [01_como_funciona.md](01_como_funciona.md). Respecto al [brief inicial de Pablo](referencia/brief_inicial.md) cambia sobre todo el **método**; donde no coincidan, manda este documento.
+> Marc, 13/11/2026 (noche). Explica el *porqué* del método; el *cómo* está en [01_como_funciona.md](01_como_funciona.md). Respecto al brief inicial de Pablo cambia sobre todo el **método**; donde no coincidan, manda este documento.
 > **[verificar]** = no comprobado todavía · **[hipótesis]** = apuesta que el motor tiene que confirmar o tumbar · **[supuesto]** = valor elegido por nosotros.
 
 ---
