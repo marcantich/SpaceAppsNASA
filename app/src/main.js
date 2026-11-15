@@ -526,16 +526,23 @@ function setBodies(l, r) {
     else l = right.key;                 // the right choice moved: the old right goes left
   }
   if (l === r) r = l === 'earth' ? 'mars' : 'earth';
+  const changed = left && right && (left.key !== l || right.key !== r);
   if (left && right) clearAll();
+  if (changed) animToken++; // stop any camera animation still running for the old pair
   if (left?.key !== l) {
     left?.destroy();
     left = makeGlobe('globe-left', l, 'left');
+  } else if (changed) {
+    left.flyHome(); // the selection was cleared: the globe that stays goes back to its whole view
   }
   if (right?.key !== r) {
     right?.destroy();
     right = makeGlobe('globe-right', r, 'right');
     zone = null;
     zoneMenu.setBody(r);
+  } else if (changed) {
+    if (zone) right.flyToZone(zone, 1.5); // keep the search zone in view if there is one
+    else right.flyHome();
   }
   leftButtons.forEach((b) => b.classList.toggle('active', b.dataset.body === l));
   rightButtons.forEach((b) => b.classList.toggle('active', b.dataset.body === r));

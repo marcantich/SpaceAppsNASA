@@ -73,9 +73,11 @@ export function createGlobe(container, bodyKey) {
   // --- 2.4 Camera flights ---
   const home = Cesium.Cartesian3.fromDegrees(body.home.lon, body.home.lat, body.home.height, ellipsoid);
   viewer.camera.setView({ destination: home });
+  /** Fly back to the starting view of the whole body (same as the home button). */
+  const flyHome = (duration = 1.5) => viewer.camera.flyTo({ destination: home, duration });
   viewer.homeButton.viewModel.command.beforeExecute.addEventListener((e) => {
     e.cancel = true;
-    viewer.camera.flyTo({ destination: home, duration: 1.5 });
+    flyHome();
   });
 
   /** Fly the camera straight above lat/lon (degrees) at `height` metres above the surface. */
@@ -463,6 +465,7 @@ export function createGlobe(container, bodyKey) {
       if (reliefLayer) reliefLayer.show = on;
     },
     flyTo,
+    flyHome,
     /** Put the marker at lat/lon (degrees, in this body's latitude convention). */
     setMarker,
     clearMarker,
