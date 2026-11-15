@@ -30,10 +30,10 @@ const NAME = { earth: 'Earth', mars: 'Mars', moon: 'the Moon' };
 const FLY_S = 2.6; // camera flights on Earth (calm, like the analog view)
 
 export const STATUS = {
-  field: { label: 'Field test on Earth', short: 'field', color: '#4fd17b', icon: '✔' },
-  partial: { label: 'Field test with caveats', short: 'with caveats', color: '#ffc14d', icon: '◐' },
+  field: { label: 'Field test on Earth', short: 'field', color: '#40d6c3', icon: '✔' },
+  partial: { label: 'Field test with caveats', short: 'with caveats', color: '#ffbe66', icon: '◐' },
   lab: { label: 'Lab only', short: 'lab only', color: '#ff6b5e', icon: '✖' },
-  nodata: { label: 'No data for this cell', short: 'no data', color: '#8a93a8', icon: '?' },
+  nodata: { label: 'No data for this cell', short: 'no data', color: '#a7b5c8', icon: '?' },
 };
 const ENV = { 1: 'polar ice', 2: 'desert', 3: 'arid open land' };
 const ICE = { 0.5: 'within 1 m', 3: '1–5 m deep', 5: 'deeper than 5 m', 10: 'none' };

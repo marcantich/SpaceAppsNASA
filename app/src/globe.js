@@ -6,12 +6,12 @@ import { formatLatLon, latLonToCartesian, pickLatLon } from './coords.js';
 
 const css = (c) => Cesium.Color.fromCssColorString(c);
 const COLORS = {
-  marker: css('#e2673a'),
-  selected: css('#e2673a'),
-  target: css('#f2c14e'), // target sites on the Moon / Mars
-  analog: css('#4cc38a'), // known analogs on Earth
+  marker: css('#40d6c3'),
+  selected: css('#40d6c3'),
+  target: css('#ffbe66'), // target sites on the Moon / Mars
+  analog: css('#40d6c3'), // known analogs on Earth
 };
-const LABEL_BG = css('rgba(16,20,31,0.85)');
+const LABEL_BG = css('rgba(23,34,53,0.9)');
 const SITE_SIZE = 8;
 const SELECTED_SIZE = 13;
 // Points sit slightly above the surface so the globe never clips them, while still being
@@ -216,7 +216,26 @@ export function createGlobe(container, bodyKey) {
 
   // --- Hexagon layer: many H3 cells filled with a colour each (Earth matches) ---
   let hexPrimitive = null;
+  let hexColors = [];
+  let lastHexOpacity = null;
   const HEX_HEIGHT = 1500; // m above the ellipsoid: sits on the imagery without z-fighting
+
+  // Fade fills from 45% in the global view to 16% near the surface. Relative height
+  // gives Earth, Mars and the Moon the same behaviour despite their different sizes.
+  // Cache Cesium's attributes and update only at 1% steps, without rebuilding geometry.
+  const removeHexFade = scene.preRender.addEventListener(() => {
+    if (!hexPrimitive?.ready) return;
+    const height = Math.max(0, viewer.camera.positionCartographic.height);
+    const zoom = Cesium.Math.clamp((height / ellipsoid.maximumRadius - 0.03) / 0.47, 0, 1);
+    const opacity = Math.round((0.16 + 0.29 * zoom) * 100) / 100;
+    if (opacity === lastHexOpacity) return;
+    for (const entry of hexColors) {
+      entry.attributes ??= hexPrimitive.getGeometryInstanceAttributes(entry.id);
+      entry.color.alpha = opacity * entry.alphaScale;
+      entry.attributes.color = Cesium.ColorGeometryInstanceAttribute.toValue(entry.color, entry.attributes.color);
+    }
+    lastHexOpacity = opacity;
+  });
 
   /** Resolves once Cesium has built a primitive (geometry is made in web workers), or after `ms`. */
   function whenReady(primitive, ms = 4000) {
@@ -238,14 +257,17 @@ export function createGlobe(container, bodyKey) {
   function showHexes(list) {
     clearHexes();
     if (!list.length) return Promise.resolve();
-    const instances = list.map(({ h3, color, alpha = 0.32 }) => new Cesium.GeometryInstance({
+    hexColors = list.map(({ h3, color, alpha = 0.45 }) => ({
+      id: `hex:${h3}`, color: css(color), alphaScale: Cesium.Math.clamp(alpha, 0, 1) / 0.45,
+    }));
+    const instances = list.map(({ h3 }, i) => new Cesium.GeometryInstance({
       geometry: new Cesium.PolygonGeometry({
         polygonHierarchy: new Cesium.PolygonHierarchy(cellToBoundary(h3).map(([la, lo]) => toCartesian(la, lo))),
         height: HEX_HEIGHT,
         ellipsoid,
         vertexFormat: Cesium.PerInstanceColorAppearance.FLAT_VERTEX_FORMAT,
       }),
-      attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(css(color).withAlpha(alpha)) },
+      attributes: { color: Cesium.ColorGeometryInstanceAttribute.fromColor(hexColors[i].color.withAlpha(0.16 * hexColors[i].alphaScale)) },
       id: `hex:${h3}`,
     }));
     hexPrimitive = scene.primitives.add(new Cesium.Primitive({
@@ -258,6 +280,8 @@ export function createGlobe(container, bodyKey) {
   function clearHexes() {
     if (hexPrimitive) scene.primitives.remove(hexPrimitive);
     hexPrimitive = null;
+    hexColors = [];
+    lastHexOpacity = null;
   }
 
   // --- Ranked results (#1, #2…) as labelled pins ---
@@ -514,6 +538,7 @@ export function createGlobe(container, bodyKey) {
       siteListeners.push(fn);
     },
     destroy() {
+      removeHexFade();
       handler.destroy();
       viewer.destroy();
     },

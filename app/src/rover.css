@@ -37,7 +37,7 @@
 
 body.rover-tab .view-btn {
   border-color: var(--accent);
-  background: rgb(226 103 58 / 0.14);
+  background: rgb(64 214 195 / 0.14);
 }
 
 .view-menu .menu {
@@ -49,7 +49,7 @@ body.rover-tab .view-btn {
   padding: 10px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgb(16 20 31 / 0.98);
+  background: rgb(23 34 53 / 0.98);
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
 }
 
@@ -79,7 +79,7 @@ body.rover-tab .view-btn {
 
 .view-opt.on {
   border-color: var(--accent);
-  background: rgb(226 103 58 / 0.12);
+  background: rgb(64 214 195 / 0.12);
 }
 
 .view-opt svg {
@@ -282,7 +282,7 @@ body.rover-tab.rover-open .card.side-left {
   padding: 2px 9px 2px 3px;
   border: 1px solid var(--c);
   border-radius: 999px;
-  background: rgb(16 20 31 / 0.88);
+  background: rgb(23 34 53 / 0.88);
   color: var(--text);
   font: 600 11px/1.5 system-ui, sans-serif;
   white-space: nowrap;
@@ -297,7 +297,7 @@ body.rover-tab.rover-open .card.side-left {
   height: 16px;
   border-radius: 50%;
   background: var(--c);
-  color: #10141f;
+  color: #172235;
   font-style: normal;
   font-size: 10px;
 }
@@ -305,7 +305,7 @@ body.rover-tab.rover-open .card.side-left {
 .rover-label:hover,
 .rover-label.sel {
   background: var(--c);
-  color: #10141f;
+  color: #172235;
 }
 
 .rover-label.dim {
@@ -369,7 +369,7 @@ body.rover-tab.rover-open .card.side-left {
   height: 46px;
   padding-top: 9px;
   border-radius: 10px;
-  color: #10141f;
+  color: #172235;
   font-size: 24px;
   font-variant-numeric: tabular-nums;
 }
@@ -417,14 +417,14 @@ body.rover-tab.rover-open .card.side-left {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  color: #10141f;
+  color: #172235;
   font-style: normal;
   font-size: 12px;
   font-weight: 700;
 }
 
 .rv-parts li > i.all {
-  background: #7fd1ff;
+  background: #529bc8;
 }
 
 .rv-detail {
@@ -478,7 +478,7 @@ body.rover-tab.rover-open .card.side-left {
 
 .rv-notes li {
   margin-bottom: 3px;
-  color: #ffd98a;
+  color: #ffbe66;
 }
 
 .rv-chip {
@@ -506,7 +506,7 @@ body.rover-tab.rover-open .card.side-left {
   padding: 5px 8px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgb(127 209 255 / 0.1);
+  background: rgb(82 155 200 / 0.1);
   color: var(--text);
   font: inherit;
   font-size: 12px;
@@ -514,7 +514,7 @@ body.rover-tab.rover-open .card.side-left {
 }
 
 .rv-btn:hover {
-  background: rgb(127 209 255 / 0.2);
+  background: rgb(82 155 200 / 0.2);
 }
 
 @media (max-width: 760px) {

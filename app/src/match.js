@@ -397,8 +397,8 @@ export class Matcher {
   }
 }
 
-// Perceptual colour ramp ("magma"-like): low = deep purple, high = pale yellow
-const RAMP = ['#1d1147', '#51127c', '#822681', '#b73779', '#e75263', '#fc8961', '#fec287', '#fcfdbf'];
+// Low similarity = violet, medium = blue, high = turquoise (also used by the legend).
+const RAMP = ['#7767ae', '#687fbb', '#529bc8', '#49b8c6', '#40d6c3'];
 
 export function rampColor(t) {
   const x = Math.min(1, Math.max(0, t)) * (RAMP.length - 1);

@@ -1,11 +1,14 @@
 :root {
-  --bg: #05070d;
-  --panel: #10141f;
-  --line: #262c3d;
-  --text: #e6e9f2;
-  --muted: #8a93a8;
-  --accent: #e2673a;
-  --zone: #7fd1ff;
+  --bg: #0b1220;
+  --panel: #172235;
+  --line: #31435b;
+  --text: #e8eef5;
+  --muted: #a7b5c8;
+  --accent: #40d6c3;
+  --zone: #529bc8;
+  --warning: #ffbe66;
+  color-scheme: dark;
+  accent-color: var(--accent);
 }
 
 * {
@@ -62,7 +65,12 @@ body {
 
 .switch button.active {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
 
 .relief {
@@ -108,7 +116,7 @@ body {
   z-index: 2;
   padding: 3px 10px;
   border-radius: 6px;
-  background: rgb(16 20 31 / 0.8);
+  background: rgb(23 34 53 / 0.8);
   font-weight: 600;
   pointer-events: none;
 }
@@ -121,7 +129,7 @@ body {
   z-index: 2;
   padding: 3px 9px;
   border-radius: 6px;
-  background: rgb(16 20 31 / 0.8);
+  background: rgb(23 34 53 / 0.8);
   color: var(--text);
   font: 12px/1.4 ui-monospace, 'Cascadia Mono', Consolas, monospace;
   pointer-events: none;
@@ -139,7 +147,7 @@ body {
   padding: 12px 14px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgb(16 20 31 / 0.94);
+  background: rgb(23 34 53 / 0.94);
   color: var(--text);
   font-size: 13px;
 }
@@ -297,7 +305,7 @@ body {
 .search input:focus {
   outline: none;
   border-color: var(--zone);
-  box-shadow: 0 0 0 3px rgb(127 209 255 / 0.15);
+  box-shadow: 0 0 0 3px rgb(82 155 200 / 0.15);
 }
 
 .suggest,
@@ -309,7 +317,7 @@ body {
   padding: 6px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgb(16 20 31 / 0.98);
+  background: rgb(23 34 53 / 0.98);
   box-shadow: 0 12px 32px rgb(0 0 0 / 0.5);
 }
 
@@ -381,7 +389,7 @@ body {
   background: var(--muted);
 }
 
-.dot.mars { background: #e2673a; }
+.dot.mars { background: #ffbe66; }
 .dot.moon { background: #c9ccd6; }
 .dot.earth { background: #4cc38a; }
 .dot.zone { background: transparent; border: 2px solid var(--zone); border-radius: 3px; }
@@ -424,7 +432,7 @@ body {
 .zone.filtered .zone-btn {
   border-color: var(--zone);
   border-radius: 8px 0 0 8px;
-  background: rgb(127 209 255 / 0.1);
+  background: rgb(82 155 200 / 0.1);
   color: var(--zone);
 }
 
@@ -437,7 +445,7 @@ body {
   padding: 5px 9px;
   border-color: var(--zone);
   border-radius: 0 8px 8px 0;
-  background: rgb(127 209 255 / 0.1);
+  background: rgb(82 155 200 / 0.1);
   color: var(--zone);
   font-size: 15px;
   line-height: 1;
@@ -450,11 +458,11 @@ body {
 .zone.drawing .zone-btn {
   background: var(--zone);
   border-color: var(--zone);
-  color: #10141f;
+  color: #172235;
 }
 
 .zone.drawing .zone-btn b {
-  color: #10141f;
+  color: #172235;
 }
 
 .zone .menu {
@@ -500,7 +508,7 @@ body {
 
 .chip.on {
   border-color: var(--zone);
-  background: rgb(127 209 255 / 0.14);
+  background: rgb(82 155 200 / 0.14);
   color: var(--zone);
 }
 
@@ -517,7 +525,7 @@ body {
 }
 
 .menu .draw:hover {
-  background: rgb(127 209 255 / 0.1);
+  background: rgb(82 155 200 / 0.1);
 }
 
 /* --- Toolbar: which body on each side ------------------------------------------------------------ */
@@ -650,7 +658,7 @@ details.dock-more > summary:hover {
   padding: 8px 10px 6px;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: rgb(16 20 31 / 0.94);
+  background: rgb(23 34 53 / 0.94);
   font-size: 12px;
 }
 
@@ -730,7 +738,7 @@ details.dock-more > summary:hover {
 
 .results-bar .ranks li.on {
   border-color: var(--accent);
-  background: rgb(226 103 58 / 0.1);
+  background: rgb(64 214 195 / 0.1);
 }
 
 .rank-txt {
@@ -796,7 +804,7 @@ details.dock-more > summary:hover {
   padding: 10px 14px 8px;
   border: 1px solid var(--line);
   border-radius: 12px;
-  background: rgb(16 20 31 / 0.96);
+  background: rgb(23 34 53 / 0.96);
   box-shadow: 0 10px 30px rgb(0 0 0 / 0.45);
   font-size: 12px;
 }
@@ -972,7 +980,7 @@ details.dock-more .dims {
 .cmp-bar i {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #b73779, #fc8961, #fcfdbf);
+  background: linear-gradient(90deg, #7767ae, #529bc8, #40d6c3);
 }
 
 /* --- Status pill: top centre, across both globes --------------------------------------------------- */
@@ -984,7 +992,7 @@ details.dock-more .dims {
   transform: translateX(-50%);
   padding: 5px 12px;
   border-radius: 999px;
-  background: rgb(16 20 31 / 0.92);
+  background: rgb(23 34 53 / 0.92);
   border: 1px solid var(--line);
   color: var(--text);
   font-size: 12px;
