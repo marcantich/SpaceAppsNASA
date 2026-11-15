@@ -1,0 +1,212 @@
+/* [intro] Opening screen (index.html + intro.js): stars, the three bodies, the team and a loading bar.
+   It is plain HTML + CSS so it paints at once, before the app's JavaScript (Cesium) has loaded. */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(18px, 4vh, 40px);
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 120%, #101a33 0%, #05070d 55%, #000 100%);
+  color: #e6e9f2;
+  transition: opacity 0.8s ease, visibility 0.8s;
+}
+
+.intro.out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.intro-stars {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---- the three bodies: Moon · Earth · Mars -------------------------------------------------------- */
+.intro-bodies {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(28px, 7vw, 110px);
+}
+
+.intro-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  opacity: 0;
+  animation: intro-rise 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.intro-body:nth-child(1) { animation-delay: 0.15s; }
+.intro-body:nth-child(2) { animation-delay: 0s; }
+.intro-body:nth-child(3) { animation-delay: 0.3s; }
+
+.intro-body span {
+  color: #8a93a8;
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+/* A disc with the world map sliding behind it + a shadow on one side reads as a turning sphere */
+.intro-globe {
+  --d: 120px;
+  position: relative;
+  width: var(--d);
+  height: var(--d);
+  border-radius: 50%;
+  background-repeat: repeat-x; /* the image itself is set in index.html (path relative to the page) */
+  background-size: auto 100%;
+  animation: intro-spin var(--turn, 40s) linear infinite, intro-float 6s ease-in-out infinite;
+  box-shadow: 0 0 calc(var(--d) * 0.35) var(--glow, transparent);
+}
+
+.intro-globe::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 32% 30%, rgb(255 255 255 / 0.16) 0%, transparent 38%, rgb(0 0 0 / 0.55) 72%, rgb(0 0 0 / 0.92) 100%);
+  box-shadow: inset 0 0 calc(var(--d) * 0.06) var(--rim, transparent);
+}
+
+.intro-globe.moon {
+  --d: clamp(70px, 10vw, 130px);
+  --turn: 70s;
+  --glow: rgb(200 205 220 / 0.14);
+  animation-delay: 0s, -2s;
+}
+
+.intro-globe.earth {
+  --d: clamp(130px, 19vw, 250px);
+  --turn: 46s;
+  --glow: rgb(80 150 255 / 0.3);
+  --rim: rgb(120 180 255 / 0.55);
+}
+
+.intro-globe.mars {
+  --d: clamp(90px, 13vw, 170px);
+  --turn: 54s;
+  --glow: rgb(226 103 58 / 0.22);
+  --rim: rgb(255 170 120 / 0.3);
+  animation-delay: 0s, -4s;
+}
+
+/* ---- name, team, bar ---------------------------------------------------------------------------- */
+.intro-text {
+  position: relative;
+  text-align: center;
+  opacity: 0;
+  animation: intro-rise 0.9s 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.intro-text h1 {
+  margin: 0;
+  font-size: clamp(24px, 4.2vw, 46px);
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-indent: 0.3em; /* the tracking of the last letter would push the word off-centre */
+  text-transform: uppercase;
+}
+
+.intro-text .sub {
+  margin: 10px 0 0;
+  color: #8a93a8;
+  font-size: clamp(12px, 1.3vw, 15px);
+  letter-spacing: 0.08em;
+}
+
+.intro-text .team {
+  margin: 18px 0 0;
+  color: #8a93a8;
+  font-size: 12px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}
+
+.intro-text .team b {
+  color: #e2673a;
+  font-weight: 700;
+}
+
+.intro-load {
+  position: relative;
+  width: min(320px, 60vw);
+  text-align: center;
+}
+
+.intro-bar {
+  height: 3px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.12);
+  overflow: hidden;
+}
+
+.intro-bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #7fd1ff, #e2673a);
+  animation: intro-load 3s cubic-bezier(0.3, 0.6, 0.3, 1) forwards; /* stops at 90 % until the app is ready */
+  transition: width 0.35s ease;
+}
+
+.intro.done .intro-bar i {
+  animation: none;
+  width: 100%;
+}
+
+.intro-load p {
+  margin: 10px 0 0;
+  color: #8a93a8;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* the app is ready: the whole screen is a button and the text under the bar invites to start */
+.intro.ready {
+  cursor: pointer;
+}
+
+.intro.ready .intro-load p {
+  color: #e6e9f2;
+  animation: intro-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes intro-pulse {
+  50% { opacity: 0.45; }
+}
+
+@keyframes intro-spin {
+  to { background-position-x: calc(var(--d) * 2); }
+}
+
+@keyframes intro-float {
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes intro-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes intro-load {
+  to { width: 90%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .intro-globe { animation: none; }
+  .intro-body,
+  .intro-text { animation-duration: 0.01s; animation-delay: 0s; }
+}
