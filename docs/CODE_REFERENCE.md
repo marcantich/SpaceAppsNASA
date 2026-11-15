@@ -75,11 +75,11 @@ Run from the repository root: `.venv\Scripts\python.exe scripts\<name>.py` (Linu
 |---|---|---|
 | Download | `download_data.py [keys] [--list]` | Mars datasets |
 | | `download_moon.py [--list] [--extras]` | Moon kit |
-| | `download_earth.py [mask dem dem15 temp polvo silice nieve]` | Earth, from Earthdata / NOAA (needs `~/.netrc`) |
+| | `download_earth.py [mask dem dem15 temp dust silica snow]` | Earth, from Earthdata / NOAA (needs `~/.netrc`) |
 | Build | `build_mars_grid.py` | Mars grid + the 12 site cards (~18 min) |
 | | `build_moon_grid.py` | Moon grid + the 9 site cards (~3 min) |
 | | `build_earth_mask.py` | Earth search mask + map |
-| | `build_earth_features.py` | Earth fields on the 0.05° mesh (for `buscar.py`) |
+| | `build_earth_features.py` | Earth fields on the 0.05° mesh (for `search.py`) |
 | | `build_earth_grid.py [--res 6]` | Earth grid; also writes `app/data/tierra/` and the search table |
 | Export | `export_mars_web.py` | `app/data/marte/` (adds solar energy and winds) |
 | | `export_mars_slope_tiles.py` | `app/data/marte/slope64/` (~5 min) |
@@ -88,11 +88,11 @@ Run from the repository root: `.venv\Scripts\python.exe scripts\<name>.py` (Linu
 | | `make_intro_textures.py` | Small textures of the opening screen |
 | Check | `check_grid_binary.py <body> <parquet>` | Export against its source: errors ≤ scale / 2, no-data cells |
 | | `recode_grid_binary.py` | Rewrites a published grid with another column definition |
-| Data folder | `inventario.py [--leeme]` | What is present or missing; writes the data folder's read-me |
-| | `importar_datos.py <zip or folder>` | Puts shared data in the right place |
+| Data folder | `inventory.py [--readme]` | What is present or missing; writes the data folder's read-me |
+| | `import_data.py <zip or folder>` | Puts shared data in the right place |
 | | `pack_data.py <body or tables>` | Zips to share data |
 | | `list_data.py` | SHA-256 listing of a data folder |
-| Tools | `buscar.py` | Search in the terminal (prompts in Spanish) |
+| Tools | `search.py` | Search in the terminal |
 | | `rover_route/` | Route replica study: `prep_route` → `fetch_dem` → `match_route` / `free_route` → `plot_*`; `make_presets.py` writes the real rover traverses used by the app |
 
 ---

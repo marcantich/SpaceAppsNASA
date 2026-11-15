@@ -1,19 +1,19 @@
-"""Encaja un tramo de la ruta marciana (plantilla rigida: traslacion + giro + espejo) sobre teselas de relieve.
-Coste E = RMS de [z_Tierra(s) - z_Marte(s)] quitando la media (m). Referencia: suelo plano -> E0 = std(z_Marte).
-Busqueda gruesa (50 m, 10 grados) y afinado local (10 m, 1 grado).
-uso: python match_route.py segments.json resultados.json dem/*.npz"""
+"""Fits a stretch of the Martian route (rigid template: translation + rotation + mirror) on relief tiles.
+Cost E = RMS of [z_Earth(s) - z_Mars(s)] after removing the mean (m). Reference: flat ground -> E0 = std(z_Mars).
+Coarse search (50 m, 10 degrees) and local refinement (10 m, 1 degree).
+usage: python match_route.py segments.json results.json dem/*.npz"""
 import json, sys, glob, os, numpy as np
 from scipy.ndimage import map_coordinates
 R_EARTH = 6371008.8
-PT_STEP = 30.0   # m entre puntos de la plantilla
+PT_STEP = 30.0   # m between points of the template
 
 def offsets(x, y, phi, mirror, px):
     c, s = np.cos(np.radians(phi)), np.sin(np.radians(phi))
     xr = c * (mirror * x) - s * y; yr = s * (mirror * x) + c * y
-    return np.round(xr / px).astype(int), np.round(-yr / px).astype(int)   # fila crece hacia el sur
+    return np.round(xr / px).astype(int), np.round(-yr / px).astype(int)   # rows grow to the south
 
 def scan(z, px, x, y, zm, phis, mirrors, stride, sample=None):
-    """Devuelve el mejor (E, phi, mirror, row, col) y, si sample, una muestra de E de todas las posiciones."""
+    """Returns the best (E, phi, mirror, row, col) and, if sample, a sample of E over all positions."""
     H, W = z.shape; n = len(x); best = (np.inf,); dist = []
     for mirror in mirrors:
         for phi in phis:
@@ -44,7 +44,7 @@ def match(seg, dem):
     if not np.isfinite(b[0]):
         return None
     dist = dist[np.isfinite(dist)]
-    # afinado: recorte alrededor de la mejor posicion
+    # refinement: crop around the best position
     r = int(np.ceil(np.hypot(x, y).max() / px)) + 12
     r0, c0 = max(b[3] - r, 0), max(b[4] - r, 0)
     zc = z[r0:b[3] + r, c0:b[4] + r]
@@ -56,7 +56,7 @@ def match(seg, dem):
             "n_tested": int(dist.size * 3)}
 
 def place(seg, dem, b):
-    """Ruta completa sobre la Tierra: lat, lon, z (interpolacion bilineal)."""
+    """Whole route on Earth: lat, lon, z (bilinear interpolation)."""
     px = float(dem["px"]); lat0 = float(dem["lat"]); lon0 = float(dem["lon"]); H, W = dem["z"].shape
     x = np.array(seg["x"]); y = np.array(seg["y"])
     c, s = np.cos(np.radians(b["phi"])), np.sin(np.radians(b["phi"]))
@@ -91,6 +91,6 @@ if __name__ == "__main__":
                      z=[round(float(v), 2) for v in ze[::3]])
             res.append(b)
             sl = b["slopes"]
-            print(f"{name:8s} {b['tile']:18s} E={b['E']:6.2f} m  plano={b['E0_flat']:6.2f}  p1={b['E_p1']:6.2f}  mediana={b['E_median']:7.2f} | "
-                  f"pend30: J={sl[0]['J']:.2f} (plano {sl[0]['J0_flat']:.2f}) r={sl[0]['r']:.2f} | pend90: J={sl[1]['J']:.2f} (plano {sl[1]['J0_flat']:.2f}) r={sl[1]['r']:.2f}", flush=True)
+            print(f"{name:8s} {b['tile']:18s} E={b['E']:6.2f} m  flat={b['E0_flat']:6.2f}  p1={b['E_p1']:6.2f}  median={b['E_median']:7.2f} | "
+                  f"slope30: J={sl[0]['J']:.2f} (flat {sl[0]['J0_flat']:.2f}) r={sl[0]['r']:.2f} | slope90: J={sl[1]['J']:.2f} (flat {sl[1]['J0_flat']:.2f}) r={sl[1]['r']:.2f}", flush=True)
     json.dump(res, open(out, "w"))

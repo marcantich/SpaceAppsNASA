@@ -39,6 +39,17 @@ and `configs/variables.yaml` (`sources`).
 | Moon | LRO LOLA GDR (ldem_64 and shots per cell), LRO Diviner (global cumulative products, polar resource products), Lunar Prospector GRS, NASA PGDA south-pole products, LROC pits atlas |
 | Earth | NOAA ETOPO 2022 (15″), MODIS Aqua MYD11C3 land surface temperature, MODIS MCD12C1 land cover, MODIS MOD10CM snow cover, GPM IMERG monthly v07, MERRA-2 M2TMNXAER aerosols, ECOSTRESS ECO_L3G_WPS |
 
+Full list with references and citations: [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
+
+## Elevation read live by the Route replica view (not stored in the repository)
+
+| Data | Provider | Terms | Credit shown |
+|---|---|---|---|
+| Mars HRSC + MOLA blended DEM, 200 m | USGS Astrogeology Science Center, DLR, ESA | USGS public data **[verify]** | "Mars HRSC+MOLA blended DEM 200 m (USGS Astrogeology, DLR)" |
+| Moon LRO LOLA global DEM, 118 m | USGS Astrogeology Science Center, NASA GSFC | NASA / USGS public data | "LRO LOLA global DEM 118 m (USGS Astrogeology, NASA GSFC)" |
+| Earth "Terrarium" terrain tiles | Mapzen terrain tiles on AWS Open Data (SRTM, USGS 3DEP and other sources) | Free to use; the providers ask for attribution of the underlying sources **[verify]** the exact wording | "Earth elevation: Terrarium tiles (SRTM / USGS 3DEP)" |
+| Perseverance and Curiosity traverses (`app/data/route/presets.json`) | NASA/JPL-Caltech (mars.nasa.gov) | NASA public data | "rover telemetry (NASA/JPL-Caltech)" |
+
 ## 3D model
 
 | Asset | Source | Terms |

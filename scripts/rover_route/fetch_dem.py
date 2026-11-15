@@ -1,5 +1,5 @@
-"""Descarga una tesela de relieve USGS 3DEP (sin registro) centrada en lat/lon.
-uso: python fetch_dem.py nombre lat lon lado_km [px_m]   -> dem/nombre.npz"""
+"""Downloads a USGS 3DEP relief tile (no account) centred on lat/lon.
+usage: python fetch_dem.py name lat lon side_km [px_m]   -> dem/name.npz"""
 import sys, io, os, numpy as np, requests
 from PIL import Image
 R_EARTH = 6371008.8
@@ -18,7 +18,7 @@ def fetch(name, lat, lon, side_km, px=10.0, outdir="dem"):
         "size": f"{n},{n}", "format": "tiff", "pixelType": "F32",
         "interpolation": "RSP_BilinearInterpolation", "f": "image"})
     r.raise_for_status()
-    z = np.array(Image.open(io.BytesIO(r.content)), dtype=np.float32)   # fila 0 = norte
+    z = np.array(Image.open(io.BytesIO(r.content)), dtype=np.float32)   # row 0 = north
     z[(z < -500) | (z > 9000)] = np.nan
     np.savez_compressed(out, z=z, lat=lat, lon=lon, side_km=side_km, px=px)
     print(name, z.shape, "z", np.nanmin(z).round(1), np.nanmax(z).round(1), "nan", int(np.isnan(z).sum()))

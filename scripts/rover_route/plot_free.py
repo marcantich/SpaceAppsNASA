@@ -10,11 +10,11 @@ for i, (sn, tn) in enumerate(picks):
     a = ax[i, 0]; a.imshow(LightSource(315, 35).hillshade(zc.astype(float), vert_exag=3, dx=10, dy=10), cmap="gray",
                            extent=[c0 * 10, (c0 + zc.shape[1]) * 10, (r0 + zc.shape[0]) * 10, r0 * 10])
     a.plot(col * 10, row * 10, "r-", lw=1.5); a.plot(col[0] * 10, row[0] * 10, "ko")
-    a.set_title(f"Tierra: {tn} ({np.mean(b['lat']):.4f}, {np.mean(b['lon']):.4f})"); a.set_xlabel("x [m]"); a.set_ylabel("y [m]")
-    a = ax[i, 1]; a.plot(s, zm - zm[0], "r-", lw=1.8, label="Marte (Perseverance)"); a.plot(s, ze - ze[0], "b-", lw=1.2, label="Tierra (camino libre)")
-    a.set_title(f"Tramo '{sn}': perfil de cota"); a.set_xlabel("distancia recorrida s [km]"); a.set_ylabel("cota desde la salida [m]"); a.grid(alpha=.3); a.legend()
+    a.set_title(f"Earth: {tn} ({np.mean(b['lat']):.4f}, {np.mean(b['lon']):.4f})"); a.set_xlabel("x [m]"); a.set_ylabel("y [m]")
+    a = ax[i, 1]; a.plot(s, zm - zm[0], "r-", lw=1.8, label="Mars (Perseverance)"); a.plot(s, ze - ze[0], "b-", lw=1.2, label="Earth (free path)")
+    a.set_title(f"Stretch '{sn}': elevation profile"); a.set_xlabel("distance travelled s [km]"); a.set_ylabel("elevation from the start [m]"); a.grid(alpha=.3); a.legend()
     d = np.hypot(np.diff(row), np.diff(col)) * 10
-    a = ax[i, 2]; a.plot(s[1:], np.degrees(np.arctan(np.diff(zm) / 30)), "r-", lw=1.5, label="Marte"); a.plot(s[1:], np.degrees(np.arctan(np.diff(ze) / d)), "b-", lw=1, label="Tierra")
-    a.set_title(f"Pendiente por paso de 30 m: error medio {b['J']:.2f} deg, r = {b['r']:.2f}, {100*b['within_2deg']:.0f} % dentro de 2 deg")
-    a.set_xlabel("distancia recorrida s [km]"); a.set_ylabel("pendiente [deg]"); a.grid(alpha=.3); a.legend()
+    a = ax[i, 2]; a.plot(s[1:], np.degrees(np.arctan(np.diff(zm) / 30)), "r-", lw=1.5, label="Mars"); a.plot(s[1:], np.degrees(np.arctan(np.diff(ze) / d)), "b-", lw=1, label="Earth")
+    a.set_title(f"Slope per 30 m step: mean error {b['J']:.2f} deg, r = {b['r']:.2f}, {100*b['within_2deg']:.0f} % within 2 deg")
+    a.set_xlabel("distance travelled s [km]"); a.set_ylabel("slope [deg]"); a.grid(alpha=.3); a.legend()
 plt.tight_layout(); plt.savefig("free_fits.png", dpi=70)

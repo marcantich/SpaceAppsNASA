@@ -4,13 +4,18 @@
 the reasons: every variable, its value on both sides and where each number comes from.
 
 **Challenge:** *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*
-([full statement](docs/02_reto_oficial.md)).
+([full statement](docs/02_official_challenge.md)).
 
-**Contents:** [What it does](#what-it-does) · [Quick start](#quick-start) · [How it works](#how-it-works) ·
-[The analog index](#the-analog-index-in-three-steps) · [Data](#data) · [Limits](#what-it-does-not-do) ·
-[Run it, step by step](#run-it-on-your-computer-step-by-step) · [Regenerating the data](#regenerating-the-data-python) ·
-[Repository map](#repository-map) · [Documentation](#documentation) · [Team](#team) ·
-[Licence and credits](#licence-and-credits)
+![Analogs of Jezero crater (Mars) on Earth](docs/img/analogs_jezero.jpg)
+
+*Perseverance's landing site in Jezero crater (left) and its best Earth analog, a desert cell in Niger
+(right). The score dock compares every variable on both sides.*
+
+**Contents:** [What it does](#what-it-does) · [Quick start](#quick-start) · [How to use it](#how-to-use-it) ·
+[How it works](#how-it-works) · [The analog index](#the-analog-index-in-three-steps) · [Data](#data) ·
+[Limits](#what-it-does-not-do) · [Installation, step by step](#installation-step-by-step) ·
+[Regenerating the data](#regenerating-the-data-python) · [Repository map](#repository-map) ·
+[Documentation](#documentation) · [Team](#team) · [Licence and credits](#licence-and-credits)
 
 ## What it does
 
@@ -39,7 +44,27 @@ npm run dev
 ```
 
 Open <http://localhost:5173>, press Enter and click any point of Mars.
-Detailed instructions and troubleshooting: [below](#run-it-on-your-computer-step-by-step).
+Detailed instructions and troubleshooting: [below](#installation-step-by-step).
+
+## How to use it
+
+1. **Pick the two bodies** in the toolbar: *Click on* (left globe) and *search* (right globe), e.g. Mars
+   and Earth. **⇄** swaps them.
+2. **Click any point** of the left globe, or type a site (`Jezero`, `Apollo 15`, `Shackleton`) or
+   coordinates (`18.4, 77.5`) in the search box and press Enter.
+3. **Read the result:** the card of the clicked cell (top left), the six best analogs (top right, click
+   one to fly there), the card of the selected analog, and the score dock at the bottom with the index,
+   the bar of each dimension and, under *Variables*, both values of every variable.
+4. **Choose what you want to test** in *Test* (wheels, navigation, ice detection, solar power…) and,
+   if you want, limit the search with *Zone*. `Esc` clears the selection.
+5. **Other views** (title menu, top left): the *Rover test planner* and the *Route replica*.
+
+| Rover test planner | Route replica |
+|---|---|
+| ![Rover test planner at Jezero](docs/img/rover_planner.jpg) | ![Route replica of a Perseverance traverse](docs/img/route_replica.jpg) |
+| Where on Earth each part of a rover sent to Jezero can be field-tested: 5 of 5 parts, testability 70 % | A 3 km Perseverance traverse replicated in Bardenas Reales (Spain): every step within ±2° |
+
+Full guide with every control: [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
 
 ## How it works
 
@@ -102,15 +127,26 @@ horizontal panel (NASA Appelbaum & Flood model) and the mean wind and wind stres
 - **Geology is not compared yet**: two cells can match in terrain and climate and be different rocks.
 - **The scale is 6–12 km**: what is smaller than a cell is averaged out.
 - **Tolerances and weights are the team's assumptions**, each with a written reason; they are not
-  calibrated, and the validation against known analogs is designed but not done.
+  calibrated. The results were spot-checked by hand (e.g. Apollo 15, below), but the systematic
+  validation against known analogs is designed and not yet run.
 - **The index is not a probability**: it orders places for one target and one test.
 
 In full: [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
 
-## Run it on your computer, step by step
+**Spot check: Apollo 15.** Searching from the Apollo 15 landing site (Hadley–Apennine, Moon), the
+expected kind of zone came out: cold, dry open land with low slopes, led by Patagonia (Argentina,
+index 68) and followed by Mongolia and Canada. Terrain and sky match well (96 and 100); the thermal
+dimension stays low (4) because no place on Earth has the lunar day–night range. This is a manual check
+of one site, not the systematic validation planned in
+[`docs/09_selection_criteria.md`](docs/09_selection_criteria.md).
+
+![Apollo 15 landing site and its best Earth analog](docs/img/analogs_apollo15.jpg)
+
+## Installation, step by step
 
 The app runs **locally**: nothing to deploy and no account needed. Everything it needs is in this
 repository (~170 MB with the data); only the map imagery is loaded from the internet while you use it.
+The same commands work on Windows (PowerShell), macOS and Linux.
 
 **1. Install two programs** (once):
 
@@ -120,21 +156,18 @@ repository (~170 MB with the data); only the map imagery is loaded from the inte
 | **Node.js 20 or newer** (LTS) | [nodejs.org](https://nodejs.org) | `node --version` |
 
 Default options in both installers are fine. On Windows, open a **new** terminal (PowerShell) after
-installing so the commands are found.
+installing so the commands are found. You also need a recent Chrome, Edge or Firefox.
 
 **2. Download the project:**
 
 ```bash
 git clone https://github.com/pablourioste/SpaceAppsNASA.git
-```
-
-```bash
 cd SpaceAppsNASA/app
 ```
 
 (No Git? On the GitHub page: **Code → Download ZIP**, unzip it, and open a terminal in the `app` folder.)
 
-**3. Install the app's libraries** (once, ~1 minute):
+**3. Install the app's libraries** (once, ~1 minute; again after every `git pull`):
 
 ```bash
 npm install
@@ -146,12 +179,13 @@ npm install
 npm run dev
 ```
 
-**5. Open [http://localhost:5173](http://localhost:5173)** in Chrome, Edge or Firefox. Press Enter on the
-opening screen, pick the body to click on (Mars, Moon or Earth) and the body to search, and click any
-point: the other globe is painted with its analogs. `Esc` clears the selection. The title menu (top
-left) opens the **Rover test planner** and the **Route replica**.
+**5. Open [http://localhost:5173](http://localhost:5173)**, press Enter on the opening screen and follow
+[How to use it](#how-to-use-it).
 
 To stop it: `Ctrl + C` in the terminal. Next time, only steps 4 and 5.
+
+**Optional:** `npm run build` writes a static copy of the site to `app/dist/` (any static web server can
+host it) and `npm run preview` serves it at <http://localhost:4173>. `npm test` runs the app's tests.
 
 **If something goes wrong:**
 
@@ -187,7 +221,7 @@ reload the page. Check any export with `scripts/check_grid_binary.py`. The app's
 in `app/`.
 
 Guides: [`scripts/README.md`](scripts/README.md) (every script),
-[`docs/08_datos_LEEME.md`](docs/08_datos_LEEME.md) (the data folder and the processing order),
+[`docs/08_data_folder_guide.md`](docs/08_data_folder_guide.md) (the data folder and the processing order),
 [`docs/07_card_grid_binary_format.md`](docs/07_card_grid_binary_format.md) (the web data format).
 
 ## Repository map
@@ -222,6 +256,7 @@ Folder and key names in Spanish are kept on purpose (renaming them would touch t
 | Document | What it explains |
 |---|---|
 | [`docs/README.md`](docs/README.md) | Index of all the documents, in reading order |
+| [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md) | Install, start and use the app: every control, with screenshots |
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the repository works: the three stages, what happens on a click, module map, glossary |
 | [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) | The mathematics: grid, how each variable is computed, the index, the ranking, rover planner, route replica |
 | [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md) | Every dataset, where it comes from and how to cite it |
@@ -241,14 +276,14 @@ Folder and key names in Spanish are kept on purpose (renaming them would touch t
 
 ## Team
 
-| Role | Person |
+| Person | Role |
 |---|---|
-| Coordination and presentation | |
-| Science and validation | |
-| Moon and Mars data | |
-| Earth data | |
-| Engine | |
-| App | |
+| Adrià Solà | Built the Mars data pipeline and the web app. |
+| Pablo Urioste | Coordinated the team, the documentation and the pitch. |
+| Martí Esquerda | Processed the Earth data and the search mask. |
+| Angel Raya | Prepared the Moon data. |
+| Marc Antich | Designed the scientific approach and the comparison method. |
+| Miquel Paris | Built the first comparison engine and its tests. |
 
 ## Pitch
 

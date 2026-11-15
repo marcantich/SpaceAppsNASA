@@ -4,8 +4,8 @@
 > was built, **every decision and why**, the conventions, the pitfalls already hit and what is still
 > open. Read it together with [`ROADMAP.md`](../ROADMAP.md) (task list, the detail of each task),
 > [`docs/decisions/README.md`](decisions/README.md) (decision log), [`docs/07`](07_card_grid_binary_format.md)
-> (web data format), [`docs/08`](08_datos_LEEME.md) (data guide, also written for Claude) and
-> [`docs/09`](09_criterios_seleccion.md) (selection / scoring criteria).
+> (web data format), [`docs/08`](08_data_folder_guide.md) (data guide, also written for Claude) and
+> [`docs/09`](09_selection_criteria.md) (selection / scoring criteria).
 
 ## 1. The project in one paragraph
 
@@ -21,7 +21,7 @@ the browser** from small pre-computed files; no server.
 
 | What | Where |
 |---|---|
-| Repo (local) | `C:\Users\adria\OneDrive\Escritorio\NASASPACEAPP\SpaceAppsNASA` (inside OneDrive) |
+| Repo (local) | A clone inside a OneDrive folder on one team member's laptop |
 | Web app | `app/` (Vite 6 + CesiumJS 1.147 + `h3-js`; `npm run dev` → http://localhost:5173) |
 | Python engine | `src/analogs/` (+ `scripts/`), venv in `.venv` |
 | Data folder | `src/analogs/paths.py`: `ANALOGS_DATA_DIR`, else `~/SpaceAppsData`, else `<repo>/data` (Adrià's machine: `<repo>/data`). Structure `raw/<earth|moon|mars>/…`, `interim/`, `processed/` — **not in git** |

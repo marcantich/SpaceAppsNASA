@@ -10,7 +10,7 @@ Grid: H3 resolution 4 (H3_RES). On the Moon a res-4 hexagon is ~131.7 km² (~12.
 the H3 level closest to the Mars res-5 hexagons (~71.6 km², ~9.1 km). Res 5 would give only
 ~4.7 km on the Moon (H3 cells are defined by angle, and the Moon is small). 288,122 cells.
 
-Inputs (data/raw/moon/, see scripts/download_moon.py and docs/06_datos_luna.md):
+Inputs (data/raw/moon/, see scripts/download_moon.py and docs/06_moon_data.md):
     lola_ldem64/          LOLA global DEM, 64 px/deg (~474 m)        → slope, roughness
     lola_ldec128/         LOLA shots per cell, 128 px/deg            → % of measured cells (QC)
     diviner_gcp/          Diviner temperature per 0.5° tile and local time → T mean/max/min
@@ -68,10 +68,10 @@ COLUMNS = {
     "prp_t_max_K": ("K", "Diviner PRP (lat ≤ −80°)", "median annual max surface temperature (polar detail, extra)"),
     "psr_frac": ("0-1", "PGDA LPSR_80S_20MPP (lat ≤ −80.4°)", "fraction of the hexagon in permanent shadow"),
     "feo_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "W_FEO × 100 of the 2° cell containing the hexagon centre [units: verify]"),
-    "tio2_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "ídem TIO2"),
-    "al2o3_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "ídem W_AL2O3"),
-    "mgo_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "ídem W_MGO"),
-    "cao_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "ídem W_CAO"),
+    "tio2_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, TIO2"),
+    "al2o3_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, W_AL2O3"),
+    "mgo_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, W_MGO"),
+    "cao_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, W_CAO"),
     "silica_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "W_SIO2 × 100 (name as in configs/variables.yaml)"),
     "k_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_K [units: verify]"),
     "th_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_TH [units: verify]"),

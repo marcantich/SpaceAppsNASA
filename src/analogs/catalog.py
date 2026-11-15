@@ -2,8 +2,8 @@
 
 Every dataset lives in  <DATA>/raw/<body>/<folder>/   (DATA = analogs.paths.DATA)
 and this file is the only list of those folders. It is used by:
-  scripts/importar_datos.py   to know where each file of a zip or USB stick goes
-  scripts/inventario.py       to say what is present, what is missing and to write <DATA>/LEEME.md
+  scripts/import_data.py   to know where each file of a zip or USB stick goes
+  scripts/inventory.py       to say what is present, what is missing and to write <DATA>/LEEME.md
 If you add a dataset: add a line here (and its download in the script of its body).
 """
 from __future__ import annotations
@@ -68,19 +68,19 @@ DATASETS: list[Dataset] = [
       "dust_aod, dust_aod_max, total_aod", "0.5° × 0.625° (~55 km)",
       "CLIMATOLOGY 2019–2023: annual mean and dustiest month",
       "netCDF4/HDF5 (subset to 4 variables). 'DUEXTTAU', 'TOTEXTTAU' (1, 361 lat, 576 lon); lat −90…90, lon −180…179.375",
-      "NASA GES DISC, Earthdata OPeNDAP service", "scripts/download_earth.py polvo", "~90 MB", "src/analogs/earth.py"),
+      "NASA GES DISC, Earthdata OPeNDAP service", "scripts/download_earth.py dust", "~90 MB", "src/analogs/earth.py"),
     C("earth", "ecostress_wps", "ECOSTRESS ECO_L3G_WPS v001",
       "Weight percent of silica (SiO₂) of exposed rock, sand and soil: first mineral map of the arid regions",
       "silica_wt_pct", "0.01° (~1.1 km), from 53° N to 53° S", "FIXED (mean 2023–2024)",
       "GeoTIFF; aggregated to 0.05° with a mean (rasterio.warp.reproject, Resampling.average)",
-      "NASA LP DAAC (Earthdata)", "scripts/download_earth.py silice", "2.5 GB", "src/analogs/earth.py"),
+      "NASA LP DAAC (Earthdata)", "scripts/download_earth.py silica", "2.5 GB", "src/analogs/earth.py"),
     C("earth", "mod10cm", "MODIS Terra MOD10CM v061",
       "Monthly snow cover (% of the cell)", "snow_cover_pct, snow_months", "0.05° (~5.6 km)",
       "CLIMATOLOGY 2019–2023: mean annual % and number of months above 50 %",
       "HDF4. 'Snow_Cover_Monthly_CMG' uint8, 0–100 = %; > 100 = codes (night, cloud, water, no data)",
-      "NASA NSIDC (Earthdata)", "scripts/download_earth.py nieve", "~120 MB", "src/analogs/earth.py"),
+      "NASA NSIDC (Earthdata)", "scripts/download_earth.py snow", "~120 MB", "src/analogs/earth.py"),
 
-    # ================================================================== MOON (docs/06_datos_luna.md)
+    # ================================================================== MOON (docs/06_moon_data.md)
     C("moon", "diviner_gcp", "LRO Diviner GCP", "Temperature per tile and local time (whole Moon)",
       "t_mean_K, t_max_K, t_min_K", "0.5° (~15 km)", "MEAN OF THE WHOLE MISSION per local time (typical lunar day)",
       ".tab tables by 10° latitude bands; column tbol; −9999 = no data", "PDS Geosciences",

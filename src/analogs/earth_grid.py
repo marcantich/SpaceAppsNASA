@@ -1,29 +1,29 @@
-"""La malla de fichas de la TIERRA: todas las variables en hexágonos H3, MISMO formato que Marte.
+"""The EARTH card grid: every variable on H3 hexagons, SAME format as Mars.
 
-    .venv\\Scripts\\python.exe scripts\\build_earth_grid.py            # H3 res 6 (por defecto)
+    .venv\\Scripts\\python.exe scripts\\build_earth_grid.py            # H3 res 6 (default)
     .venv\\Scripts\\python.exe scripts\\build_earth_grid.py --res 5    # H3 res 5
 
-Es el equivalente de src/analogs/mars_grid.py (Adrià) para la Tierra:
-  - una fila por celda H3 de TODO el planeta (mar = NaN), columna `h3` (texto), `lat`, `lon` y una
-    columna float32 por variable → data/processed/earth_h3r<res>.parquet
-  - mismo método raster → celda (ROADMAP 3.5): paso bajo = media ponderada por área; paso alto
-    (plano restado) SOLO para la rugosidad; mediana ponderada para la pendiente.
-  - después, scripts/build_earth_grid.py lo escribe en binario con analogs.export.write_grid_binary
-    → app/data/tierra/ (docs/07_card_grid_binary_format.md), igual que app/data/marte/.
+It is the equivalent of src/analogs/mars_grid.py for Earth:
+  - one row per H3 cell of the WHOLE planet (sea = NaN), column `h3` (text), `lat`, `lon` and one
+    float32 column per variable → data/processed/earth_h3r<res>.parquet
+  - same raster → cell method (ROADMAP 3.5): low-pass = area-weighted mean; high-pass
+    (plane removed) ONLY for roughness; weighted median for the slope.
+  - then scripts/build_earth_grid.py writes it in binary with analogs.export.write_grid_binary
+    → app/data/tierra/ (docs/07_card_grid_binary_format.md), like app/data/marte/.
 
-Tamaño de celda (H3 es una malla angular: el mismo nivel mide distinto en cada cuerpo):
-  Marte res 5 ≈ 9,1 km entre lados · Luna res 5 ≈ 4,7 km · Tierra res 5 ≈ 17 km · Tierra res 6 ≈ 6,5 km.
-  La Tierra res 6 es la más parecida a los ~9 km de Marte (y está entre Marte y la Luna).
+Cell size (H3 is an angular grid: the same level has a different size on each body):
+  Mars res 5 ≈ 9.1 km across · Moon res 5 ≈ 4.7 km · Earth res 5 ≈ 17 km · Earth res 6 ≈ 6.5 km.
+  Earth res 6 is the closest to the ~9 km of Mars (and lies between Mars and the Moon).
 
-Por variable (fuente → celda):
-  slope_deg, roughness_deg, elevation_m  relieve a 15″ (~460 m, ETOPO 2022: misma línea base que MOLA 128 px/°
-                                         y LOLA ldem_64) si está descargado; si no, 30″ (~0,93 km: SRTMGL30
-                                         + ETOPO 30″ en los polos) y se avisa. Solo píxeles de tierra.
-  t_*, precip, polvo, sílice, nieve,     malla 0,05° de src/analogs/earth.py (climatologías 2019–2023) →
-  máscara (in_mask, env, kept_frac)      media ponderada por ÁREA DE INTERSECCIÓN (cada píxel se parte en
-                                         3×3 subpíxeles, como TES en Marte)
-  land_frac                              fracción de la celda que es tierra (MCD12C1)
-  sun_elev_max_deg                       fórmula con la latitud del centro (oblicuidad 23,44°)
+Per variable (source → cell):
+  slope_deg, roughness_deg, elevation_m  relief at 15″ (~460 m, ETOPO 2022: same baseline as MOLA 128 px/°
+                                         and LOLA ldem_64) if it is downloaded; otherwise 30″ (~0.93 km:
+                                         SRTMGL30 + ETOPO 30″ at the poles) with a warning. Land pixels only.
+  t_*, precip, dust, silica, snow,       0.05° mesh of src/analogs/earth.py (2019–2023 climatologies) →
+  mask (in_mask, env, kept_frac)         mean weighted by AREA OF INTERSECTION (each pixel is split in
+                                         3×3 sub-pixels, like TES on Mars)
+  land_frac                              fraction of the cell that is land (MCD12C1)
+  sun_elev_max_deg                       formula with the latitude of the centre (obliquity 23.44°)
 """
 from __future__ import annotations
 
@@ -45,15 +45,15 @@ def log(msg: str) -> None:
 
 
 def to_cells(lat: np.ndarray, lon: np.ndarray, res: int) -> np.ndarray:
-    """H3 de muchos puntos a la vez (h3ronpy, vectorizado; mismo resultado que h3-py)."""
+    """H3 cell of many points at once (h3ronpy, vectorised; same result as h3-py)."""
     return np.asarray(coordinates_to_cells(np.ascontiguousarray(lat, dtype=np.float64),
                                            np.ascontiguousarray(wrap180(lon), dtype=np.float64), res)).astype(np.uint64)
 
 
 class EarthGrid(Grid):
-    """La misma clase de acumuladores que mars_grid.Grid, pero a la resolución que se pida."""
+    """The same accumulator class as mars_grid.Grid, at the resolution asked for."""
 
-    def __init__(self, res: int) -> None:          # noqa: D107 (no llama a Grid.__init__: otra resolución)
+    def __init__(self, res: int) -> None:          # noqa: D107 (does not call Grid.__init__: another resolution)
         self.res = res
         cells = np.fromiter((c for r in h3i.get_res0_cells() for c in h3i.cell_to_children(r, res)), dtype=np.uint64)
         cells.sort()
@@ -67,11 +67,11 @@ class EarthGrid(Grid):
 
 
 # --------------------------------------------------------------------------------------
-# Relieve: pendiente (mediana ponderada), rugosidad (paso alto), elevación
+# Relief: slope (weighted median), roughness (high-pass), elevation
 # --------------------------------------------------------------------------------------
 
 def _accumulate_dem(grid: EarthGrid, ids, z, gx, gy, lat, lon, w) -> None:
-    """Igual que mars_grid._accumulate_topography, con el radio de la Tierra."""
+    """Same as mars_grid._accumulate_topography, with the radius of Earth."""
     uniq, inv = np.unique(ids, return_inverse=True)
     gidx = grid.index(uniq)
     clat, clon = grid.lat[gidx][inv], grid.lon[gidx][inv]
@@ -90,14 +90,14 @@ def _accumulate_dem(grid: EarthGrid, ids, z, gx, gy, lat, lon, w) -> None:
 
 def _process_block(grid: EarthGrid, z: np.ndarray, lat_rows: np.ndarray, lon_cols: np.ndarray,
                    land_cmg: np.ndarray, halo_top: int, halo_bottom: int) -> None:
-    """Un bloque de relieve (filas con 1 fila de halo arriba/abajo) → sumas de la malla."""
+    """One block of relief (rows with a 1-row halo above / below) → sums of the grid."""
     dim = abs(lat_rows[1] - lat_rows[0])
     step = np.deg2rad(dim) * EARTH_RADIUS_M
-    gy = -np.gradient(z, axis=0) / step                                            # d z / d norte
+    gy = -np.gradient(z, axis=0) / step                                            # d z / d north
     gx = np.gradient(z, axis=1) / (step * np.clip(np.cos(np.deg2rad(lat_rows)), 1e-3, None))[:, None]
     cut = slice(halo_top, z.shape[0] - halo_bottom)
     z, gx, gy, lat_rows = z[cut], gx[cut], gy[cut], lat_rows[cut]
-    # solo píxeles de TIERRA (máscara MCD12C1 a 0,05°) y con dato en el píxel y sus vecinos
+    # LAND pixels only (MCD12C1 mask at 0.05°), with data in the pixel and its neighbours
     ri = np.clip(((90 - lat_rows) / RES).astype(int), 0, N_LAT - 1)
     ci = np.clip(((wrap180(lon_cols) + 180) / RES).astype(int), 0, N_LON - 1)
     keep = land_cmg[ri][:, ci] & np.isfinite(z) & np.isfinite(gx) & np.isfinite(gy)
@@ -110,38 +110,38 @@ def _process_block(grid: EarthGrid, z: np.ndarray, lat_rows: np.ndarray, lon_col
 
 
 def process_relief(grid: EarthGrid, land_cmg: np.ndarray) -> str:
-    """Relieve → sumas. Devuelve la descripción de la fuente usada (para index.json)."""
+    """Relief → sums. Returns the description of the source used (for index.json)."""
     import rasterio
     from rasterio.windows import Window
 
     tiles15 = sorted((RAW_EARTH / "etopo2022_15s").glob("*.tif"))
-    needed = 0                                    # piezas de 15°×15° con tierra (las que baja download_earth.py dem15)
+    needed = 0                                    # 15°×15° tiles with land (those downloaded by download_earth.py dem15)
     for top in range(90, -90, -15):
         for west in range(-180, 180, 15):
             r0, c0 = int((90 - top) / RES), int((west + 180) / RES)
             needed += bool(land_cmg[r0:r0 + 300, c0:c0 + 300].any())
     if tiles15 and len(tiles15) < needed:
-        log(f"⚠️  Relieve 15″ incompleto ({len(tiles15)}/{needed} piezas): se usa 30″ hasta que acabe la descarga")
+        log(f"⚠️  15″ relief incomplete ({len(tiles15)}/{needed} tiles): 30″ is used until the download ends")
         tiles15 = []
     if tiles15:
-        log(f"Relieve 15″ (~460 m): {len(tiles15)} piezas ETOPO 2022")
+        log(f"15″ relief (~460 m): {len(tiles15)} ETOPO 2022 tiles")
         for k, t in enumerate(tiles15, 1):
             try:
                 with rasterio.open(t) as src:
                     z = src.read(1).astype(np.float64)
                     tr = src.transform
-            except Exception as e:  # noqa: BLE001 — pieza a medias
-                log(f"  ✗ {t.name}: {type(e).__name__} (se salta)")
+            except Exception as e:  # noqa: BLE001 — unfinished tile
+                log(f"  ✗ {t.name}: {type(e).__name__} (skipped)")
                 continue
             lat_rows = tr.f + (np.arange(z.shape[0]) + 0.5) * tr.e
             lon_cols = tr.c + (np.arange(z.shape[1]) + 0.5) * tr.a
-            # sin halo entre piezas: el gradiente del borde es de un solo lado (error de 1 fila, despreciable)
+            # no halo between tiles: the gradient at the edge is one-sided (an error of 1 row, negligible)
             _process_block(grid, z, lat_rows, lon_cols, land_cmg, 0, 0)
             if k % 25 == 0:
                 log(f"  {k}/{len(tiles15)}")
         return "NOAA ETOPO 2022 15″ (~460 m pixels, same as MGS MOLA 128 px/deg and LRO LOLA ldem_64)"
 
-    log("⚠️  No hay relieve a 15″ (download_earth.py dem15): se usa 30″ (~0,93 km) → pendientes más suaves que en Marte/Luna")
+    log("⚠️  No 15″ relief (download_earth.py dem15): 30″ (~0.93 km) is used → slopes gentler than on Mars / the Moon")
     from .earth import _read_srtm30_tile
     for t in sorted((RAW_EARTH / "srtmgl30").glob("*.zip")):
         dem, g = _read_srtm30_tile(t)
@@ -149,7 +149,7 @@ def process_relief(grid: EarthGrid, land_cmg: np.ndarray) -> str:
         lon_cols = g["ulx"] + g["dim"] * np.arange(dem.shape[1])
         _process_block(grid, dem.astype(np.float64), lat_rows, lon_cols, land_cmg, 0, 0)
     tif = next((RAW_EARTH / "etopo2022_30s").glob("*.tif"), None)
-    if tif is not None:                                     # polos: lo que SRTMGL30 no cubre
+    if tif is not None:                                     # poles: what SRTMGL30 does not cover
         with rasterio.open(tif) as src:
             dim = src.transform.a
             for top, bottom in ((90.0, 60.0), (-56.0, -90.0)):
@@ -163,18 +163,18 @@ def process_relief(grid: EarthGrid, land_cmg: np.ndarray) -> str:
 
 
 # --------------------------------------------------------------------------------------
-# Campos de 0,05° → celda (área de intersección con 3×3 subpíxeles)
+# 0.05° fields → cell (area of intersection with 3×3 sub-pixels)
 # --------------------------------------------------------------------------------------
 
 def accumulate_cmg(grid: EarthGrid, fields: dict[str, np.ndarray], land: np.ndarray, sub: int = 3,
                    chunk: int = 120) -> None:
-    """Media ponderada por área de cada campo 0,05° dentro de cada celda (como accumulate_fine_raster
-    de Marte). También acumula el área total (W_all) y la de tierra (W_land) → land_frac."""
+    """Area-weighted mean of each 0.05° field inside each cell (like accumulate_fine_raster for Mars).
+    It also accumulates the total area (W_all) and the land area (W_land) → land_frac."""
     offs = (np.arange(sub) + 0.5) / sub - 0.5
     for r0 in range(0, N_LAT, chunk):
         r1 = min(N_LAT, r0 + chunk)
-        lat_s = (LAT[r0:r1, None] - offs[None, :] * RES).ravel()           # subfilas
-        lon_s = (LON[:, None] + offs[None, :] * RES).ravel()               # subcolumnas
+        lat_s = (LAT[r0:r1, None] - offs[None, :] * RES).ravel()           # sub-rows
+        lon_s = (LON[:, None] + offs[None, :] * RES).ravel()               # sub-columns
         LA, LO = np.meshgrid(lat_s, lon_s, indexing="ij")
         ids = to_cells(LA.ravel(), LO.ravel(), grid.res)
         uniq, inv = np.unique(ids, return_inverse=True)
@@ -199,21 +199,21 @@ def _mean(grid: EarthGrid, name: str) -> np.ndarray:
 
 
 # --------------------------------------------------------------------------------------
-# Principal
+# Main
 # --------------------------------------------------------------------------------------
 
-MIN_CELL_FRAC = 0.25      # como build_earth_mask.py: la celda está en la máscara si ≥ 25 % de su tierra lo está
+MIN_CELL_FRAC = 0.25      # as in build_earth_mask.py: the cell is in the mask if ≥ 25 % of its land is
 
-# --- Permafrost → profundidad del hielo (equivalente a SWIM en Marte y Diviner PRP en la Luna) ---------
-# [supuesto] Método (lo revisa Ciencia):
-#   1. hielo en superficie: ≥ 50 % de la celda es nieve/hielo permanente (MCD12C1) → 0 m
-#   2. permafrost: temperatura media anual de la superficie < 0 °C → hielo bajo la CAPA ACTIVA,
-#      espesor por la fórmula de Stefan  ALT = E·√(grados-día de deshielo)  (Nelson et al. 1997)
-#   3. si no → sin hielo = NO_ICE_DEPTH_M (10 m, el mismo código que Marte, mars_grid.NO_ICE_DEPTH_M)
-# ice_depth_m se guarda en las MISMAS CLASES que Marte (0,5 = primer metro · 3 = 1–5 m · 5 = > 5 m · 10 = no);
-# ice_depth_cont_m guarda los metros estimados. Limitaciones: LST es la superficie con cielo despejado y la nieve
-# aísla el suelo; el hielo terrestre está bajo atmósfera (analogía parcial, variables.yaml).
-STEFAN_E = 0.035          # m / √(°C·día) [supuesto]: 0,02–0,05 según el suelo
+# --- Permafrost → ice depth (the equivalent of SWIM on Mars and Diviner PRP on the Moon) ---------------
+# [assumption] Method (to be reviewed by Science):
+#   1. ice at the surface: ≥ 50 % of the cell is permanent snow / ice (MCD12C1) → 0 m
+#   2. permafrost: mean annual surface temperature < 0 °C → ice under the ACTIVE LAYER,
+#      thickness from the Stefan formula  ALT = E·√(thawing degree-days)  (Nelson et al. 1997)
+#   3. otherwise → no ice = NO_ICE_DEPTH_M (10 m, the same code as Mars, mars_grid.NO_ICE_DEPTH_M)
+# ice_depth_m is stored in the SAME CLASSES as Mars (0.5 = first metre · 3 = 1–5 m · 5 = > 5 m · 10 = none);
+# ice_depth_cont_m stores the estimated metres. Limitations: LST is the clear-sky surface and snow
+# insulates the ground; Earth ice is under an atmosphere (partial analogy, variables.yaml).
+STEFAN_E = 0.035          # m / √(°C·day) [assumption]: 0.02–0.05 depending on the soil
 NO_ICE_DEPTH_M = 10.0
 
 
@@ -226,9 +226,9 @@ def permafrost_fields(m: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 
 def ice_depth(t_mean_K: np.ndarray, thaw_dd: np.ndarray, ice_frac: np.ndarray
               ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """(ice_depth_m en clases de Marte, ice_depth_cont_m en metros, ice_depth_source).
-    ice_depth_source, como en Marte y la Luna: 1 = casquete/glaciar (MCD12C1) · 2 = modelo de permafrost
-    (Stefan) · 3 = supuesto (temperatura media ≥ 0 °C → sin hielo en el suelo)."""
+    """(ice_depth_m in the Mars classes, ice_depth_cont_m in metres, ice_depth_source).
+    ice_depth_source, as on Mars and the Moon: 1 = ice sheet / glacier (MCD12C1) · 2 = permafrost model
+    (Stefan) · 3 = assumption (mean temperature ≥ 0 °C → no ground ice)."""
     t, tdd, ice = (np.asarray(a, dtype=float) for a in (t_mean_K, thaw_dd, ice_frac))
     cont = np.full(t.shape, np.nan)
     src = np.full(t.shape, np.nan)
@@ -247,7 +247,7 @@ def ice_depth(t_mean_K: np.ndarray, thaw_dd: np.ndarray, ice_frac: np.ndarray
 
 
 def add_permafrost(res: int = 6) -> pd.DataFrame:
-    """Añade ice_depth_m / ice_depth_cont_m a un earth_h3r<res>.parquet ya hecho (sin repetir el relieve)."""
+    """Adds ice_depth_m / ice_depth_cont_m to an existing earth_h3r<res>.parquet (without redoing the relief)."""
     path = PROCESSED / f"earth_h3r{res}.parquet"
     df = pd.read_parquet(path)
     log(f"Permafrost → {path.name}")
@@ -260,28 +260,28 @@ def add_permafrost(res: int = 6) -> pd.DataFrame:
     df["ice_depth_m"], df["ice_depth_cont_m"], df["ice_depth_source"] = cls.astype("f4"), cont.astype("f4"), src.astype("f4")
     df.to_parquet(path, index=False)
     land = df[df.land_frac > 0]
-    log(f"  clases (celdas con tierra): {land.ice_depth_m.value_counts().sort_index().to_dict()}")
+    log(f"  classes (cells with land): {land.ice_depth_m.value_counts().sort_index().to_dict()}")
     return df
 
 
 def build_earth_grid(res: int = 6) -> tuple[pd.DataFrame, str]:
     t0 = time.time()
-    log(f"Malla H3 res {res} de la Tierra…")
+    log(f"H3 res-{res} grid of Earth…")
     grid = EarthGrid(res)
-    log(f"  {grid.n:,} celdas")
+    log(f"  {grid.n:,} cells")
 
     m = load_mask()
     land, cls = m["land"], m["cls"]
     relief_source = process_relief(grid, land)
     topo = finish_topography(grid).drop(columns=["mola_measured_frac"])
 
-    log("Campos de 0,05° (temperatura, lluvia, polvo, sílice, nieve) …")
-    fields = compute_fields(m, relief=False)                      # el relieve ya va por su cuenta (arriba)
+    log("0.05° fields (temperature, rain, dust, silica, snow) …")
+    fields = compute_fields(m, relief=False)                      # the relief is handled apart (above)
     fields["ice_frac"] = (cls == 1).astype("f4")                  # permafrost (ice_depth, abajo)
     fields["kept"] = (cls > 0).astype("f4")
     for k in (1, 2, 3):
         fields[f"env{k}"] = (cls == k).astype("f4")
-    log("Agregando a celdas (3×3 subpíxeles por píxel) …")
+    log("Aggregating to cells (3×3 sub-pixels per pixel) …")
     accumulate_cmg(grid, fields, land)
 
     with np.errstate(invalid="ignore", divide="ignore"):
@@ -308,16 +308,16 @@ def build_earth_grid(res: int = 6) -> tuple[pd.DataFrame, str]:
     out = PROCESSED / f"earth_h3r{res}.parquet"
     df = df.astype({c: "float32" for c in df.columns if c not in ("h3", "lat", "lon")})
     df.to_parquet(out, index=False)
-    log(f"Hecho en {(time.time() - t0) / 60:.1f} min → {out} ({out.stat().st_size / 1e6:.0f} MB)")
+    log(f"Done in {(time.time() - t0) / 60:.1f} min → {out} ({out.stat().st_size / 1e6:.0f} MB)")
     return df, relief_source
 
 
-# Tamaño medio de una celda H3 en la Tierra (ancho entre lados, km), para index.json → "cell_size_km"
-# (la ficha de la app lo enseña; Marte res 5 ≈ 9,1 km, Luna res 4 ≈ 12,3 km)
+# Mean size of an H3 cell on Earth (width between sides, km), for index.json → "cell_size_km"
+# (the app's card shows it; Mars res 5 ≈ 9.1 km, Moon res 4 ≈ 12.3 km)
 EARTH_CELL_SIZE_KM = {4: 45.3, 5: 17.1, 6: 6.5}
 
-# name → (dtype, scale, offset, unit, label). Las variables COMPARTIDAS con Marte y la Luna usan su mismo
-# nombre, unidad y (cuando el rango cabe) la misma codificación que Marte (src/analogs/export.py).
+# name → (dtype, scale, offset, unit, label). The variables SHARED with Mars and the Moon use the same
+# name, unit and (when the range fits) the same encoding as Mars (src/analogs/export.py).
 EARTH_WEB_COLUMNS: dict[str, tuple[str, float, float, str, str]] = {
     "slope_deg":        ("u1", 0.25, 0.0, "°", "Slope (median; ~460 m pixels, central differences ≈ 0.9 km baseline)"),
     "roughness_deg":    ("u1", 0.25, 0.0, "°", "Roughness (RMS slope after removing a plane)"),
@@ -364,24 +364,24 @@ def earth_sources(relief_source: str) -> dict[str, str]:
 
 
 # --------------------------------------------------------------------------------------
-# Tabla compacta para COMPARAR en el navegador (ROADMAP 4.9): solo las celdas de la máscara
+# Compact table to COMPARE in the browser (ROADMAP 4.9): only the cells of the mask
 # --------------------------------------------------------------------------------------
-# La app tiene que puntuar TODA la Tierra cada vez que se hace clic en Marte o la Luna. Bajar los 14 M de
-# celdas del binario por regiones sería lento, así que se escribe aparte una tabla con SOLO las celdas de
-# búsqueda (in_mask = 1, ~1,4 M) y SOLO las columnas que se comparan, con la misma codificación:
-#   app/data/tierra/match.json     columnas, nº de celdas, variables (tolerancias) y pruebas (pesos)
-#   app/data/tierra/match.bin.gz   [h3 alto u4][h3 bajo u4][columna 1]…  little-endian, celdas por H3 ascendente
+# The app has to score the WHOLE Earth every time Mars or the Moon is clicked. Downloading the 14 M
+# cells of the binary by regions would be slow, so a separate table is written with ONLY the search
+# cells (in_mask = 1, ~1.4 M) and ONLY the compared columns, with the same encoding:
+#   app/data/tierra/match.json     columns, number of cells, variables (tolerances) and tests (weights)
+#   app/data/tierra/match.bin.gz   [h3 high u4][h3 low u4][column 1]…  little-endian, cells in ascending H3 order
 MATCH_COLUMNS = ["slope_deg", "roughness_deg", "t_mean_K", "t_max_K", "t_min_K", "t_night_K", "dust_aod",
                  "ice_depth_m", "sun_elev_max_deg", "precip_mm_year", "env"]
 
 
 def match_scoring_meta() -> dict:
-    """Bloques de puntuación de match.json, leídos de configs/variables.yaml y configs/pruebas.yaml.
+    """Scoring blocks of match.json, read from configs/variables.yaml and configs/pruebas.yaml.
 
-    Fórmula (src/analogs/similarity.py = app/src/scoring.js): nota suave 1/(1+(Δ/half_diff)²), o matriz de
-    clases (hielo); nota de cada dimensión = media ponderada de sus variables; índice = media ponderada de
-    las dimensiones (peso = el mayor de sus variables); el ranking mezcla la celda con sus 6 vecinas.
-    scripts/export_scoring.py lo reescribe sin tocar match.bin.gz.
+    Formula (src/analogs/similarity.py = app/src/scoring.js): soft note 1/(1+(Δ/half_diff)²), or class
+    matrix (ice); note of each dimension = weighted mean of its variables; index = weighted mean of
+    the dimensions (weight = the largest of its variables); the ranking mixes the cell with its 6
+    neighbours. scripts/export_scoring.py rewrites it without touching match.bin.gz.
     """
     import yaml
 
@@ -389,7 +389,7 @@ def match_scoring_meta() -> dict:
 
     cfg = yaml.safe_load((CONFIGS / "variables.yaml").read_text(encoding="utf-8"))
     pruebas = yaml.safe_load((CONFIGS / "pruebas.yaml").read_text(encoding="utf-8"))["pruebas"]
-    key = lambda x: format(float(x), "g")  # noqa: E731  0.5 → "0.5", 3 → "3" (igual que String(n) en JS)
+    key = lambda x: format(float(x), "g")  # noqa: E731  0.5 → "0.5", 3 → "3" (the same as String(n) in JS)
     variables = {}
     for k, v in cfg["variables"].items():
         if k not in MATCH_COLUMNS or v.get("type", "numeric") != "numeric":
@@ -448,11 +448,11 @@ def write_match_table(df: pd.DataFrame) -> dict:
         **match_scoring_meta(),
     }
     (out / "match.json").write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
-    log(f"match.bin.gz: {len(ids):,} celdas de búsqueda, {(out / 'match.bin.gz').stat().st_size / 1e6:.1f} MB")
+    log(f"match.bin.gz: {len(ids):,} search cells, {(out / 'match.bin.gz').stat().st_size / 1e6:.1f} MB")
     return meta
 
 
-# Etiquetas cortas para la ficha de la app (mismo esquema que MARS_DISPLAY / MOON_DISPLAY en export.py)
+# Short labels for the app's card (same scheme as MARS_DISPLAY / MOON_DISPLAY in export.py)
 EARTH_DISPLAY: dict[str, dict] = {
     "slope_deg": {"short_source": "ETOPO"},
     "roughness_deg": {"short_source": "ETOPO"},

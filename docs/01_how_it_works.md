@@ -1,7 +1,7 @@
 # 01 · Quick guide: how this works
 
 > For anyone who has never worked with satellite data. Written by Marc on 2026-11-14 as the team's
-> starting guide; the *why* of the method is in the [approach](03_enfoque.md). What was finally built is
+> starting guide; the *why* of the method is in the [approach](03_approach.md). What was finally built is
 > described in the [README](../README.md).
 
 ---

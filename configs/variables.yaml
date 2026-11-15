@@ -21,7 +21,7 @@
 # ⚠️ Every half_diff has a written criterion but is still an [assumption]: it has to be validated
 #    with known analogs (docs/09: point 9 of the criteria report).
 # ⚠️ Sources marked [verify] are identified but not downloaded or checked.
-# See docs/03_enfoque.md §2 for the caveats of each variable.
+# See docs/03_approach.md §2 for the caveats of each variable.
 # =============================================================================
 
 # Index (web app and src/analogs/similarity.py):

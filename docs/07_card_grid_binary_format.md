@@ -112,7 +112,7 @@ Pentagon base cells have fewer children (e.g. 16,807 vs 16,807 − …): always 
 > formula gives a number that looks precise but is meaningless (it would say "~2°" for both a
 > permanently shadowed crater and a sunlit ridge). Use an **illumination / permanent-shadow map**
 > instead — e.g. PGDA `LPSR_80S_20MPP_ADJ` (permanently shadowed regions, 20 m), already in Marc's
-> Moon kit (`docs/06_datos_luna.md`) — and document in the Moon's `SOURCES`/`DISPLAY` which one
+> Moon kit (`docs/06_moon_data.md`) — and document in the Moon's `SOURCES`/`DISPLAY` which one
 > was used (a per-cell `source_column` if the formula is kept away from the poles and the map is
 > used near them).
 

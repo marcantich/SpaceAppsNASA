@@ -1,11 +1,11 @@
-"""Re-escribe un binario web YA PUBLICADO (app/data/<cuerpo>/) con otra definición de columnas, sin
-necesitar el parquet original (lo reconstruye decodificando los propios .bin.gz).
+"""Rewrites an ALREADY PUBLISHED web binary (app/data/<body>/) with another column definition, without
+needing the original parquet (it rebuilds it by decoding the .bin.gz files themselves).
 
     .venv\\Scripts\\python.exe scripts\\recode_grid_binary.py luna
 
-Uso actual: la Luna (binario de Marc) pasa ice_depth_m de metros continuos a las MISMAS clases que Marte
-y la Tierra (0,5 / 3 / 5 / 10, export.ice_depth_class) y guarda los metros en ice_depth_cont_m.
-Los demás valores se decodifican y se vuelven a codificar con la misma escala: quedan idénticos.
+Current use: the Moon binary changes ice_depth_m from continuous metres to the SAME classes as Mars
+and Earth (0.5 / 3 / 5 / 10, export.ice_depth_class) and keeps the metres in ice_depth_cont_m.
+The other values are decoded and encoded again with the same scale: they stay identical.
 """
 import gzip
 import json
@@ -47,15 +47,15 @@ def decode(body: str) -> tuple[pd.DataFrame, dict]:
 
 def main(body: str) -> None:
     if body != "luna":
-        raise SystemExit("De momento solo: luna")
+        raise SystemExit("For now only: luna")
     df, idx = decode(body)
-    if "ice_depth_cont_m" not in df:                     # aún en metros → pasar a clases
+    if "ice_depth_cont_m" not in df:                     # still in metres → convert to classes
         df["ice_depth_cont_m"] = df["ice_depth_m"]
         df["ice_depth_m"] = ice_depth_class(df["ice_depth_cont_m"])
     extra = {k: idx[k] for k in ("cell_size_km",) if k in idx}
     write_grid_binary(df, body, MOON_WEB_COLUMNS, MOON_SOURCES, MOON_DISPLAY, extra=extra)
     land = df["ice_depth_m"].value_counts(dropna=False).sort_index()
-    print(f"{body}: {len(df):,} celdas reescritas · clases de hielo: {land.to_dict()}")
+    print(f"{body}: {len(df):,} cells rewritten · ice classes: {land.to_dict()}")
 
 
 if __name__ == "__main__":

@@ -57,8 +57,10 @@ tests that compare a single variable (*Drilling*, *Habitat*) is still pending (R
 - **Tolerances and weights are the team's assumptions.** Every `half_diff` has a written reason, but
   none has been calibrated. The same holds for the neighbour weight (0.4), the SWIM threshold, the
   permafrost coefficient, the mask thresholds and every rover margin.
-- **No validation against known analogs yet** (ROADMAP 3.17). The plan
-  ([`09_criterios_seleccion.md`](09_criterios_seleccion.md)): for each known analog, its percentile in the
+- **Only manual spot checks so far.** Searching from Apollo 15 (Hadley–Apennine), the team checked
+  that the expected kind of zone came out (cold, dry open land: Patagonia first, then Mongolia and
+  Canada). The systematic validation against known analogs (ROADMAP 3.17) is not run yet. The plan
+  ([`09_selection_criteria.md`](09_selection_criteria.md)): for each known analog, its percentile in the
   ranking from the site it represents; enrichment of known analogs in the top 1 % against random cells of
   the same mask; leave-one-out tuning; sensitivity of the top 100 to ±50 % changes of each tolerance.
   With 20 known sites this can catch large errors, not calibrate the index.

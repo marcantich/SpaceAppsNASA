@@ -181,9 +181,11 @@ SpaceAppsNASA/
 - **[verify]** marks something not checked; **[assumption]** marks a value chosen by the team.
 - Heavy data never go in git. Every downloaded file is listed in `data/raw/<body>/MANIFEST.csv`.
 
-## 7. Glossary (Spanish names kept in the code and data)
+## 7. Glossary (Spanish names kept in the data contract)
 
-Renaming them would touch about a thousand data files and every reader, so they were kept.
+Everything in the repository is written in English. The only Spanish words left are identifiers of the
+data contract between Python and the app (folder names, file names and keys inside the data files).
+Renaming them would touch about a thousand data files and every reader, so they were kept:
 
 | In the repository | Meaning |
 |---|---|
@@ -194,5 +196,6 @@ Renaming them would touch about a thousand data files and every reader, so they 
 | `analogos_conocidos` | Known Earth analogs |
 | `pruebas` (`pruebas.yaml`) | Tests ("what do you want to test?") |
 | `ruedas`, `navegacion`, `perforacion`, `hielo`, `energia_termica`, `polvo`, `habitat`, `comunicaciones` | Keys of the tests: wheels, navigation, drilling, ice, power & thermal, dust, habitat, communications |
-| `LEEME`, `inventario`, `importar_datos`, `buscar` | Read-me, inventory, import data, search (data-management scripts) |
+| `LEEME.md` | Read-me written inside the data folder by `scripts/inventory.py --readme` |
+| `LISTADO_<name>.csv` | File listing with hashes made by `scripts/list_data.py` |
 | `_aviso` | Warning field of a JSON file (empty when the data are real) |

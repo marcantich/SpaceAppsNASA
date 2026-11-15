@@ -1,11 +1,11 @@
-"""Reescribe la parte de PUNTUACIÓN de app/data/tierra/match.json (notas, dimensiones, pruebas) desde
-configs/variables.yaml y configs/pruebas.yaml, sin volver a construir la malla ni tocar match.bin.gz.
+"""Rewrites the SCORING part of app/data/tierra/match.json (notes, dimensions, tests) from
+configs/variables.yaml and configs/pruebas.yaml, without rebuilding the grid or touching match.bin.gz.
 
-Úsalo después de cambiar un half_diff, una matriz, una dimensión o los pesos de una prueba:
+Use it after changing a half_diff, a matrix, a dimension or the weights of a test:
 
     python scripts/export_scoring.py
 
-La web (app/src/scoring.js) lee esos bloques al cargar: basta con recargar la página.
+The web app (app/src/scoring.js) reads those blocks when it loads: just reload the page.
 """
 import json
 import sys
@@ -23,8 +23,8 @@ meta = json.loads(path.read_text(encoding="utf-8"))
 meta.update(match_scoring_meta())
 path.write_text(json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8")
 v = meta["variables"]
-print(f"{path.relative_to(ROOT)}: {len(v)} variables en {len(meta['dimensions'])} dimensiones, "
-      f"{len(meta['pruebas'])} pruebas, area_weight {meta['area_weight']}")
+print(f"{path.relative_to(ROOT)}: {len(v)} variables in {len(meta['dimensions'])} dimensions, "
+      f"{len(meta['pruebas'])} tests, area_weight {meta['area_weight']}")
 for k, s in v.items():
-    how = "matriz de clases" if "matrix" in s else f"half_diff {s['half_diff']}" if "half_diff" in s else f"lineal {s['tolerance']}"
+    how = "class matrix" if "matrix" in s else f"half_diff {s['half_diff']}" if "half_diff" in s else f"linear {s['tolerance']}"
     print(f"  {k:18s} {s['dimension']:12s} {how}")

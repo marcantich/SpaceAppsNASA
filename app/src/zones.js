@@ -52,7 +52,7 @@ const ZONES_MOON = [
   { key: 'l_near', label: 'Nearside, Apollo belt', south: -30, north: 30, west: -60, east: 60,
     words: 'apollo maria near side' },
   { key: 'l_far', label: 'Farside', south: -60, north: 60, west: 100, east: -100, words: 'far side chang e' },
-  { key: 'l_mid', label: 'Mid latitudes (30–80°)', group: 'other', south: -80, north: -30, west: -180, east: 180,
+  { key: 'l_mid', label: 'Southern mid latitudes (30–80° S)', group: 'other', south: -80, north: -30, west: -180, east: 180,
     words: 'highlands' },
 ];
 

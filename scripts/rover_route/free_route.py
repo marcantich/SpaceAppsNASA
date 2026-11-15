@@ -1,11 +1,11 @@
-"""Camino libre en la Tierra que reproduce la secuencia de pendientes de un tramo marciano.
-Programacion dinamica sobre (posicion, rumbo): en cada paso de ~30 m el camino avanza en uno de 16 rumbos,
-puede girar como mucho 22,5 grados por paso, y paga |pendiente_Tierra - pendiente_Marte| de ese paso.
-uso: python free_route.py segments.json salida.json dem/*.npz"""
+"""Free path on Earth that reproduces the slope sequence of a Martian stretch.
+Dynamic programming over (position, heading): at each ~30 m step the path advances in one of 16 headings,
+may turn at most 22.5 degrees per step, and pays |slope_Earth - slope_Mars| for that step.
+usage: python free_route.py segments.json output.json dem/*.npz"""
 import json, sys, glob, os, tempfile, numpy as np
 R_EARTH = 6371008.8
 OFF = [(0, 3), (-1, 3), (-2, 2), (-3, 1), (-3, 0), (-3, -1), (-2, -2), (-1, -3),
-       (0, -3), (1, -3), (2, -2), (3, -1), (3, 0), (3, 1), (2, 2), (1, 3)]      # (dfila, dcol), antihorario desde el este
+       (0, -3), (1, -3), (2, -2), (3, -1), (3, 0), (3, 1), (2, 2), (1, 3)]      # (d_row, d_col), counter-clockwise from east
 NH = len(OFF); C = 20; INF = np.float32(1e9)
 
 def shift(A, dy, dx, fill=INF):
@@ -30,7 +30,7 @@ def backstep(V, S, t):
     return out
 
 def solve(z, px, t, tmpdir):
-    """t = tan(pendiente) objetivo por paso. Devuelve coste medio (tan) y camino [(fila, col)]."""
+    """t = target tan(slope) per step. Returns the mean cost (tan) and the path [(row, col)]."""
     N = len(t); S = slope_fields(z.astype(np.float32), px); H, W = z.shape
     ncp = (N + C - 1) // C
     cp = np.lib.format.open_memmap(os.path.join(tmpdir, "cp.npy"), "w+", np.float32, (ncp, NH, H, W))
@@ -95,6 +95,6 @@ if __name__ == "__main__":
                 if b is None:
                     continue
                 b.update(segment=name, tile=os.path.basename(f)[:-4]); res.append(b)
-                print(f"{name:8s} {b['tile']:18s} J={b['J']:.2f} deg (plano {b['J0_flat']:.2f})  r={b['r']:.3f}  <=1deg {100*b['within_1deg']:.0f}%  <=2deg {100*b['within_2deg']:.0f}%  max {b['max_err']:.1f}  "
-                      f"cota RMS {b['E']:.2f} m (plano {b['E0_flat']:.1f})  long {b['len_earth_m']/1e3:.2f}/{b['len_mars_m']/1e3:.2f} km", flush=True)
+                print(f"{name:8s} {b['tile']:18s} J={b['J']:.2f} deg (flat {b['J0_flat']:.2f})  r={b['r']:.3f}  <=1deg {100*b['within_1deg']:.0f}%  <=2deg {100*b['within_2deg']:.0f}%  max {b['max_err']:.1f}  "
+                      f"elevation RMS {b['E']:.2f} m (flat {b['E0_flat']:.1f})  length {b['len_earth_m']/1e3:.2f}/{b['len_mars_m']/1e3:.2f} km", flush=True)
                 json.dump(res, open(out, "w"))

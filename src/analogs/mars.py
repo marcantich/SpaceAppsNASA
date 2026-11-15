@@ -34,7 +34,7 @@ from .paths import CATALOGS, INTERIM, PROCESSED, RAW, VALIDATION
 
 MARS_RADIUS_M = 3_389_500.0     # mean radius (IAU), used for distances on the grid
 MARS_OBLIQUITY_DEG = 25.19
-FOOTPRINT_DIAMETER_KM = 10.0    # site footprint (docs/03_enfoque.md, decision 006)
+FOOTPRINT_DIAMETER_KM = 10.0    # site footprint (docs/03_approach.md, decision 006)
 
 # TES IR dust optical depth is absorption at 9.3 µm; Earth AOD (MODIS) is visible extinction.
 # Montabone et al. (2015) use ×2.6 to go from 9.3 µm absorption to visible extinction. [verify]

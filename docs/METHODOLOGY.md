@@ -74,8 +74,8 @@ The gradient is taken by central differences with the true metric spacing at eac
 ($\Delta = R \cdot \Delta\varphi$ is the pixel size in metres):
 
 $$
-g_x = \frac{z_{i,j+1} - z_{i,j-1}}{2\,\Delta\cos\varphi},\qquad
-g_y = \frac{z_{i-1,j} - z_{i+1,j}}{2\,\Delta},\qquad
+g_x = \frac{z_{i,j+1} - z_{i,j-1}}{2\thinspace \Delta\cos\varphi},\qquad
+g_y = \frac{z_{i-1,j} - z_{i+1,j}}{2\thinspace \Delta},\qquad
 \text{slope} = \arctan\sqrt{g_x^2 + g_y^2}
 $$
 
@@ -89,19 +89,19 @@ because a few cliff pixels should not decide the slope of a plain.
 ### 3.2 Roughness
 
 Roughness is the slope that is left after removing the regional tilt of the cell. A plane
-$z = a + b\,x + c\,y$ is fitted to the cell's pixels by weighted least squares ($x$, $y$ in metres east
+$z = a + b\thinspace x + c\thinspace y$ is fitted to the cell's pixels by weighted least squares ($x$, $y$ in metres east
 and north of the cell centre), solving the normal equations
 
 $$
-\begin{pmatrix} \sum w & \sum wx & \sum wy \\ \sum wx & \sum wx^2 & \sum wxy \\ \sum wy & \sum wxy & \sum wy^2 \end{pmatrix}
-\begin{pmatrix} a \\ b \\ c \end{pmatrix} =
-\begin{pmatrix} \sum wz \\ \sum wxz \\ \sum wyz \end{pmatrix}
+\begin{pmatrix} \sum w & \sum wx & \sum wy \cr \sum wx & \sum wx^2 & \sum wxy \cr \sum wy & \sum wxy & \sum wy^2 \end{pmatrix}
+\begin{pmatrix} a \cr b \cr c \end{pmatrix} =
+\begin{pmatrix} \sum wz \cr \sum wxz \cr \sum wyz \end{pmatrix}
 $$
 
 and the roughness is the weighted RMS of the residual gradient, as an angle:
 
 $$
-\text{roughness} = \arctan\sqrt{\frac{\sum w\,\big[(g_x - b)^2 + (g_y - c)^2\big]}{\sum w}}
+\text{roughness} = \arctan\sqrt{\frac{\sum w\thinspace \big[(g_x - b)^2 + (g_y - c)^2\big]}{\sum w}}
 $$
 
 Only running sums are needed, so a planet of ~10⁹ pixels is processed tile by tile and cells split
@@ -172,13 +172,13 @@ mean. It measures how far an Earth place is from an environment without liquid w
 horizontal panel over a Mars year, with the Appelbaum & Flood model:
 
 $$
-G_{ob} = 590\ \frac{\big(1 + e\cos(L_s - 248^\circ)\big)^2}{(1 - e^2)^2}\ \mathrm{W\,m^{-2}},\qquad
+G_{ob} = 590\ \frac{\big(1 + e\cos(L_s - 248^\circ)\big)^2}{(1 - e^2)^2}\ \mathrm{W\thinspace m^{-2}},\qquad
 \cos z = \sin\varphi\sin\delta + \cos\varphi\cos\delta\cos h,\qquad
-\sin\delta = \sin\varepsilon\,\sin L_s
+\sin\delta = \sin\varepsilon\thinspace \sin L_s
 $$
 
 $$
-G_h = G_{ob}\,\cos z\ \frac{f(z, \tau, a)}{1 - a}
+G_h = G_{ob}\thinspace \cos z\ \frac{f(z, \tau, a)}{1 - a}
 $$
 
 with $e$ = 0.0934, $L_s$ the solar longitude, $h$ the hour angle, $z$ the zenith angle, $\tau$ the
@@ -188,7 +188,7 @@ spends in it ($dt \propto (1 + e\cos(L_s - 248^\circ))^{-2}$, Kepler's second la
 0.8–4.1 kWh/m²/sol; it agrees within 5–15 % with the surface solar flux of NASA's Mars climate model.
 
 **Mars wind** (`wind_mean_m_s`, `wind_stress_mPa`, shown, not compared) is model output (NASA Ames Mars
-GCM, 2° grid, bilinear interpolation). The stress $\tau = \rho\,u_*^2$ is the quantity to compare with
+GCM, 2° grid, bilinear interpolation). The stress $\tau = \rho\thinspace u_*^2$ is the quantity to compare with
 Earth: Mars air is ~60 times thinner, so the same speed pushes ~60 times less.
 
 ### 3.4 Where on Earth analogs are searched
@@ -265,13 +265,13 @@ temperatures do not count as three votes. The dimension note is the weighted mea
 have data on both sides, with the weights $w_v$ of the chosen test (1 without a test):
 
 $$
-S_D = \frac{\sum_{v \in D} w_v\, s_v}{\sum_{v \in D} w_v}
+S_D = \frac{\sum_{v \in D} w_v\thinspace  s_v}{\sum_{v \in D} w_v}
 $$
 
 ### Step 3 — the index
 
 $$
-I = 100\ \frac{\sum_D W_D\, S_D}{\sum_D W_D},\qquad W_D = \max_{v \in D} w_v
+I = 100\ \frac{\sum_D W_D\thinspace  S_D}{\sum_D W_D},\qquad W_D = \max_{v \in D} w_v
 $$
 
 A dimension in which the candidate cell has no data at all contributes $S_D = 0$ but keeps its weight
@@ -327,7 +327,7 @@ Code: `Matcher.rank` in `app/src/match.js`.
 4. **Mix with the surroundings.** For the 3,000 best cells, the index used for ranking is
 
 $$
-I_{\text{area}} = (1 - \alpha)\, I_{\text{cell}} + \alpha\, \frac{1}{6}\sum_{k=1}^{6} I_{k},\qquad \alpha = 0.4
+I_{\text{area}} = (1 - \alpha)\thinspace  I_{\text{cell}} + \alpha\thinspace  \frac{1}{6}\sum_{k=1}^{6} I_{k},\qquad \alpha = 0.4
 $$
 
    where $I_k$ are the 6 neighbouring cells (a neighbour outside the search mask counts 0) and
@@ -415,7 +415,7 @@ A variable the target body does not have is skipped (Mars has no minimum tempera
 temperature).
 
 $$
-\text{testability index} = 100\ \frac{n_{\text{field}} + \tfrac12\, n_{\text{caveats}}}{n_{\text{parts}}}
+\text{testability index} = 100\ \frac{n_{\text{field}} + \tfrac12\thinspace  n_{\text{caveats}}}{n_{\text{parts}}}
 $$
 
 Measured: Jezero 70 %, Shackleton 30 %, the Mars sites 60–70 %, the lunar sites 25–30 %.
@@ -445,7 +445,7 @@ $\sigma(p, h)$ the Earth slope of the step that leaves $p$ with heading $h$, and
 cell it reaches:
 
 $$
-V_k(p, h) = \big|\sigma(p, h) - \theta_k\big| + \min_{h' \in \{h-1,\ h,\ h+1\}} V_{k+1}(p + \delta_h,\ h'),\qquad V_{N+1} = 0
+V_k(p, h) = \big|\sigma(p, h) - \theta_k\big| + \min_{h' \in \lbrace h-1,\ h,\ h+1\rbrace } V_{k+1}(p + \delta_h,\ h'),\qquad V_{N+1} = 0
 $$
 
 The best path starts at the state that minimises $V_1$ and is recovered by following the stored

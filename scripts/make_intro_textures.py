@@ -1,5 +1,5 @@
-"""Texturas equirectangulares pequeñas (1024x512) de la Luna, la Tierra y Marte para la pantalla de inicio.
-Fuentes: NASA Trek (Viking MDIM 2.1, LRO WAC) y NASA GIBS (Blue Marble). uso: python make_textures.py carpeta_salida"""
+"""Small equirectangular textures (1024x512) of the Moon, Earth and Mars for the opening screen.
+Sources: NASA Trek (Viking MDIM 2.1, LRO WAC) and NASA GIBS (Blue Marble). usage: python make_intro_textures.py output_folder"""
 import io, sys, os, requests
 from PIL import Image
 UA = {"User-Agent": "generic-client"}
@@ -12,7 +12,7 @@ def trek(body, layer, ext="jpg", z=1):
             im.paste(get(f"https://trek.nasa.gov/tiles/{body}/EQ/{layer}/1.0.0/default/default028mm/{z}/{y}/{x}.{ext}"), (256 * x, 256 * y))
     return im
 def gibs():
-    # EPSG:4326, nivel 1: teselas de 144 grados y 512 px, 3 x 2 teselas desde (-180, 90)
+    # EPSG:4326, level 1: tiles of 144 degrees and 512 px, 3 x 2 tiles from (-180, 90)
     im = Image.new("RGB", (512 * 3, 512 * 2))
     for y in range(2):
         for x in range(3):

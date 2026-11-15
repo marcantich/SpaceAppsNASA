@@ -2,7 +2,7 @@
 
 > Copied from the Space Apps website on 2026-11-13. It includes the *Summary* and also **Background,
 > Objectives and Potential Considerations**, which say what the challenge values.
-> What it implies for us: [`03_enfoque.md`](03_enfoque.md) §1.
+> What it implies for us: [`03_approach.md`](03_approach.md) §1.
 >
 > The **Resources** tab is at the end of this document (copied on 2026-11-13).
 

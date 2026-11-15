@@ -15,7 +15,7 @@ from .paths import APP_DATA
 
 
 def _clean(value, ndigits=3):
-    """NaN → null y floats redondeados, para un JSON válido y ligero."""
+    """NaN → null and rounded floats, for a valid and light JSON."""
     if isinstance(value, (float, np.floating)):
         return None if np.isnan(value) else round(float(value), ndigits)
     if isinstance(value, np.integer):

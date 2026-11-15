@@ -1,9 +1,9 @@
 # 03 · Approach: why the method is what it is
 
 > Written by Marc on 2026-11-13 (night) as the team's proposal, before building anything. It explains the
-> *why* of the method; the *how* is in [01_como_funciona.md](01_como_funciona.md). Most of it was applied;
+> *why* of the method; the *how* is in [01_how_it_works.md](01_how_it_works.md). Most of it was applied;
 > where the final product differs, it is said in a note (the final formula is in
-> [09_criterios_seleccion.md](09_criterios_seleccion.md)).
+> [09_selection_criteria.md](09_selection_criteria.md)).
 > **[verify]** = not checked · **[hypothesis]** = a bet the engine has to confirm or reject ·
 > **[assumption]** = a value chosen by us.
 
@@ -28,7 +28,7 @@
 
 ## 1. What the full official text adds
 
-The full challenge text ([`02_reto_oficial.md`](02_reto_oficial.md)) explicitly asks for:
+The full challenge text ([`02_official_challenge.md`](02_official_challenge.md)) explicitly asks for:
 
 | The statement says | Implication for us |
 |---|---|
@@ -56,9 +56,9 @@ abundance in %, temperature in K) are compared **in physical units** with a tole
 was linear:
 
 $$
-s_k = \max\!\left(0,\; 1 - \frac{\left|x_k^{\text{target}} - x_k^{\text{Earth}}\right|}{\sigma_k}\right),
+s_k = \max\left(0,\enspace  1 - \frac{\left|x_k^{\text{target}} - x_k^{\text{Earth}}\right|}{\sigma_k}\right),
 \qquad
-S = 100\,\frac{\sum_{k} w_k\, s_k}{\sum_{k} w_k}
+S = 100\thinspace \frac{\sum_{k} w_k\thinspace  s_k}{\sum_{k} w_k}
 $$
 
 with $\sigma_k$ the tolerance of variable $k$ and $w_k$ the weight of the chosen test
@@ -67,7 +67,7 @@ bodies.
 
 > **Applied with a change:** the final formula uses a **soft note** $s_k = 1/(1+(\Delta_k/h_k)^2)$, which
 > never reaches 0, and averages by **dimension** (terrain, thermal, water & ice, sky & light):
-> [09_criterios_seleccion.md](09_criterios_seleccion.md).
+> [09_selection_criteria.md](09_selection_criteria.md).
 
 - **Categorical variables** (rock type): a similarity matrix between classes, $s_k = M[c^{\text{target}}, c^{\text{Earth}}]$.
 - **Percentiles** only for indices without a common physical scale.
@@ -133,7 +133,7 @@ If aridity weighs a lot, **any** hyper-arid desert comes out on top by construct
   and **Mistastin crater (Labrador, Canada)**, an impact on anorthosite used as an analog of the lunar
   highlands.
 
-> **Not done yet** (ROADMAP 3.17, method in [09_criterios_seleccion.md](09_criterios_seleccion.md)).
+> **Not done yet** (ROADMAP 3.17, method in [09_selection_criteria.md](09_selection_criteria.md)).
 
 ### 2.7 Lunar target sites
 

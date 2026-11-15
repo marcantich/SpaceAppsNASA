@@ -1,4 +1,4 @@
-"""Tests of the engine with the toy example of docs/01_como_funciona.md.
+"""Tests of the engine with the toy example of docs/01_how_it_works.md.
 
 Target on Mars: slope 8°, rocks 15 %, temperature −50 °C (made-up numbers).
 Tolerances: 10°, 20 %, 60 °C.

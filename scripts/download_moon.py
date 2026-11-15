@@ -1,15 +1,15 @@
-"""Descarga el KIT DE DATOS DE LA LUNA (v1) → data/raw/moon/<dataset>/
+"""Downloads the MOON DATA KIT (v1) → data/raw/moon/<dataset>/
 
-    python scripts/download_moon.py            # descarga lo que falte (se puede relanzar: reanuda)
-    python scripts/download_moon.py --list     # solo enseña qué bajaría
+    python scripts/download_moon.py            # downloads what is missing (can be rerun: it resumes)
+    python scripts/download_moon.py --list     # only shows what it would download
 
-Qué se baja y por qué: docs/06_datos_luna.md. Criterios: (1) da una variable de la ficha,
-(2) entre todos cubren TODA la Luna (zona global ±60° + zona polar), (3) resumen de todo el
-periodo (no una fecha), (4) resolución de ~1 km o la que haya, sin pasarse de peso,
-(5) fuente oficial (NASA PDS, NASA Goddard PGDA, USGS, LROC).
+What is downloaded and why: docs/06_moon_data.md. Criteria: (1) it gives a card variable,
+(2) together they cover the WHOLE Moon (global zone ±60° + polar zone), (3) a summary of the whole
+period (not one date), (4) resolution of ~1 km or whatever exists, without too much weight,
+(5) official source (NASA PDS, NASA Goddard PGDA, USGS, LROC).
 
-Solo usa la librería estándar de Python y `curl` (incluido en Windows 10+, Mac y Linux).
-Al acabar escribe data/raw/moon/MANIFEST.csv: qué fichero, de qué URL, cuántos bytes y cuándo.
+It only uses the Python standard library and `curl` (included in Windows 10+, Mac and Linux).
+At the end it writes data/raw/moon/MANIFEST.csv: which file, from which URL, how many bytes and when.
 """
 import argparse
 import csv
@@ -22,11 +22,11 @@ import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # consolas de Windows (cp1252)
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")  # Windows consoles (cp1252)
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
-from analogs.paths import RAW  # noqa: E402  (misma carpeta de datos que el resto: ver paths.py)
+from analogs.paths import RAW  # noqa: E402  (same data folder as the rest: see paths.py)
 
 DEST = RAW / "moon"
 
@@ -36,44 +36,44 @@ PGDA = "https://pgda.gsfc.nasa.gov/data/LOLA_20mpp"
 
 
 def with_labels(url_base: str, exts=(".lbl", ".xml")) -> list[str]:
-    """El fichero de datos + sus etiquetas (las etiquetas dicen cómo leerlo)."""
+    """The data file + its labels (the labels say how to read it)."""
     stem = url_base.rsplit(".", 1)[0]
     return [url_base] + [stem + e for e in exts]
 
 
 GCP_BANDS = [f"{a:02d}n{a + 10:02d}n" for a in range(0, 90, 10)] + [f"{a + 10:02d}s{a:02d}s" for a in range(0, 90, 10)]
 
-# dataset → lista de URLs, por ORDEN DE PRIORIDAD (primero lo del polo sur y lo pequeño)
+# dataset → list of URLs, in ORDER OF PRIORITY (first the south pole and the small files)
 DATASETS: dict[str, list[str]] = {
-    # Temperatura media/máx y profundidad del hielo, polo sur (~0,5 km). 605 MB
+    # Mean / max temperature and ice depth, south pole (~0.5 km). 605 MB
     "diviner_prp": with_labels(f"{DIV}/data_derived_prp/dlre_prp_south.tab"),
-    # Pendiente, rugosidad (escalas 100–1600 m) y exponente de Hurst, 80–90°S, 1 km. ~1,5 MB c/u
+    # Slope, roughness (scales 100–1600 m) and RMS deviation, 80–90°S, 1 km. ~1.5 MB each
     "pgda_south_pole": [f"{PGDA}/LDRM_80S_1000MPP_ADJ_{v}_{L}M.TIF"
                         for v in ("SLP", "ROUGH", "RMSD") for L in (100, 200, 400, 800, 1600)]
-                       + [f"{PGDA}/LPSR_80S_20MPP_ADJ.TIF",      # sombra permanente, 20 m. 148 MB
-                          f"{PGDA}/LDEM_80S_80MPP_ADJ.TIF"],     # relieve, 80 m. 181 MB
-    # Composición química (FeO, Al2O3, TiO2…) de TODA la Luna, 2° y 5°. ~12 MB
+                       + [f"{PGDA}/LPSR_80S_20MPP_ADJ.TIF",      # permanent shadow, 20 m. 148 MB
+                          f"{PGDA}/LDEM_80S_80MPP_ADJ.TIF"],     # relief, 80 m. 181 MB
+    # Chemical composition (FeO, Al2O3, TiO2…) of the WHOLE Moon, 2° and 5°. ~12 MB
     "lunar_prospector_grs": with_labels(f"{PDS}/lunar/lp-l-grs-5-elem-abundance-v1/lp_9001/data/lpgrs_high1_elem_abundance_2deg.tab")
                             + with_labels(f"{PDS}/lunar/lp-l-grs-5-elem-abundance-v1/lp_9001/data/lpgrs_high1_elem_abundance_5deg.tab")
                             + [f"{PDS}/lunar/lp-l-grs-5-elem-abundance-v1/lp_9001/data/lpgrs_elem_abundance.fmt"],
-    # Abundancia de rocas, 60°N–60°S, ~950 m. 88,5 MB
+    # Rock abundance, 60°N–60°S, ~950 m. 88.5 MB
     "diviner_rocks": with_labels(f"{DIV}/data_derived_gdr_l3/cylindrical/img/dgdr_ra_avg_cyl_032_img.img"),
-    # Relieve global de LOLA, 64 px/° (~470 m) → pendiente y rugosidad fuera del polo. 531 MB
+    # Global LOLA relief, 64 px/° (~470 m) → slope and roughness away from the pole. 531 MB
     "lola_ldem64": with_labels(f"{PDS}/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ldem_64.img", (".lbl",)),
-    # Disparos LOLA por celda, 128 px/° (~237 m), toda la Luna → % de celdas MEDIDAS (no interpoladas)
-    # de cada hexágono, igual que el control de calidad de MOLA en Marte. 2,1 GB
+    # LOLA shots per cell, 128 px/° (~237 m), whole Moon → % of MEASURED (not interpolated) cells
+    # of each hexagon, like the MOLA quality check on Mars. 2.1 GB
     "lola_ldec128": with_labels(f"{PDS}/lro/lro-l-lola-3-rdr-v1/lrolol_1xxx/data/lola_gdr/cylindrical/img/ldec_128.img", (".lbl",)),
-    # Mapa geológico unificado (detalle para las fichas finales). 224 MB
+    # Unified geologic map (detail for the final cards). 224 MB
     "usgs_geology": ["https://asc-astropedia.s3.us-west-2.amazonaws.com/Moon/Geology/Unified_Geologic_Map_of_the_Moon_GIS_v2.zip"],
-    # Temperatura de TODA la Luna por casilla de 0,5° y hora local: 18 bandas de 10°. 156 MB c/u (~2,8 GB)
+    # Temperature of the WHOLE Moon per 0.5° tile and local time: 18 bands of 10°. 156 MB each (~2.8 GB)
     "diviner_gcp": [u for b in GCP_BANDS for u in with_labels(f"{DIV}/data_derived_gcp/global_cumul_avg_cyl_{b}_002.tab")],
 }
 
-# EXTRAS: no dan ninguna variable de la ficha. Solo con --extras (revisión 14/11: se quitaron del kit)
+# EXTRAS: they give no card variable. Only with --extras (review of 14/11: removed from the kit)
 EXTRAS: dict[str, list[str]] = {
-    # Radar CPR de toda la Luna, ~950 m. 265 MB. Solo si se sigue el eje "radar" (enfoque §4)
+    # Radar CPR of the whole Moon, ~950 m. 265 MB. Only if the "radar" line is followed (approach §4)
     "minirf_cpr": with_labels(f"{PDS}/lro/lro-l-mrflro-5-global-mosaic-v1/lromrf_1001/data/32ppd/global_cpr_32ppd_simp_0c.img"),
-    # Exponente de Hurst (cómo cambia la rugosidad con la escala), 80–90°S. 1,4 MB
+    # Hurst exponent (how roughness changes with scale), 80–90°S. 1.4 MB
     "pgda_south_pole": [f"{PGDA}/LDRM_80S_1000MPP_ADJ_H.TIF"],
 }
 
@@ -91,7 +91,7 @@ def fetch(dataset: str, url: str) -> dict:
     out.parent.mkdir(parents=True, exist_ok=True)
     size = remote_size(url)
     if out.exists() and size is not None and out.stat().st_size == size:
-        return {"dataset": dataset, "file": out.name, "url": url, "bytes": size, "status": "ya estaba"}
+        return {"dataset": dataset, "file": out.name, "url": url, "bytes": size, "status": "already there"}
     part = out.with_suffix(out.suffix + ".part")
     cmd = ["curl", "-sSL", "--fail", "--retry", "5", "--retry-delay", "5", "-C", "-", "-o", str(part), url]
     r = subprocess.run(cmd, capture_output=True, text=True)
@@ -102,11 +102,11 @@ def fetch(dataset: str, url: str) -> dict:
     got = out.stat().st_size
     ok = size is None or got == size
     return {"dataset": dataset, "file": out.name, "url": url, "bytes": got,
-            "status": "ok" if ok else f"ERROR tamaño {got} ≠ {size}"}
+            "status": "ok" if ok else f"ERROR size {got} ≠ {size}"}
 
 
 def fetch_lroc_pits() -> dict:
-    """La lista de pozos es una tabla web: se guarda como CSV."""
+    """The list of pits is a web table: it is saved as CSV."""
     out = DEST / "lroc_pits" / "lroc_pits_list.csv"
     out.parent.mkdir(parents=True, exist_ok=True)
     r = subprocess.run(["curl", "-sSL", "--fail", "--max-time", "120", LROC_PITS_URL], capture_output=True)
@@ -120,14 +120,14 @@ def fetch_lroc_pits() -> dict:
         csv.writer(f).writerows(rows)
     n = max(len(rows) - 1, 0)
     return {"dataset": "lroc_pits", "file": out.name, "url": LROC_PITS_URL, "bytes": out.stat().st_size,
-            "status": f"ok ({n} pozos)" if n > 200 else f"ERROR: solo {n} filas"}
+            "status": f"ok ({n} pits)" if n > 200 else f"ERROR: only {n} rows"}
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--list", action="store_true", help="solo enseñar qué se bajaría")
-    ap.add_argument("--workers", type=int, default=4, help="descargas en paralelo")
-    ap.add_argument("--extras", action="store_true", help="bajar también los EXTRAS (radar Mini-RF, Hurst)")
+    ap.add_argument("--list", action="store_true", help="only show what would be downloaded")
+    ap.add_argument("--workers", type=int, default=4, help="parallel downloads")
+    ap.add_argument("--extras", action="store_true", help="also download the EXTRAS (Mini-RF radar, Hurst)")
     args = ap.parse_args()
 
     jobs = [(d, u) for d, urls in DATASETS.items() for u in urls]
@@ -136,10 +136,10 @@ def main() -> None:
     if args.list:
         for d, u in jobs:
             print(f"{d:22s} {u}")
-        print(f"{len(jobs)} ficheros + lista de pozos de LROC → {DEST}")
+        print(f"{len(jobs)} files + LROC pits list → {DEST}")
         return
 
-    print(f"Destino: {DEST}\n{len(jobs)} ficheros + lista de pozos de LROC", flush=True)
+    print(f"Destination: {DEST}\n{len(jobs)} files + LROC pits list", flush=True)
     results = [fetch_lroc_pits()]
     print(f"[{results[0]['status']}] lroc_pits/{results[0]['file']}", flush=True)
     with ThreadPoolExecutor(max_workers=args.workers) as pool:
@@ -158,7 +158,7 @@ def main() -> None:
             w.writerow({**r, "downloaded": now})
     errors = [r for r in results if r["status"].startswith("ERROR")]
     total = sum(r["bytes"] for r in results) / 1e9
-    print(f"\nFIN: {len(results) - len(errors)} ok, {len(errors)} con error, {total:.2f} GB en {DEST}")
+    print(f"\nEND: {len(results) - len(errors)} ok, {len(errors)} with errors, {total:.2f} GB in {DEST}")
     for r in errors:
         print(f"  ✗ {r['dataset']}/{r['file']}: {r['status']}")
     sys.exit(1 if errors else 0)

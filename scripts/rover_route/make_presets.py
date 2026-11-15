@@ -1,5 +1,5 @@
-"""Rutas reales (Perseverance, Curiosity) como ejemplos para la pestaña Route de la app.
-uso: python make_presets.py m20_traverse.json msl_traverse.json salida.json"""
+"""Real traverses (Perseverance, Curiosity) as examples for the Route view of the app.
+usage: python make_presets.py m20_traverse.json msl_traverse.json output.json"""
 import json, sys, numpy as np
 R = 3389500.0; DS = 10.0
 def load(path):

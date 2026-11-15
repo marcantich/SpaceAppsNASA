@@ -19,7 +19,7 @@ What the app reads (step 3) is not here: it is in [`app/data/`](../app/README.md
 
 By default the code looks for the data folder in `ANALOGS_DATA_DIR`, then `~/SpaceAppsData`, then this
 `data/` folder (`src/analogs/paths.py`). Full guide to the data folder, processing order and reference
-numbers: [`docs/08_datos_LEEME.md`](../docs/08_datos_LEEME.md).
+numbers: [`docs/08_data_folder_guide.md`](../docs/08_data_folder_guide.md).
 
 ## Rules
 
@@ -44,7 +44,7 @@ numbers: [`docs/08_datos_LEEME.md`](../docs/08_datos_LEEME.md).
 | Body | Datasets | Record |
 |---|---|---|
 | Mars | MOLA MEGDR (all 16 tiles of 128 px/deg + polar maps, 16 px/deg), TES thermal inertia, Odyssey GRS element maps and neutron products, TES atmosphere MY26, MRO MCS surface temperature MY31, SWIM 2.0 ice; NASA Ames Mars GCM output and the Appelbaum & Flood tables (`src/analogs/mars_climate.py`). 4.4 GiB + 2.7 GB | [`raw/mars/MANIFEST.csv`](raw/mars/MANIFEST.csv) |
-| Moon | LOLA, Diviner (GCP, PRP, rock abundance), Lunar Prospector, PGDA south pole, LROC pits. 88 files, 4.4 GB | [`raw/moon/MANIFEST.csv`](raw/moon/MANIFEST.csv), [`docs/06_datos_luna.md`](../docs/06_datos_luna.md) |
+| Moon | LOLA, Diviner (GCP, PRP, rock abundance), Lunar Prospector, PGDA south pole, LROC pits. 88 files, 4.4 GB | [`raw/moon/MANIFEST.csv`](raw/moon/MANIFEST.csv), [`docs/06_moon_data.md`](../docs/06_moon_data.md) |
 | Earth | NOAA ETOPO 2022, MODIS (MYD11C3, MCD12C1, MOD10CM), GPM IMERG, MERRA-2, ECOSTRESS | `scripts/download_earth.py --list` |
 
 Full list of sources with licences and credits: [`CREDITS.md`](../CREDITS.md).

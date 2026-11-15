@@ -1,18 +1,18 @@
-"""Buscador en la terminal: escribe unas condiciones y te dice qué sitios de la Tierra se parecen más.
+"""Search tool in the terminal: type some conditions and it tells you which Earth sites resemble them most.
 
-    .venv\\Scripts\\python.exe scripts\\buscar.py                  # píxeles de 0,05° (~5,6 km), lo más fino
-    .venv\\Scripts\\python.exe scripts\\buscar.py --malla h3r5     # hexágonos de ~17 km, más rápido
+    .venv\\Scripts\\python.exe scripts\\search.py                  # 0.05° pixels (~5.6 km), the finest
+    .venv\\Scripts\\python.exe scripts\\search.py --grid h3r5      # ~17 km hexagons, faster
 
-Sirve para comprobar que los datos están bien gestionados ANTES de tener la app:
-  [1] Escribir valores a mano      (p. ej. pendiente 3°, temperatura media 250 K, lluvia 0)
-  [2] Parecidos a un punto de la Tierra   (lat, lon) → ¿salen sitios del mismo tipo?
-  [3] Parecidos a un sitio de la Luna o Marte   (cuando existan sus fichas, tras el pendrive)
-  [4] Estadísticas de una variable
-  [5] Qué datos hay (resumen)
+Useful to check that the data are handled properly WITHOUT the app:
+  [1] Type values by hand            (e.g. slope 3°, mean temperature 250 K, rain 0)
+  [2] Similar to a point of Earth    (lat, lon) → do sites of the same kind come out?
+  [3] Similar to a Moon or Mars site (when their cards exist)
+  [4] Statistics of a variable
+  [5] Which data there are (summary)
 
-Fórmula: la del motor (src/analogs/similarity.py) con las tolerancias de configs/variables.yaml.
-Lee: data/processed/fichas_tierra_h3r5.parquet (scripts/build_earth_features.py)
-     data/processed/fichas_objetivos_*.parquet   (Luna / Marte, si existen)
+Formula: the engine's (src/analogs/similarity.py) with the tolerances of configs/variables.yaml.
+Reads: data/processed/fichas_tierra_h3r5.parquet (scripts/build_earth_features.py)
+       data/processed/fichas_objetivos_*.parquet   (Moon / Mars, if they exist)
 """
 import datetime as dt
 import sys
@@ -27,22 +27,23 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from analogs.paths import CONFIGS, PROCESSED, VALIDATION  # noqa: E402
 from analogs.similarity import analog_index, dimensions_of, variable_scores  # noqa: E402
 
-MALLAS = {  # nombre → (fichero, cómo se llama cada fila)
-    "005deg": ("fichas_tierra_005deg.parquet", "píxeles de 0,05° (~5,6 km)"),
-    "h3r5": ("fichas_tierra_h3r5.parquet", "hexágonos H3 res 5 (~17 km)"),
+GRIDS = {  # grid name → (file, what each row is called)
+    "005deg": ("fichas_tierra_005deg.parquet", "pixels of 0.05° (~5.6 km)"),
+    "h3r5": ("fichas_tierra_h3r5.parquet", "H3 res-5 hexagons (~17 km)"),
 }
-MALLA = "005deg"
-if "--malla" in sys.argv:          # python scripts/buscar.py --malla h3r5
-    MALLA = sys.argv[sys.argv.index("--malla") + 1]
-EARTH_FILE = PROCESSED / MALLAS[MALLA][0]
-UNIT_NAME = MALLAS[MALLA][1]
-ENVS = {"1": "hielo polar", "2": "desierto (suelo desnudo)", "3": "árido abierto (matorral/estepa)"}
+GRID = "005deg"
+for flag in ("--grid", "--malla"):  # python scripts/search.py --grid h3r5  (--malla: old name)
+    if flag in sys.argv:
+        GRID = sys.argv[sys.argv.index(flag) + 1]
+EARTH_FILE = PROCESSED / GRIDS[GRID][0]
+UNIT_NAME = GRIDS[GRID][1]
+ENVS = {"1": "polar ice", "2": "desert (bare ground)", "3": "arid open land (shrubland / steppe)"}
 
 
-# ------------------------------------------------------------------ entrada por teclado
+# ------------------------------------------------------------------ keyboard input
 def ask(prompt: str, default: str = "") -> str:
     try:
-        r = input(prompt).replace("﻿", "").strip()   # PowerShell añade un BOM al canalizar texto
+        r = input(prompt).replace("﻿", "").strip()   # PowerShell adds a BOM when piping text
     except EOFError:
         print()
         raise SystemExit(0)
@@ -55,17 +56,17 @@ def ask_float(prompt: str, unit: str = "") -> float | None:
         if r == "":
             return None
         try:
-            if unit == "K" and r.endswith("c"):          # se admite °C: "-20c"
+            if unit == "K" and r.endswith("c"):          # °C is accepted: "-20c"
                 return float(r[:-1].replace("°", "")) + 273.15
             return float(r)
         except ValueError:
-            print("   (escribe un número, o Enter para no usar esta variable)")
+            print("   (type a number, or Enter to leave this variable out)")
 
 
-# ------------------------------------------------------------------ datos
+# ------------------------------------------------------------------ data
 def load() -> tuple[pd.DataFrame, dict, dict, pd.DataFrame]:
     if not EARTH_FILE.exists():
-        raise SystemExit(f"No existe {EARTH_FILE}.\nEjecuta antes (una línea cada uno):\n"
+        raise SystemExit(f"{EARTH_FILE} does not exist.\nRun first (one line each):\n"
                          f"   .venv\\Scripts\\python.exe scripts\\build_earth_mask.py\n"
                          f"   .venv\\Scripts\\python.exe scripts\\build_earth_features.py")
     earth = pd.read_parquet(EARTH_FILE)
@@ -77,31 +78,31 @@ def load() -> tuple[pd.DataFrame, dict, dict, pd.DataFrame]:
 
 
 def usable_vars(earth: pd.DataFrame, variables: dict) -> list[str]:
-    """Variables de variables.yaml que existen en la Tierra con algún dato."""
+    """Variables of variables.yaml that exist on Earth with some data."""
     return [v for v in variables if v in earth.columns and earth[v].notna().any()]
 
 
 def summary(earth: pd.DataFrame, variables: dict, targets: pd.DataFrame) -> None:
     m = earth[earth.in_mask]
-    print(f"\n=== DATOS CARGADOS ===\nTierra: {len(earth):,} {UNIT_NAME} con tierra · "
-          f"{len(m):,} dentro de la máscara (desiertos, hielo, zonas áridas)")
+    print(f"\n=== DATA LOADED ===\nEarth: {len(earth):,} {UNIT_NAME} with land · "
+          f"{len(m):,} inside the mask (deserts, ice, arid zones)")
     for k, name in ENVS.items():
-        print(f"   {name:34s} {int((m.env == int(k)).sum()):>8,}")
-    print(f"\n{'variable':18s} {'unidad':7s} {'con dato':>9s}   {'mín':>8s} {'p5':>8s} {'mediana':>8s} {'p95':>8s} {'máx':>8s}")
+        print(f"   {name:36s} {int((m.env == int(k)).sum()):>8,}")
+    print(f"\n{'variable':18s} {'unit':7s} {'with data':>9s}   {'min':>8s} {'p5':>8s} {'median':>8s} {'p95':>8s} {'max':>8s}")
     for v in usable_vars(earth, variables):
         s = m[v].dropna()
         unit = variables[v].get("unit", "")
         print(f"{v:18s} {unit:7s} {100 * len(s) / max(len(m), 1):8.0f}%   "
               + " ".join(f"{x:8.1f}" for x in (s.min(), s.quantile(.05), s.median(), s.quantile(.95), s.max())))
     missing = [v for v in variables if v not in usable_vars(earth, variables)]
-    print(f"\nSin dato todavía en la Tierra: {', '.join(missing)}")
+    print(f"\nNo data yet on Earth: {', '.join(missing)}")
     if len(targets):
-        print(f"Sitios objetivo: {len(targets)} ({', '.join(f'{b}: {n}' for b, n in targets.body.value_counts().items())})")
+        print(f"Target sites: {len(targets)} ({', '.join(f'{b}: {n}' for b, n in targets.body.value_counts().items())})")
     else:
-        print("Sitios objetivo (Luna/Marte): ninguno procesado aún → faltan los datos del pendrive")
+        print("Target sites (Moon / Mars): none processed yet → build the Mars and Moon grids first")
 
 
-# ------------------------------------------------------------------ búsqueda
+# ------------------------------------------------------------------ search
 def haversine_km(lat1, lon1, lat2, lon2):
     p1, p2 = np.radians(lat1), np.radians(lat2)
     a = np.sin((p2 - p1) / 2) ** 2 + np.cos(p1) * np.cos(p2) * np.sin(np.radians(lon2 - lon1) / 2) ** 2
@@ -109,7 +110,7 @@ def haversine_km(lat1, lon1, lat2, lon2):
 
 
 def spread(df: pd.DataFrame, n: int, min_km: float) -> pd.DataFrame:
-    """Los n mejores, pero separados al menos min_km (si no, salen 10 hexágonos vecinos del mismo sitio)."""
+    """The n best, but at least min_km apart (otherwise 10 neighbouring hexagons of the same site come out)."""
     kept = []
     for idx, r in df.iterrows():
         if all(haversine_km(r.lat, r.lon, df.at[k, "lat"], df.at[k, "lon"]) >= min_km for k in kept):
@@ -120,32 +121,32 @@ def spread(df: pd.DataFrame, n: int, min_km: float) -> pd.DataFrame:
 
 
 def ask_filters(earth: pd.DataFrame) -> pd.DataFrame:
-    print("\n--- Filtros (Enter = valor por defecto) ---")
+    print("\n--- Filters (Enter = default value) ---")
     cells = earth
-    if ask("¿Solo dentro de la máscara (desiertos/hielo/árido)? [S/n]: ", "s").lower().startswith("s"):
+    if ask("Only inside the mask (deserts / ice / arid)? [Y/n]: ", "y").lower().startswith(("y", "s")):
         cells = cells[cells.in_mask]
-    env = ask("Tipo de zona: 1 hielo polar · 2 desierto · 3 árido abierto · Enter = todas: ")
+    env = ask("Zone type: 1 polar ice · 2 desert · 3 arid open land · Enter = all: ")
     if env in ENVS:
         cells = cells[cells.env == int(env)]
-    lat_min = ask_float("Latitud mínima (Enter = sin límite): ")
-    lat_max = ask_float("Latitud máxima (Enter = sin límite): ")
+    lat_min = ask_float("Minimum latitude (Enter = no limit): ")
+    lat_max = ask_float("Maximum latitude (Enter = no limit): ")
     if lat_min is not None:
         cells = cells[cells.lat >= lat_min]
     if lat_max is not None:
         cells = cells[cells.lat <= lat_max]
-    print(f"→ {len(cells):,} celdas candidatas")
+    print(f"→ {len(cells):,} candidate cells")
     return cells
 
 
 def ask_weights(vars_in_target: list[str], pruebas: dict) -> dict:
     names = ", ".join(pruebas)
-    r = ask(f"\nPesos: Enter = todas las variables pesan igual · o escribe una prueba ({names}): ").lower()
+    r = ask(f"\nWeights: Enter = every variable weighs the same · or type a test ({names}): ").lower()
     if r in pruebas:
         w = {k: v for k, v in pruebas[r]["weights"].items() if k in vars_in_target}
         if not w:
-            print(f"   La prueba '{r}' usa variables que aún no tenemos → pesos iguales")
+            print(f"   The test '{r}' uses variables we do not have yet → equal weights")
         else:
-            print(f"   Prueba '{pruebas[r]['label']}': {w}\n   Validez: {pruebas[r]['test_validity']}")
+            print(f"   Test '{pruebas[r]['label']}': {w}\n   Validity: {pruebas[r]['test_validity']}")
             return w
     return {v: 1.0 for v in vars_in_target}
 
@@ -154,118 +155,118 @@ def run_search(target: dict, cells: pd.DataFrame, variables: dict, weights: dict
                exclude_near: tuple[float, float] | None = None) -> None:
     scores = variable_scores(target, cells, {k: variables[k] for k in weights})
     idx = analog_index(scores, weights, dimensions_of(variables))
-    res = cells.assign(indice=idx).join(scores.add_prefix("nota_"))
-    res = res.dropna(subset=["indice"]).sort_values("indice", ascending=False)
+    res = cells.assign(score=idx).join(scores.add_prefix("note_"))
+    res = res.dropna(subset=["score"]).sort_values("score", ascending=False)
     if exclude_near:
         d = haversine_km(exclude_near[0], exclude_near[1], res.lat.to_numpy(), res.lon.to_numpy())
         res = res[d >= 150]
 
-    n = int(ask_float("¿Cuántos resultados? (Enter = 10): ") or 10)
-    sep = ask_float("Separación mínima entre resultados en km (Enter = 100): ")
+    n = int(ask_float("How many results? (Enter = 10): ") or 10)
+    sep = ask_float("Minimum distance between results in km (Enter = 100): ")
     top = spread(res.head(5000), n, 100 if sep is None else sep)
 
     print(f"\n=== {title} ===")
-    print("Objetivo: " + " · ".join(f"{k} = {target[k]:.1f} {variables[k].get('unit', '')}" for k in weights))
-    print(f"Celdas evaluadas: {len(res):,} · índice ≥ 90: {(res.indice >= 90).sum():,} · "
-          f"≥ 75: {(res.indice >= 75).sum():,} · ≥ 50: {(res.indice >= 50).sum():,}\n")
+    print("Target: " + " · ".join(f"{k} = {target[k]:.1f} {variables[k].get('unit', '')}" for k in weights))
+    print(f"Cells evaluated: {len(res):,} · index ≥ 90: {(res.score >= 90).sum():,} · "
+          f"≥ 75: {(res.score >= 75).sum():,} · ≥ 50: {(res.score >= 50).sum():,}\n")
     for rank, (_, r) in enumerate(top.iterrows(), 1):
-        print(f"{rank:2d}. índice {r.indice:5.1f}   lat {r.lat:7.2f}  lon {r.lon:8.2f}   {r.env_name}")
-        print("      " + " · ".join(f"{k} {r[k]:.1f} (nota {r['nota_' + k]:.2f})" for k in weights if pd.notna(r[k])))
+        print(f"{rank:2d}. index {r.score:5.1f}   lat {r.lat:7.2f}  lon {r.lon:8.2f}   {r.env_name}")
+        print("      " + " · ".join(f"{k} {r[k]:.1f} (note {r['note_' + k]:.2f})" for k in weights if pd.notna(r[k])))
         print(f"      https://www.google.com/maps/@{r.lat:.4f},{r.lon:.4f},9z")
     VALIDATION.mkdir(parents=True, exist_ok=True)
-    out = VALIDATION / f"busqueda_{dt.datetime.now():%Y%m%d_%H%M%S}.csv"
+    out = VALIDATION / f"search_{dt.datetime.now():%Y%m%d_%H%M%S}.csv"
     top.round(3).to_csv(out, index=False)
-    print(f"\nGuardado: {out}")
+    print(f"\nSaved: {out}")
 
 
 def mode_manual(earth, variables, pruebas):
     vs = usable_vars(earth, variables)
     m = earth[earth.in_mask]
-    print("\n--- Escribe el valor de cada variable (Enter = no usarla). Temperaturas en K o en °C con 'c' (p. ej. -20c) ---")
+    print("\n--- Type the value of each variable (Enter = leave it out). Temperatures in K or in °C with 'c' (e.g. -20c) ---")
     target = {}
     for v in vs:
         s = m[v].dropna()
         spec = variables[v]
-        val = ask_float(f"{spec['label']} ({spec.get('unit', '')}) [Tierra: {s.quantile(.05):.0f}–{s.quantile(.95):.0f}, "
-                        f"mediana {s.median():.0f}; tolerancia {spec['tolerance']}]: ", spec.get("unit", ""))
+        val = ask_float(f"{spec['label']} ({spec.get('unit', '')}) [Earth: {s.quantile(.05):.0f}–{s.quantile(.95):.0f}, "
+                        f"median {s.median():.0f}; tolerance {spec['tolerance']}]: ", spec.get("unit", ""))
         if val is not None:
             target[v] = val
     if not target:
-        print("No has escrito ningún valor.")
+        print("You did not type any value.")
         return
     cells = ask_filters(earth)
-    run_search(target, cells, variables, ask_weights(list(target), pruebas), "SITIOS MÁS PARECIDOS A TUS VALORES")
+    run_search(target, cells, variables, ask_weights(list(target), pruebas), "SITES MOST SIMILAR TO YOUR VALUES")
 
 
 def mode_earth_point(earth, variables, pruebas):
-    lat = ask_float("Latitud del punto (p. ej. -24.1 para Atacama): ")
-    lon = ask_float("Longitud del punto (p. ej. -70.0): ")
+    lat = ask_float("Latitude of the point (e.g. -24.1 for Atacama): ")
+    lon = ask_float("Longitude of the point (e.g. -70.0): ")
     if lat is None or lon is None:
         return
     d = haversine_km(lat, lon, earth.lat.to_numpy(), earth.lon.to_numpy())
     ref = earth.iloc[int(np.argmin(d))]
     vs = [v for v in usable_vars(earth, variables) if pd.notna(ref[v])]
-    print(f"\nCelda más cercana ({d.min():.0f} km): {ref.env_name}, dentro de la máscara: {ref.in_mask}")
+    print(f"\nNearest cell ({d.min():.0f} km): {ref.env_name}, inside the mask: {ref.in_mask}")
     for v in vs:
         print(f"   {variables[v]['label']:32s} {ref[v]:9.1f} {variables[v].get('unit', '')}")
     target = {v: float(ref[v]) for v in vs}
     cells = ask_filters(earth)
     run_search(target, cells, variables, ask_weights(vs, pruebas),
-               f"SITIOS PARECIDOS A ({lat:.2f}, {lon:.2f}) — se excluyen los de < 150 km", exclude_near=(lat, lon))
+               f"SITES SIMILAR TO ({lat:.2f}, {lon:.2f}) — those closer than 150 km are excluded", exclude_near=(lat, lon))
 
 
 def mode_target(earth, variables, pruebas, targets):
     if targets.empty:
-        print("\nTodavía no hay fichas de la Luna ni de Marte en data/processed/.\n"
-              "Cuando copies los datos del pendrive: python scripts/importar_datos.py <zip o carpeta>\n"
-              "y después: python scripts/build_mars_grid.py")
+        print("\nThere are no Moon or Mars cards in data/processed/ yet.\n"
+              "Import the data: python scripts/import_data.py <zip or folder>\n"
+              "and then: python scripts/build_mars_grid.py")
         return
     for k, r in targets.reset_index(drop=True).iterrows():
         print(f"  [{k}] {r['body']:5s} {r['name']}")
-    k = ask_float("Número del sitio: ")
+    k = ask_float("Number of the site: ")
     if k is None or not 0 <= int(k) < len(targets):
         return
     t = targets.reset_index(drop=True).iloc[int(k)]
     vs = [v for v in usable_vars(earth, variables) if v in t.index and pd.notna(t[v])]
     if "precip_mm_year" in usable_vars(earth, variables):
         t = t.copy()
-        t["precip_mm_year"] = 0.0      # en la Luna y Marte no llueve (variables.yaml)
+        t["precip_mm_year"] = 0.0      # it does not rain on the Moon or Mars (variables.yaml)
         vs.append("precip_mm_year")
     if not vs:
-        print("Ese sitio no comparte ninguna variable con la Tierra todavía.")
+        print("That site does not share any variable with Earth yet.")
         return
     target = {v: float(t[v]) for v in vs}
     cells = ask_filters(earth)
-    run_search(target, cells, variables, ask_weights(vs, pruebas), f"ANÁLOGOS EN LA TIERRA DE {t['name']} ({t['body']})")
+    run_search(target, cells, variables, ask_weights(vs, pruebas), f"EARTH ANALOGS OF {t['name']} ({t['body']})")
 
 
 def mode_stats(earth, variables):
     vs = usable_vars(earth, variables)
     for k, v in enumerate(vs):
         print(f"  [{k}] {v}")
-    k = ask_float("Número de la variable: ")
+    k = ask_float("Number of the variable: ")
     if k is None or not 0 <= int(k) < len(vs):
         return
     v = vs[int(k)]
     m = earth[earth.in_mask]
     s = m[v].dropna()
-    print(f"\n{variables[v]['label']} ({variables[v].get('unit', '')}) — {len(s):,} celdas con dato")
+    print(f"\n{variables[v]['label']} ({variables[v].get('unit', '')}) — {len(s):,} cells with data")
     counts, edges = np.histogram(s, bins=12)
     for c, a, b in zip(counts, edges[:-1], edges[1:]):
         print(f"  {a:9.1f} – {b:9.1f} │{'█' * int(50 * c / counts.max()):50s}│ {c:,}")
-    print("\nMediana por tipo de zona:")
+    print("\nMedian by zone type:")
     print(m.groupby("env_name")[v].describe(percentiles=[.5])[["count", "min", "50%", "max"]].round(1).to_string())
 
 
 def main() -> None:
     earth, variables, pruebas, targets = load()
     summary(earth, variables, targets)
-    menu = {"1": "Escribir valores a mano", "2": "Parecidos a un punto de la Tierra",
-            "3": "Parecidos a un sitio de la Luna o Marte", "4": "Estadísticas de una variable",
-            "5": "Resumen de los datos", "0": "Salir"}
+    menu = {"1": "Type values by hand", "2": "Similar to a point of Earth",
+            "3": "Similar to a Moon or Mars site", "4": "Statistics of a variable",
+            "5": "Summary of the data", "0": "Quit"}
     while True:
         print("\n" + " · ".join(f"[{k}] {v}" for k, v in menu.items()))
-        op = ask("Opción: ")
+        op = ask("Option: ")
         if op == "1":
             mode_manual(earth, variables, pruebas)
         elif op == "2":
@@ -276,7 +277,7 @@ def main() -> None:
             mode_stats(earth, variables)
         elif op == "5":
             summary(earth, variables, targets)
-        elif op in ("0", "q", "salir"):
+        elif op in ("0", "q", "quit", "exit", "salir"):
             break
 
 

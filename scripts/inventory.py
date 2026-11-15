@@ -1,10 +1,10 @@
 """Which data are on THIS computer? Per body and dataset: files, GB, what is missing from the catalogue,
 and the tables already processed (how many rows each one has).
 
-    .venv\\Scripts\\python.exe scripts\\inventario.py            # shows it on screen
-    .venv\\Scripts\\python.exe scripts\\inventario.py --leeme    # and also writes <DATA>/LEEME.md
+    .venv\\Scripts\\python.exe scripts\\inventory.py            # shows it on screen
+    .venv\\Scripts\\python.exe scripts\\inventory.py --readme   # and also writes <DATA>/LEEME.md
 
-LEEME.md (the read-me of the data folder) is docs/08_datos_LEEME.md (a guide for people and for
+LEEME.md (the read-me of the data folder) is docs/08_data_folder_guide.md (a guide for people and for
 Claude) + this inventory. The list of datasets comes from the single catalogue: src/analogs/catalog.py.
 """
 import argparse
@@ -21,7 +21,7 @@ from analogs.catalog import DATASETS  # noqa: E402
 from analogs.paths import DATA, INTERIM, PROCESSED, RAW  # noqa: E402
 
 BODY_LABEL = {"earth": "🌍 Earth", "moon": "🌕 Moon", "mars": "🔴 Mars"}
-TEMPLATE = ROOT / "docs" / "08_datos_LEEME.md"
+TEMPLATE = ROOT / "docs" / "08_data_folder_guide.md"
 
 
 def folder_stats(p: Path) -> tuple[int, int]:
@@ -88,11 +88,11 @@ def build() -> tuple[str, list[str]]:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--leeme", action="store_true", help="also write <DATA>/LEEME.md (the data folder's read-me)")
+    ap.add_argument("--readme", "--leeme", dest="readme", action="store_true", help="also write <DATA>/LEEME.md (the data folder's read-me)")
     args = ap.parse_args()
     md, screen = build()
     print("\n".join(screen))
-    if args.leeme:
+    if args.readme:
         text = TEMPLATE.read_text(encoding="utf-8").replace("<!-- INVENTARIO -->", md)
         (DATA / "LEEME.md").write_text(text, encoding="utf-8")
         print(f"\nWritten: {DATA / 'LEEME.md'}")

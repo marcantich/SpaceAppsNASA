@@ -68,7 +68,7 @@ Rejected: OpenMARS reanalysis (CC BY-NC-ND licence: no derived products; 5° gri
 
 Archives: PDS Geosciences, NASA Goddard PGDA, LROC (Arizona State University); no account needed.
 Downloaded with `python scripts/download_moon.py` (88 files, 4.4 GB). What was reviewed and rejected, and
-why: [`06_datos_luna.md`](06_datos_luna.md).
+why: [`06_moon_data.md`](06_moon_data.md).
 
 | Product | Mission · instrument | Resolution | Coverage | Feeds | Source |
 |---|---|---|---|---|---|
@@ -118,7 +118,7 @@ Downloaded with `python scripts/download_earth.py`. Climate variables are 2019�
 | MOD10CM v061, snow cover, monthly | Terra · MODIS | 0.05° | 2019–2023 | `snow_cover_pct` (shown) | NASA NSIDC DAAC |
 | ECO_L3G_WPS v001, silica weight percent | ECOSTRESS (International Space Station) | 0.01° (~1.1 km), 53° N–53° S | 2023–2024 mean | `silica_wt_pct` (shown) | NASA LP DAAC |
 
-Used only by the terminal search tool `scripts/buscar.py` (0.05° mesh): NASA SRTMGL30 v002 and ETOPO
+Used only by the terminal search tool `scripts/search.py` (0.05° mesh): NASA SRTMGL30 v002 and ETOPO
 2022 30″.
 
 References:

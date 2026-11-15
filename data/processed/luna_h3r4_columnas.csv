@@ -15,10 +15,10 @@ prp_t_avg_2cm_K,K,Diviner PRP (lat ≤ −80°),"median annual mean temperature 
 prp_t_max_K,K,Diviner PRP (lat ≤ −80°),"median annual max surface temperature (polar detail, extra)"
 psr_frac,0-1,PGDA LPSR_80S_20MPP (lat ≤ −80.4°),fraction of the hexagon in permanent shadow
 feo_wt_pct,wt%,Lunar Prospector GRS 2°,W_FEO × 100 of the 2° cell containing the hexagon centre [units: verify]
-tio2_wt_pct,wt%,Lunar Prospector GRS 2°,ídem TIO2
-al2o3_wt_pct,wt%,Lunar Prospector GRS 2°,ídem W_AL2O3
-mgo_wt_pct,wt%,Lunar Prospector GRS 2°,ídem W_MGO
-cao_wt_pct,wt%,Lunar Prospector GRS 2°,ídem W_CAO
+tio2_wt_pct,wt%,Lunar Prospector GRS 2°,same, TIO2
+al2o3_wt_pct,wt%,Lunar Prospector GRS 2°,same, W_AL2O3
+mgo_wt_pct,wt%,Lunar Prospector GRS 2°,same, W_MGO
+cao_wt_pct,wt%,Lunar Prospector GRS 2°,same, W_CAO
 silica_wt_pct,wt%,Lunar Prospector GRS 2°,W_SIO2 × 100 (name as in configs/variables.yaml)
 k_ppm,ppm,Lunar Prospector GRS 2°,W_K [units: verify]
 th_ppm,ppm,Lunar Prospector GRS 2°,W_TH [units: verify]

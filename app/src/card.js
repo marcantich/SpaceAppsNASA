@@ -215,7 +215,7 @@ export function createScoreDock(el, { onClose } = {}) {
           <div class="dock-side left"><b>${esc(source.name)}</b><span>${esc(source.body)} · clicked cell</span></div>
           <div class="dock-score">
             ${badge(index, color, 'big')}
-            <span class="dock-sub">analog index${Number.isFinite(ring) ? ` · cell ${cell.toFixed(0)}, 20 km around ${ring.toFixed(0)}` : ''}</span>
+            <span class="dock-sub">analog index${Number.isFinite(ring) ? ` · cell ${cell.toFixed(0)}, its 6 neighbours ${ring.toFixed(0)}` : ''}</span>
           </div>
           <div class="dock-side right"><b>${esc(candidate.name)}</b><span>${esc(candidate.body)} · analog</span></div>
         </div>

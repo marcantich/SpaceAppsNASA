@@ -1,9 +1,9 @@
 """Copies the data from a USB STICK (zip or folder) to the right place on this computer.
 
-    .venv\\Scripts\\python.exe scripts\\importar_datos.py E:\\data.zip --dry-run   # only shows what it would do
-    .venv\\Scripts\\python.exe scripts\\importar_datos.py E:\\data.zip
-    .venv\\Scripts\\python.exe scripts\\importar_datos.py E:\\folder_with_zips      # every .zip in the folder
-    .venv\\Scripts\\python.exe scripts\\importar_datos.py E:\\folder_without_zips   # copies the folder as it is
+    .venv\\Scripts\\python.exe scripts\\import_data.py E:\\data.zip --dry-run   # only shows what it would do
+    .venv\\Scripts\\python.exe scripts\\import_data.py E:\\data.zip
+    .venv\\Scripts\\python.exe scripts\\import_data.py E:\\folder_with_zips      # every .zip in the folder
+    .venv\\Scripts\\python.exe scripts\\import_data.py E:\\folder_without_zips   # copies the folder as it is
 
 Destination: <DATA>/raw/<moon|mars|earth>/<dataset>/…   (DATA: see src/analogs/paths.py; outside git and OneDrive)
 
@@ -71,14 +71,14 @@ def entries(src: Path):
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("origen", type=Path, help="source: zip or folder of the USB stick")
+    ap.add_argument("source", type=Path, help="zip or folder of the USB stick")
     ap.add_argument("--dry-run", action="store_true", help="only show what it would copy")
     args = ap.parse_args()
 
     print(f"Destination: {RAW}\n")
     stats: dict[str, list[int]] = {}
     datasets: dict[str, set] = {}
-    for rel, size, opener in entries(args.origen):
+    for rel, size, opener in entries(args.source):
         body, dest = destination(rel)
         st = stats.setdefault(body, [0, 0, 0])
         st[0] += 1
@@ -100,7 +100,7 @@ def main() -> None:
     if "_sin_clasificar" in stats:
         print(f"\n⚠️  There are unclassified files in {RAW / '_sin_clasificar'}: move them by hand to raw/<body>/<dataset>/")
     print("\n(dry-run: nothing was copied)" if args.dry_run
-          else "\nDone. Check with: .venv\\Scripts\\python.exe scripts\\inventario.py --leeme")
+          else "\nDone. Check with: .venv\\Scripts\\python.exe scripts\\inventory.py --readme")
 
 
 if __name__ == "__main__":

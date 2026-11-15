@@ -117,7 +117,7 @@ def download_mcs_tsurf(dest: Path, step_days: int = 10, session: requests.Sessio
         out = dest / f"{day:%Y%m%d}{hour:02d}_tsurf.csv"
         if out.exists() and out.stat().st_size > 0:
             manifest.append({"dataset": dest.name, "file": out.name, "url": url,
-                             "bytes": out.stat().st_size, "status": "ya estaba"})
+                             "bytes": out.stat().st_size, "status": "already there"})
             log(f"  [{i:3d}/{len(jobs)}] {out.name}: skipped (already there)")
             continue
         try:

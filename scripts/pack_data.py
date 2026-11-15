@@ -2,7 +2,7 @@
 
     python scripts/pack_data.py mars --out C:\\some\\folder
     python scripts/pack_data.py earth --out E:\\          # straight to a USB stick
-    python scripts/pack_data.py tables --out E:\\         # only the processed tables (enough for buscar.py)
+    python scripts/pack_data.py tables --out E:\\         # only the processed tables (enough for search.py)
 
 Each zip keeps the path below data/raw/, so whoever downloads it just unzips it into
 data/raw/ and every file lands in the right place, e.g.
@@ -49,8 +49,8 @@ PACKS = {
         "earth_silica.zip": ["ecostress_wps"],                         # ~2.5 GB raw
     },
 }
-# "tables": the PROCESSED tables (a few hundred MB) — enough to run scripts/buscar.py without any raw data.
-# Zip paths start with processed/ or interim/, and scripts/importar_datos.py puts them back in place.
+# "tables": the PROCESSED tables (a few hundred MB) — enough to run scripts/search.py without any raw data.
+# Zip paths start with processed/ or interim/, and scripts/import_data.py puts them back in place.
 TABLES = {"processed": "*.parquet", "interim": "*.npz"}
 
 

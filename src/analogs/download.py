@@ -295,7 +295,7 @@ def download(keys: list[str] | None = None) -> None:
                 url = f"{ds.base_url}/{name}"
                 try:
                     status = _download_file(session, url, ds.dest / name)
-                    manifest_status = "ya estaba" if status.startswith("skipped") else "ok"
+                    manifest_status = "already there" if status.startswith("skipped") else "ok"
                 except Exception as e:  # keep going; the error is recorded in the manifest
                     status = manifest_status = f"ERROR {type(e).__name__}: {str(e)[:120]}"
                 path = ds.dest / name

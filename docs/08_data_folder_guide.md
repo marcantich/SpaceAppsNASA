@@ -1,7 +1,7 @@
 # README of the data folder · "Earth Analogs for Moon & Mars" (NASA Space Apps 2026)
 
 > **This file goes inside the data folder** (`SpaceAppsData/LEEME.md`). It is written by
-> `scripts/inventario.py --leeme` from `docs/08_datos_LEEME.md` in the repository, with the real
+> `scripts/inventory.py --readme` from `docs/08_data_folder_guide.md` in the repository, with the real
 > inventory at the end. It is written for people **and for AI assistants**: section 1 is a set of rules
 > to follow.
 
@@ -47,7 +47,7 @@
 8. Mark anything not checked as **[verify]** and any value chosen by the team as **[assumption]**.
 9. After processing, **check against the reference numbers of section 6**.
 10. To **share data**, use `scripts/pack_data.py` (zips) and, on the other computer,
-    `scripts/importar_datos.py` (section 7).
+    `scripts/import_data.py` (section 7).
 
 ---
 
@@ -65,7 +65,7 @@ SpaceAppsData/                      ← this folder (DATA)
 └── processed/                      STEP 2 · CARD GRIDS (.parquet)
     ├── mars_h3r5.parquet             Mars, one row per H3 res-5 hexagon (~9.1 km)
     ├── luna_h3r4.parquet             Moon, one row per H3 res-4 hexagon (~12.3 km)
-    ├── Earth grid (H3 res 6, ~6.5 km) and fichas_tierra_*.parquet (0.05° mesh, used by buscar.py)
+    ├── Earth grid (H3 res 6, ~6.5 km) and fichas_tierra_*.parquet (0.05° mesh, used by search.py)
     ├── earth_mask_h3r*.parquet       Earth search mask per hexagon
     └── fichas_objetivos_<body>.parquet   one row per target site of the Moon / Mars
 ```
@@ -107,17 +107,17 @@ Apps*, approve **NASA GESDISC DATA ARCHIVE**.
 
 | Step | Command | Reads | Writes | What it does |
 |---|---|---|---|---|
-| 0 | `scripts\inventario.py --leeme` | everything | `LEEME.md` | Says what is present and missing; rewrites this file |
-| 1a | `scripts\download_earth.py [group…]` | Earthdata / NOAA | `raw/earth/` | Downloads Earth. Groups: `mask dem temp polvo silice nieve`. Can be rerun |
+| 0 | `scripts\inventory.py --readme` | everything | `LEEME.md` | Says what is present and missing; rewrites this file |
+| 1a | `scripts\download_earth.py [group…]` | Earthdata / NOAA | `raw/earth/` | Downloads Earth. Groups: `mask dem dem15 temp dust silica snow`. Can be rerun |
 | 1b | `scripts\download_moon.py` · `scripts\download_data.py` | PDS, PGDA… | `raw/moon/` · `raw/mars/` | Download the Moon and Mars |
-| 1c | `scripts\importar_datos.py <zip/folder>` | USB stick | `raw/`, `processed/` | Instead of downloading: puts in place what someone gives you (section 7) |
+| 1c | `scripts\import_data.py <zip/folder>` | USB stick | `raw/`, `processed/` | Instead of downloading: puts in place what someone gives you (section 7) |
 | 2 | `scripts\build_earth_mask.py` | `mcd12c1`, `imerg_monthly` | `interim/`, `processed/earth_mask_h3r*.parquet`, `outputs/maps/earth_mask.png` | Decides **where to search**: deserts, polar ice and arid land yes; sea, forests, crops, towns, wetlands no |
-| 3 | `scripts\build_earth_features.py` | all `raw/earth/` + mask | `processed/fichas_tierra_005deg.parquet`, `_h3r5.parquet` | Earth variables on the 0.05° mesh (used by `buscar.py` and the Earth grid) |
+| 3 | `scripts\build_earth_features.py` | all `raw/earth/` + mask | `processed/fichas_tierra_005deg.parquet`, `_h3r5.parquet` | Earth variables on the 0.05° mesh (used by `search.py` and the Earth grid) |
 | 4 | `scripts\build_earth_grid.py` | `raw/earth/` + step 3 | Earth grid + `app/data/tierra/` | Earth card grid, H3 res 6, and the search table of the app |
 | 5 | `scripts\build_mars_grid.py` | `raw/mars/` | `processed/mars_h3r5.parquet`, `fichas_objetivos_mars.parquet` | Mars card grid (~18 min) and the Mars site cards |
 | 6 | `scripts\build_moon_grid.py` | `raw/moon/` | `processed/luna_h3r4.parquet`, `fichas_objetivos_moon.csv` | Moon card grid (~3 min) and the Moon site cards |
 | 7 | `scripts\export_mars_web.py`, `export_moon_web.py`, `export_mars_slope_tiles.py` | `processed/` | `app/data/` | Exports for the web app |
-| 8 | `scripts\buscar.py [--malla h3r5]` | `processed/` | `outputs/validation/` | **Search in the terminal**: by hand values, similar to a point of Earth or to a Moon / Mars site |
+| 8 | `scripts\search.py [--grid h3r5]` | `processed/` | `outputs/validation/` | **Search in the terminal**: by hand values, similar to a point of Earth or to a Moon / Mars site |
 
 All are run **from the root of the repository** with `.venv\Scripts\python.exe scripts\<script>.py`.
 
@@ -153,7 +153,7 @@ For each 0.05° cell (MCD12C1 gives the % of each land-cover class):
 | Mars cells (H3 res 5) | **2,016,842** |
 | Moon cells (H3 res 4) | **288,122** |
 | Known analogs inside the Earth mask (`outputs/validation/earth_mask_known_analogs.csv`) | **15 of 20**. Outside, as expected: Río Tinto, Ries, Sudbury, Lonar (geology analogs in vegetated areas) and Kilauea |
-| `buscar.py` → [1] → t_mean −63 °C, t_max 270 K, rain 0 (Mars-like) | **none above ~61**: Earth does not reproduce that mean cold with those maxima (a result, not an error) |
+| `search.py` → [1] → t_mean −63 °C, t_max 270 K, rain 0 (Mars-like) | **none above ~61**: Earth does not reproduce that mean cold with those maxima (a result, not an error) |
 
 ---
 
@@ -161,9 +161,9 @@ For each 0.05° cell (MCD12C1 gives the % of each land-cover class):
 
 | What | How | Size |
 |---|---|---|
-| **Only the card tables** (enough for `buscar.py`) | `scripts\pack_data.py tables --out E:\` → `tables_processed.zip` | ~0.3 GB |
+| **Only the card tables** (enough for `search.py`) | `scripts\pack_data.py tables --out E:\` → `tables_processed.zip` | ~0.3 GB |
 | Raw data of one body | `scripts\pack_data.py earth --out E:\` (or `moon`, `mars`) → one zip per group of datasets | see section 8 |
-| On the receiving computer | `scripts\importar_datos.py E:\ --dry-run` and then without `--dry-run` (takes a zip, a folder of zips or a folder) | — |
+| On the receiving computer | `scripts\import_data.py E:\ --dry-run` and then without `--dry-run` (takes a zip, a folder of zips or a folder) | — |
 | Code | `git pull` / `git push` | — |
 
 **Never** share `~/.netrc` or `.venv` (it does not work on another computer: create it with section 3).

@@ -7,14 +7,14 @@ Run them **from the repository root** with the Python of the environment, one co
 **Data:** everything is read from and written to the data folder (`src/analogs/paths.py`:
 `ANALOGS_DATA_DIR`, else `~/SpaceAppsData`, else `<repo>/data`), with the structure
 `raw/<earth|moon|mars>/<folder>/`, `interim/`, `processed/`. Which folder is what:
-`src/analogs/catalog.py`. Full data guide: [`docs/08_datos_LEEME.md`](../docs/08_datos_LEEME.md).
+`src/analogs/catalog.py`. Full data guide: [`docs/08_data_folder_guide.md`](../docs/08_data_folder_guide.md).
 
 ## 0 · Manage the data
 
 | Script | What it does |
 |---|---|
-| `inventario.py [--leeme]` | Which datasets are present or missing, GB, rows of each table. `--leeme` writes `<DATA>/LEEME.md` |
-| `importar_datos.py <zip/folder> [--dry-run]` | Puts data from a USB stick or a zip in the right place |
+| `inventory.py [--readme]` | Which datasets are present or missing, GB, rows of each table. `--readme` writes `<DATA>/LEEME.md` |
+| `import_data.py <zip/folder> [--dry-run]` | Puts data from a USB stick or a zip in the right place |
 | `pack_data.py <earth\|moon\|mars\|tables> --out <folder>` | Makes the zips to share data (`tables` = only the cards) |
 | `list_data.py` | SHA-256 listing of a data folder → `LISTADO_<name>.csv` (to compare downloads) |
 
@@ -23,8 +23,8 @@ Run them **from the repository root** with the Python of the environment, one co
 | Script | What it does |
 |---|---|
 | `download_data.py [mola tes grs …] [--list]` | **Mars** (datasets in `src/analogs/download.py`) |
-| `download_moon.py [--list]` | **Moon** (`docs/06_datos_luna.md`) |
-| `download_earth.py [mask dem temp polvo silice nieve] [--list]` | **Earth** from Earthdata / NOAA (needs `~/.netrc`) |
+| `download_moon.py [--list]` | **Moon** (`docs/06_moon_data.md`) |
+| `download_earth.py [mask dem dem15 temp dust silica snow] [--list]` | **Earth** from Earthdata / NOAA (needs `~/.netrc`) |
 
 Mars extras downloaded by hand (see `src/analogs/mars_climate.py`): NASA Ames Mars GCM output
 (`raw/mars/ames_mgcm_fv3beta/`) and the Appelbaum & Flood net flux tables (`raw/mars/appelbaum_flood/`).
@@ -36,7 +36,7 @@ Mars extras downloaded by hand (see `src/analogs/mars_climate.py`): NASA Ames Ma
 | `build_mars_grid.py` | Mars grid, H3 res 5 (~18 min) + cards of the 12 Mars sites |
 | `build_moon_grid.py` | Moon grid, H3 res 4 (~3 min) + cards of the 9 Moon sites |
 | `build_earth_mask.py` | Earth search mask (deserts, polar ice, arid open land) + map |
-| `build_earth_features.py` | Earth fields on the 0.05° mesh and H3 res 5 (used by `buscar.py`) |
+| `build_earth_features.py` | Earth fields on the 0.05° mesh and H3 res 5 (used by `search.py`) |
 | `build_earth_grid.py` | Earth grid, H3 res 6; also writes `app/data/tierra/` and the search table |
 
 ## 3 · Export to the web → `app/data/`
@@ -55,5 +55,5 @@ Mars extras downloaded by hand (see `src/analogs/mars_climate.py`): NASA Ames Ma
 
 | Script | What it does |
 |---|---|
-| `buscar.py [--malla h3r5]` | Search in the terminal (prompts in Spanish): by hand values, similar to a point of Earth or to a Moon / Mars site |
+| `search.py [--grid h3r5]` | Search in the terminal: by hand values, similar to a point of Earth or to a Moon / Mars site |
 | `rover_route/` | "Route replica" study: find on Earth a path with the slopes of a rover traverse (`prep_route` → `fetch_dem` → `match_route` / `free_route` → `plot_*`; `make_presets.py` writes `app/data/route/presets.json`). Run from inside that folder |

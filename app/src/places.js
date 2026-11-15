@@ -186,7 +186,7 @@ export function createZoneMenu(root, { onSelect, onDraw }) {
       ${other.length ? `<p class="menu-title">Other zones</p>
       <div class="chips">${other.map((z) => chip(z.key, z.label)).join('')}</div>` : ''}
       ${custom ? `<p class="menu-title">Your area</p><div class="chips">${chip('custom', zoneText(custom), 'wide')}</div>` : ''}
-      <button type="button" class="draw" data-draw>▭ Draw an area on the ${esc(NAME[body])} globe</button>`;
+      <button type="button" class="draw" data-draw>▭ Draw an area on the ${esc(BODY_NAME[body])} globe</button>`;
   }
 
   function set(key, label) {
