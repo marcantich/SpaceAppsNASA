@@ -1,226 +1,115 @@
-# Guía rápida: cómo funciona esto y todo lo que hay que hacer
+# 01 · Quick guide: how this works
 
-> Para quien no ha tocado nunca la observación de la Tierra (o sea, todos nosotros). Marc, 14/11/2026.
-> Complementa al [enfoque](03_enfoque.md): allí está el *porqué* del método; aquí, el *cómo* y la lista completa de tareas.
-> **[verificar]** = no comprobado todavía.
-
----
-
-## 1. La idea en una frase
-
-**No comparamos fotos: comparamos la "ficha técnica" de cada sitio** (pendiente, temperatura, hielo, tipo de roca, iluminación…) y buscamos en la Tierra las fichas más parecidas a la de un sitio de la Luna o de Marte, **según lo que quieras probar**.
+> For anyone who has never worked with satellite data. Written by Marc on 2026-11-14 as the team's
+> starting guide; the *why* of the method is in the [approach](03_enfoque.md). What was finally built is
+> described in the [README](../README.md).
 
 ---
 
-## 2. Qué es un "dato de satélite"
+## 1. The idea in one sentence
 
-- **Ráster:** una imagen en la que cada píxel guarda **un número físico** y sabe en qué latitud y longitud está.
-  - Una foto en color son 3 rásters: cuánta luz roja, verde y azul refleja el suelo.
-  - Un **DEM** es un ráster de alturas (m). Una **LST** es un ráster de temperatura de superficie (K). Una imagen de **radar** es un ráster de eco (dB).
-- **Resolución:** lo que mide un píxel sobre el suelo (30 m, 1 km…).
-- **Formatos:** GeoTIFF (el más fácil), NetCDF / HDF5 (científicos: varias variables y fechas en un fichero) y tablas (CSV/TAB, como el PRP de Diviner).
-- **Niveles de procesado (convención de NASA):**
+**We do not compare pictures: we compare the "data sheet" (card) of each place** (slope, temperature,
+ice, rock type, sunlight…) and look on Earth for the cards most similar to that of a place on the Moon or
+Mars, **depending on what you want to test**.
 
-  | Nivel | Qué es | ¿Lo usamos? |
+---
+
+## 2. What "satellite data" are
+
+- **Raster:** an image where each pixel stores **a physical number** and knows its latitude and longitude.
+  - A colour photo is 3 rasters: how much red, green and blue light the ground reflects.
+  - A **DEM** is a raster of heights (m). An **LST** is a raster of surface temperature (K). A **radar**
+    image is a raster of echo strength (dB).
+- **Resolution:** the size of a pixel on the ground (30 m, 1 km…).
+- **Formats:** GeoTIFF (the easiest), NetCDF / HDF5 (scientific: several variables and dates in one file)
+  and tables (CSV / TAB, like Diviner's PRP).
+- **Processing levels (NASA convention):**
+
+  | Level | What it is | Do we use it? |
   |---|---|---|
-  | L0 | Señal bruta del instrumento | ❌ |
-  | L1 | Calibrado (radiancias) | ❌ |
-  | L2 | Variable física (p. ej. temperatura) en la geometría de cada pasada | Solo si no hay L3 |
-  | **L3** | **Variable física en malla regular**, a menudo media mensual y global | ✅ **Lo normal** |
-  | **L4** | Modelos o productos derivados (p. ej. profundidad del hielo de Diviner PRP) | ✅ |
+  | L0 | Raw instrument signal | ❌ |
+  | L1 | Calibrated (radiances) | ❌ |
+  | L2 | Physical variable (e.g. temperature) in the geometry of each pass | Only if there is no L3 |
+  | **L3** | **Physical variable on a regular grid**, often a global monthly mean | ✅ **The usual** |
+  | **L4** | Models or derived products (e.g. Diviner PRP ice depth) | ✅ |
 
-  **Regla:** trabajamos con L3/L4. En L0 y L1 es donde se ahoga la gente.
-- **Vectores:** puntos y polígonos (sitios, cráteres, volcanes) en CSV o GeoJSON.
-- **Proyección (CRS):** cómo se aplana la esfera para hacer un mapa.
-  - Lat/lon sirve para casi todo; en los polos se usa la estereográfica polar (LOLA polar, por ejemplo).
-  - La Luna y Marte tienen sus propios sistemas, con otro radio: **no se mezclan con los de la Tierra**, cada cuerpo se procesa por separado.
+  **Rule:** we work with L3 / L4. L0 and L1 are where people drown.
+- **Vectors:** points and polygons (sites, craters, volcanoes) in CSV or GeoJSON.
+- **Projection (CRS):** how the sphere is flattened into a map. Lat/lon works for almost everything; polar
+  stereographic is used at the poles. The Moon and Mars have their own systems and radii: **they are
+  never mixed with Earth's**, each body is processed on its own.
 
-> **Analogía CFD:** cada dataset es un campo escalar sobre su propia malla. El trabajo consiste en interpolarlos todos a una **malla común** y comparar celda a celda. Como en CFD, el ~70 % del esfuerzo es el **preproceso** (encontrar, descargar, recortar y remuestrear), no el "solver".
+> **CFD analogy:** each dataset is a scalar field on its own mesh. The work is to bring them all to a
+> **common mesh** and compare cell by cell. As in CFD, ~70 % of the effort is **pre-processing** (finding,
+> downloading, cropping and resampling), not the "solver".
 
 ---
 
-## 3. El flujo completo, de cero a la demo
+## 3. The flow, from zero to the demo
 
 ```
- ① ¿Qué quieres probar?  →  ② ¿Qué variables lo controlan?  →  ③ ¿En qué dataset está cada variable?
-                                                                   (Luna, Marte y Tierra)
+ ① What do you want to test?  →  ② Which variables control it?  →  ③ Which dataset has each variable?
+                                                                     (Moon, Mars and Earth)
             ↓
- ④ Descargar SOLO lo necesario  →  ⑤ Leer, recortar, malla común  →  ⑥ Derivados (pendiente, rugosidad…)
+ ④ Download ONLY what is needed  →  ⑤ Read, crop, common mesh  →  ⑥ Derived fields (slope, roughness…)
             ↓
- ⑦ Tabla de fichas (1 fila = 1 celda o sitio)  →  ⑧ Similitud ponderada  →  ⑨ Validar  →  ⑩ JSON → globo web
-            ↓
- ⑪ Elegir 2–3 sitios nuevos y escribir sus fichas  →  ⑫ Presentación, vídeo y entrega
+ ⑦ Card table (1 row = 1 cell or site)  →  ⑧ Weighted similarity  →  ⑨ Validate  →  ⑩ Web globe
 ```
 
-| Paso | Quién | Herramienta | Resultado |
-|---|---|---|---|
-| ①–② | Ciencia + Coordinación | Esta guía (§5) | Tabla "qué probar → variables → pesos" en `configs/` |
-| ③ | Datos | Portales de [Resources](02_reto_oficial.md#resources-pestaña-oficial) | Inventario en `data/README.md` |
-| ④–⑥ | Datos Luna/Marte · Datos Tierra | `earthaccess`, PDS/ODE, `rasterio`, `xarray` | `data/processed/` |
-| ⑦–⑧ | Motor | `pandas`, `numpy`, `h3` | `data/processed/fichas_*.parquet` |
-| ⑨ | Ciencia + Motor | Análogos conocidos + modelo nulo ([enfoque §2.6](03_enfoque.md)) | Gráfico de validación |
-| ⑩ | Motor → App | Índice en `app/data/` ([formato](../app/README.md)) → globo web | App desplegada |
-| ⑪ | Ciencia | Imágenes de Worldview / Trek a la misma escala | 2–3 fichas |
-| ⑫ | Coordinación | Slides y vídeo | Entrega |
-
-**Por qué un índice y no llamar a la API en cada clic.** Google no visita toda la web cuando buscas: la tiene indexada. Nosotros igual. Los datos de NASA se descargan y procesan **una vez** (pasos ④–⑦, decenas de GB que no van en la app) y se convierten en un **índice de fichas** de pocos MB (`app/data/`). La app calcula los *matches* sobre ese índice al instante, con cualquier filtro. Lo único que pide en vivo a NASA son los **mapas y fotos** al hacer zoom. Si aparece un sitio nuevo o una variable nueva, se vuelve a ejecutar el script y la app no se toca.
+**Why an index and not an API call on every click.** Google does not visit the whole web when you search:
+it has it indexed. We do the same. NASA data are downloaded and processed **once** (steps ④–⑦, tens of GB
+that never go into the app) and turned into a **card index** of a few MB per body (`app/data/`). The app
+computes the matches on that index instantly, with any filter. The only live requests are the **maps and
+imagery** when zooming. A new site or variable means rerunning a script; the app does not change.
 
 ---
 
-## 4. "¿Y la IA?"
+## 4. "What about AI?"
 
-- **Entrenar una IA** es enseñarle muchos ejemplos *con la respuesta correcta*. Para "este píxel es buen sitio para probar ruedas de Marte: sí/no" esas respuestas no existen: hay unos 20–50 análogos conocidos. Con eso un modelo no aprende nada fiable, y además no sabría explicar por qué.
-- **Lo que hacemos:** **búsqueda por similitud**, es decir, buscar los vecinos más cercanos en el espacio de variables.
-  - Es un algoritmo clásico de *machine learning* no supervisado: no necesita entrenamiento y se explica variable a variable.
-  - El reto lo pide así: *"similarity metrics, machine learning"* y *"think beyond visual similarity"*.
-- **Dónde sí meter ML si sobra tiempo (stretch):**
-  - *k-means* para agrupar la Tierra en "familias de terreno";
-  - comparar imágenes con un modelo preentrenado (p. ej. **Prithvi**, de NASA e IBM). El riesgo es que está entrenado con imágenes de la Tierra, así que en la Luna y en Marte trabaja fuera de lo que conoce.
-- **Las fotos sí sirven,** pero para las **fichas y la demo** (comparación lado a lado y a la misma escala), no para el cálculo.
-- **El "%" es un índice de analogía (0–100), no una probabilidad:** no está calibrado contra nada. En el pitch hay que decirlo así.
-
----
-
-## 5. "¿Qué quieres probar?" → variables → datos
-
-Es el corazón de la app. **Borrador para que Ciencia lo corrija.** Ya está en [`configs/pruebas.yaml`](../configs/pruebas.yaml) (pesos) y [`configs/variables.yaml`](../configs/variables.yaml) (fuentes y tolerancias):
-
-| Quiero probar… | Lo controla | Luna / Marte (fuente) | Tierra (fuente) | Qué NO reproduce la Tierra y cómo se compensa |
-|---|---|---|---|---|
-| **Ruedas / movilidad** | pendiente, rugosidad, rocas, tamaño de grano | LOLA · Diviner (rocas) / MOLA · THEMIS | DEM (NASADEM / Copernicus) · SoilGrids [verificar] | Carga por rueda ∝ m·g → vehículo de prueba aligerado (JPL lo hizo con *Scarecrow* para Curiosity) |
-| **Navegación autónoma / cámaras** | Sol rasante, sombras, sin vegetación, albedo | geometría solar · LROC / CTX | geometría solar · NDVI y albedo MODIS | Las sombras se mueven ~30× más rápido; la luz difusa del cielo rellena las sombras |
-| **Perforación / muestras** | tipo de roca, suelo helado y cementado | mapas geológicos USGS · Diviner PRP | GLiM · permafrost (ESA CCI) | Material sí; temperatura del suelo no |
-| **Detección de hielo** (radar, neutrones) | hielo en el subsuelo y su profundidad, rugosidad vista por radar | Diviner PRP (`ice_depth`) · Mini-RF · LEND / SWIM | permafrost (ESA CCI) · Sentinel-1 / RCM | Parcial: el hielo lunar está en vacío |
-| **Energía solar y térmica** | iluminación, temperaturas extremas, ciclos | geometría · Diviner PRP / MCD | geometría · MODIS LST | La Tierra no baja de ≈ −90 °C ni llega al mediodía lunar (≈ +120 °C) |
-| **Polvo, juntas, mecanismos** (Marte) | polvo en suspensión, viento | TES / MCD | MODIS AOD · MERRA-2 (viento) | Aire de Marte ~60× menos denso → el polvo se levanta de otra forma |
-| **Hábitat / operaciones humanas** | aislamiento, frío, oscuridad, logística | — | tiempo de viaje a ciudades · LST · latitud | Radiación y gravedad no |
-| **Comunicaciones** | relieve que tapa la línea de visión | LOLA / MOLA | DEM | La geometría sí se reproduce |
+- **Training an AI** means showing it many examples *with the right answer*. For "this pixel is a good
+  place to test Mars wheels: yes / no" those answers do not exist: there are about 20–50 known analogs.
+  A model would learn nothing reliable from that, and it could not explain why.
+- **What we do:** a **similarity search**, i.e. finding the nearest neighbours in the space of variables.
+  It is a classic unsupervised method: it needs no training and can be explained variable by variable.
+  The challenge asks for exactly this: *"similarity metrics, machine learning"* and *"think beyond visual
+  similarity"*.
+- **Pictures are useful** for the cards and the demo (side by side, at the same scale), not for the
+  calculation.
+- **The index (0–100) is an analogy index, not a probability:** it is not calibrated against anything.
 
 ---
 
-## 6. Herramientas y librerías
+## 5. "What do you want to test?" → variables → data
 
-- **QGIS** (gratis): ver cualquier ráster sobre un mapa. **Es lo primero que hay que instalar.** Antes de programar nada, se abre el dato y se mira.
-- **Python:**
+The heart of the app. The weights are in [`configs/pruebas.yaml`](../configs/pruebas.yaml) and the
+sources and tolerances in [`configs/variables.yaml`](../configs/variables.yaml).
 
-  | Librería | Para qué |
-  |---|---|
-  | `numpy`, `pandas` | Números y tablas |
-  | `rasterio`, `rioxarray`, `xarray` | Leer, recortar y remuestrear rásters (GeoTIFF, NetCDF) |
-  | `geopandas` | Puntos y polígonos |
-  | `h3` | Malla hexagonal de igual área |
-  | `earthaccess` | Buscar y descargar de Earthdata con tu cuenta, en 3 líneas |
-  | `pystac-client` | Buscar en Copernicus Data Space |
-  | `scikit-learn` | Vecinos más cercanos, *k-means* |
-  | `matplotlib`, `plotly` | Gráficos |
-
-  Todas están en [`requirements.txt`](../requirements.txt).
-- **Web:**
-  - **globe.gl**: globo 3D en pocas líneas; admite texturas de la Luna y de Marte y capas de hexágonos [verificar].
-  - **CesiumJS**: más potente, pero cuesta más aprenderlo.
-  - Alternativa todo en Python: **Streamlit + pydeck**.
-- **GitHub** para el código y **Drive** para los datos pesados.
+| I want to test… | Controlled by | What Earth does NOT reproduce, and how to compensate |
+|---|---|---|
+| **Wheels / mobility** | slope, roughness, rocks, grain size | Wheel load ∝ m·g → lightened test vehicle (JPL did it with *Scarecrow* for Curiosity) |
+| **Autonomous navigation / cameras** | low Sun, shadows, no vegetation, albedo | Shadows move ~30× faster; the sky fills shadows with diffuse light |
+| **Drilling / sampling** | rock type, frozen and cemented ground | The material yes; the ground temperature no |
+| **Ice detection** (radar, neutrons) | subsurface ice and its depth | Partial: lunar ice sits in vacuum |
+| **Solar power and thermal control** | sunlight, extreme temperatures, cycles | Earth never drops below ≈ −90 °C nor reaches the lunar noon (≈ +120 °C) |
+| **Dust, seals, mechanisms** (Mars) | airborne dust, wind | Mars air is ~60× thinner → dust is lifted differently |
+| **Habitat / human operations** | isolation, cold, darkness, logistics | Neither radiation nor gravity |
+| **Communications** | relief blocking the line of sight | The geometry is reproduced |
 
 ---
 
-## 7. Checklist de TODO el challenge
+## 6. Glossary
 
-**A. Definición (Coordinación + Ciencia)**
-- [ ] Enfoque del producto ("¿qué quieres probar?" + modo inverso).
-- [ ] Sitios objetivo: 3 de la Luna y 2–3 de Marte, con coordenadas oficiales.
-- [ ] Tabla §5 cerrada: variables, pesos y tolerancias σ por cada cosa que se quiere probar.
-
-**B. Datos (Datos Luna/Marte + Datos Tierra)**
-- [ ] Cuentas: Earthdata Login, Copernicus Data Space, EODMS, JAXA G-Portal.
-- [ ] Inventario en `data/README.md`: cada dataset con fuente, resolución, formato y quién lo lleva.
-- [ ] Huella de los objetivos: Diviner PRP + LOLA (Luna); MOLA + THEMIS (Marte).
-- [ ] Capas globales gruesas de la Tierra (~1 km) para el cribado.
-- [ ] Capas finas (30–90 m) **solo** alrededor de los candidatos.
-
-**C. Motor**
-- [ ] Malla H3 y tabla de fichas de la Tierra.
-- [ ] Similitud por variable y global ([enfoque §2.1](03_enfoque.md); ya funciona: `src/analogs/similarity.py`).
-- [ ] Novedad (distancia a análogos conocidos) y operabilidad (accesibilidad).
-- [ ] Exportar JSON.
-
-**D. Validación (Ciencia + Motor)**
-- [ ] Análogos conocidos etiquetados por dimensión.
-- [ ] Comparación con el modelo nulo (celdas aleatorias).
-- [ ] Pruebas específicas: lago Salda ↔ Jezero, Mistastin ↔ tierras altas lunares.
-
-**E. App**
-- [x] Globo con datos desde el primer minuto (al principio falsos; hoy la app solo usa datos reales).
-- [ ] Selectores "qué probar" y "destino"; ficha con radar y valores.
-- [ ] Modo inverso: clic en la Tierra → Luna y Marte.
-- [ ] Desplegada con un enlace público.
-
-**F. Contenido (Ciencia)**
-- [ ] 2–3 fichas de sitios **nuevos**: qué se parece, qué no, qué probarías allí y qué validez tiene la prueba.
-- [ ] Bloque fijo de límites (gravedad, presión, radiación).
-
-**G. Entrega (Coordinación)**
-- [ ] Título y resumen.
-- [ ] Vídeo y/o slides [verificar formato].
-- [ ] Enlace al repo y a la app.
-- [ ] **Lista de datos usados, citados.**
-- [ ] Declaración de uso de IA [verificar].
-- [ ] **Hora límite** [verificar].
-
-**H. Coordinación**
-- [ ] Stand-up de 10 min cada ~3 h.
-- [ ] Decisiones apuntadas en `docs/decisions/`.
-- [ ] Recortar alcance sin piedad.
-
----
-
-## 8. Ruta en el tiempo
-
-| Cuándo | Objetivo |
+| Term | What it is |
 |---|---|
-| **Esta noche (vie → sáb)** | Marc: enfoque claro, tabla §5 en borrador, QGIS y Python instalados. |
-| **Sábado mañana** | Todos crean cuentas y hacen el "hola mundo" (§9). Después, en paralelo: Datos Luna/Marte saca la huella lunar, Datos Tierra busca 2–3 capas, Motor conecta fichas e índice, App monta el globo con datos falsos y Ciencia cierra pesos y análogos. |
-| **Sábado 14:30** | Sync con Pablo. |
-| **Sábado tarde** | **Flujo de punta a punta**, aunque sea con 2 variables reales. |
-| **Sábado noche** | Más variables, validación y modo inverso. |
-| **Domingo mañana** | Congelar funcionalidades. Refinar 2–3 candidatos y escribir las fichas. |
-| **Domingo hasta el cierre** | Slides, vídeo y entrega. **No tocar código en las últimas horas.** |
-
----
-
-## 9. "Hola mundo" (30 min, para perder el miedo)
-
-1. Instalar QGIS y el entorno de Python (ver el [README](../README.md#puesta-en-marcha)); `python -m pytest` tiene que salir en verde.
-2. Bajar **un** ráster pequeño, por ejemplo un recorte del DEM de la zona donde estéis.
-3. Abrirlo en QGIS y comprobar que "se ve bien".
-4. Leerlo con Python y sacar el valor en un punto:
-
-```python
-import rasterio
-
-with rasterio.open("dem.tif") as src:
-    print(src.crs, src.res, src.bounds)        # sistema de referencia, tamaño de píxel, extensión
-    lon, lat = 2.17, 41.39                      # ojo: rasterio pide (x, y) = (lon, lat)
-    print(next(src.sample([(lon, lat)])))       # valor del píxel en ese punto
-```
-
-Si eso funciona, ya se sabe lo esencial: **un dato de satélite es una matriz de números con coordenadas.**
-
----
-
-## 10. Glosario mínimo
-
-| Término | Qué es |
-|---|---|
-| Ráster / píxel | Imagen de números; el píxel es una celda |
-| Banda | Una de las "capas" de un ráster (p. ej. el rojo, o un canal infrarrojo) |
-| DEM | Modelo digital de elevaciones (alturas) |
-| LST | *Land Surface Temperature*: temperatura de la superficie vista desde el satélite |
-| NDVI | Índice de vegetación (verde = alto) |
-| Albedo | Fracción de luz que se refleja |
-| SAR | Radar de apertura sintética: ve de día y de noche, a través de las nubes |
-| Retrodispersión | Cuánta señal de radar vuelve al satélite; depende de la rugosidad y de la humedad |
-| CPR | *Circular Polarization Ratio*: índice de radar sensible a la rugosidad y al hielo |
-| Gránulo | Un fichero o escena concreta dentro de una colección de Earthdata |
-| STAC | Estándar para buscar imágenes por zona y fecha (lo usa Copernicus) |
-| Tesela / WMTS | Trocitos de mapa que carga la web (mapas base de Worldview y Trek) |
-| L0–L4 | Niveles de procesado (§2) |
+| Raster / pixel | An image of numbers; the pixel is one cell |
+| Band | One of the "layers" of a raster (e.g. red, or an infrared channel) |
+| DEM | Digital elevation model (heights) |
+| LST | *Land Surface Temperature*, seen from the satellite |
+| NDVI | Vegetation index (green = high) |
+| Albedo | Fraction of light reflected |
+| SAR | Synthetic aperture radar: sees day and night, through clouds |
+| H3 | Uber's hexagonal grid of equal-area cells, used for the card grids of the three bodies |
+| Card (*ficha*) | The values of every variable in one cell or site |
+| Granule | One file or scene within an Earthdata collection |
+| Tile / WMTS | Small map pieces loaded by the web app (base maps from GIBS and Trek) |
+| L0–L4 | Processing levels (§2) |

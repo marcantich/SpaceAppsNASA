@@ -7,7 +7,7 @@ Run them **from the repository root** with the Python of the environment, one co
 **Data:** everything is read from and written to the data folder (`src/analogs/paths.py`:
 `ANALOGS_DATA_DIR`, else `~/SpaceAppsData`, else `<repo>/data`), with the structure
 `raw/<earth|moon|mars>/<folder>/`, `interim/`, `processed/`. Which folder is what:
-`src/analogs/catalog.py`. Full data guide: [`docs/08_datos_LEEME.md`](../docs/08_datos_LEEME.md) (Spanish).
+`src/analogs/catalog.py`. Full data guide: [`docs/08_datos_LEEME.md`](../docs/08_datos_LEEME.md).
 
 ## 0 · Manage the data
 
@@ -55,5 +55,5 @@ Mars extras downloaded by hand (see `src/analogs/mars_climate.py`): NASA Ames Ma
 
 | Script | What it does |
 |---|---|
-| `buscar.py [--malla h3r5]` | Search in the terminal (Spanish): by hand values, similar to a point of Earth or to a Moon / Mars site |
+| `buscar.py [--malla h3r5]` | Search in the terminal (prompts in Spanish): by hand values, similar to a point of Earth or to a Moon / Mars site |
 | `rover_route/` | "Route replica" study: find on Earth a path with the slopes of a rover traverse (`prep_route` → `fetch_dem` → `match_route` / `free_route` → `plot_*`; `make_presets.py` writes `app/data/route/presets.json`). Run from inside that folder |

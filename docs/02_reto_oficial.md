@@ -1,16 +1,16 @@
-# Texto oficial completo del reto
+# Official challenge text
 
-> Copiado de la web de Space Apps el 13/11/2026. El brief inicial solo recogía el *Summary*;
-> aquí están también **Background, Objectives y Potential Considerations**, que son las que dicen qué valoran.
-> Lo que implica para nosotros está en [`03_enfoque.md`](03_enfoque.md) §1.
+> Copied from the Space Apps website on 2026-11-13. It includes the *Summary* and also **Background,
+> Objectives and Potential Considerations**, which say what the challenge values.
+> What it implies for us: [`03_enfoque.md`](03_enfoque.md) §1.
 >
-> La pestaña **Resources** está al final de este documento (copiada el 13/11/2026; pueden añadir más antes del hackathon).
+> The **Resources** tab is at the end of this document (copied on 2026-11-13).
 
 ---
 
 ## Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars
 
-- **Event:** 2026 NASA Space Apps Challenge (14–15 nov. 2026)
+- **Event:** 2026 NASA Space Apps Challenge (14–15 Nov 2026)
 - **Difficulty:** Advanced · Intermediate · Beginner/Youth
 - **Subjects:** Earth Science · Planets & Moons · Software · Space Exploration
 
@@ -61,7 +61,7 @@ For data and resources related to this challenge, refer to the Resources tab at 
 
 ---
 
-## Resources (pestaña oficial)
+## Resources (official tab)
 
 > NASA does not endorse any non-U.S. Government entity and is not responsible for information contained on non-U.S. Government websites. For non-U.S. Government websites, participants must comply with any data use parameters of that specific website.
 

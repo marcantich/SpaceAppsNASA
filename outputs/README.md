@@ -1,11 +1,11 @@
-# outputs/ — resultados para PERSONAS
+# outputs/ — results for PEOPLE
 
-Lo que se enseña en la presentación, las fichas y la validación. Ficheros ligeros → sí van a git.
+What is shown in the presentation and used to check the data. Light files only (they go to git).
 
-| Carpeta | Qué va | Ejemplo |
-|---|---|---|
-| `figures/` | Gráficos (mejor en PDF o SVG) | radar de un sitio, similitud vs. accesibilidad |
-| `maps/` | Mapas exportados | mapa mundial del índice para "ruedas en Jezero" |
-| `validation/` | Resultados de la validación | aciertos con análogos conocidos vs. modelo nulo |
+| Folder | Content |
+|---|---|
+| `figures/` | Figures, e.g. the Route replica study (`rover_route_best_fits.png`, `rover_route_free_fits.png`) |
+| `maps/` | Quick-look maps: the Earth search mask (`earth_mask.png`) and every variable of the Mars grid (`mars_h3r5_quicklook.png`) |
+| `validation/` | Checks, e.g. which known analogs fall inside the Earth search mask (`earth_mask_known_analogs.csv`) |
 
-⚠️ **Lo que lee la app NO va aquí**: va en [`app/data/`](../app/README.md).
+⚠️ **What the app reads does not go here**: it goes in [`app/data/`](../app/README.md).

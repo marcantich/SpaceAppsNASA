@@ -1,10 +1,6 @@
-# presentation/ — entrega (Coordinación)
+# presentation/ — the pitch
 
-- `slides/` — presentación.
-- `video/` — guion y vídeo de la demo (los .mp4 no van a git; subir al Drive).
-- `assets/` — capturas, logos, imágenes.
-
-Guion (borrador, una diapositiva por bloque; ver [`docs/03_enfoque.md`](../docs/03_enfoque.md) §7):
-problema → principio (similitud física, no visual) → método → demo en vivo ("¿qué quieres probar?" → vuelo → ficha) → validación → 2–3 análogos nuevos (qué sí / qué no) → límites e impacto.
-
-⚠️ Confirmar en spaceappschallenge.org el formato (¿vídeo?, ¿número de diapositivas?) y la hora de cierre.
+- `slides/Earth_Analogs_pitch.pptx` — the 7-slide pitch (the Space Apps limit is 7 slides, title included).
+- `video/` — the demo video goes here if one is made (`.mp4` / `.mov` files are not committed: share them
+  through the team drive). A video demo is limited to 30 seconds, with English subtitles.
+- `assets/` — screenshots, logos and images.

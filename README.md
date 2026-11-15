@@ -1,7 +1,7 @@
 # 🌍🌕🔴 Earth Analogs for Moon & Mars — NASA Space Apps 2026
 
 **Challenge:** *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars.* Full
-statement in [`docs/02_reto_oficial.md`](docs/02_reto_oficial.md) (Spanish).
+statement in [`docs/02_reto_oficial.md`](docs/02_reto_oficial.md).
 
 **What we built:** a web app with 3D globes of Mars, the Moon and Earth. **Click any point** of Mars or the
 Moon and the app finds the most similar places on Earth (or the other way round: any body against any
@@ -31,7 +31,7 @@ field-tested, and the **Route replica**, which finds on Earth a path with the sl
   dimension, dimensions are averaged with the weights of the chosen test, and the ranking mixes each cell
   with its 6 neighbours (homogeneous areas first). Only the variables with data on both sides are
   compared, and the app says how many. Details: [`docs/09_criterios_seleccion.md`](docs/09_criterios_seleccion.md)
-  (Spanish) and the comments in [`app/src/scoring.js`](app/src/scoring.js).
+  and the comments in [`app/src/scoring.js`](app/src/scoring.js).
 
 | Body | Cells | Cell size | Main data |
 |---|---|---|---|
@@ -120,7 +120,7 @@ Raw data stay **outside git** (tens of GB): by default in `C:\Users\<you>\SpaceA
 After changing a tolerance, a weight or a test in `configs/`, run `python scripts/export_scoring.py` and
 reload the page. Check any export with `scripts/check_grid_binary.py`. Web data format:
 [`docs/07_card_grid_binary_format.md`](docs/07_card_grid_binary_format.md). Data guide:
-[`docs/08_datos_LEEME.md`](docs/08_datos_LEEME.md) (Spanish). Script index:
+[`docs/08_datos_LEEME.md`](docs/08_datos_LEEME.md). Script index:
 [`scripts/README.md`](scripts/README.md).
 
 ## Repository map
@@ -175,6 +175,12 @@ Folder and key names in Spanish are kept on purpose (renaming them would touch t
 **Use Mars' Earth twins to learn when a rover's "no traces of past life found" really means something,
 and when it only means our instruments can't see well enough.** How we would do it, and the next
 parameters to add (radiation at the surface): [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md).
+
+## Use of AI
+
+We used Claude (Anthropic), mostly through Claude Code, to help write and debug the code, process the
+data and draft the documentation; the team chose the method, made the decisions and checked every
+result. No data or images are AI-generated. Details: [`docs/AI_USAGE.md`](docs/AI_USAGE.md).
 
 ## Licence and credits
 
