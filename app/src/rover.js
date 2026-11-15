@@ -307,6 +307,13 @@ const VIEWS = {
     text: 'Send a rover to Mars or the Moon: where on Earth can each of its parts be tested?',
     icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13V9.5h9l3 3.5h4v2.5H4z"/><path d="M9 9.5V6h3"/><circle cx="7" cy="17.5" r="2"/><circle cx="12.5" cy="17.5" r="2"/><circle cx="18" cy="17.5" r="2"/></svg>',
   },
+  // [route] third view: route.js (main.js passes it as api.route)
+  route: {
+    title: 'Route replica',
+    name: 'Route replica',
+    text: 'Draw a rover route on Mars or the Moon: where on Earth can you drive the same slopes?',
+    icon: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="18" r="2"/><circle cx="19" cy="6" r="2"/><path d="M7 18h6a3 3 0 0 0 0-6h-2a3 3 0 0 1 0-6h6"/></svg>',
+  },
 };
 
 /**
@@ -322,6 +329,7 @@ const VIEWS = {
  *   rebuildPlaces()        rebuild the place search list (it depends on the view)
  *   reframe()              fly the left camera so the clicked hexagon is clear of the panels
  *   setStatus(text)
+ *   route                  the route view (route.js): open(), close()   [route]
  */
 export function createRover(api) {
   const state = { tab: 'analogs', config: null, planner: null, view: null, viewLoading: null, result: null, selected: 'all', request: 0 };
@@ -704,29 +712,20 @@ export function createRover(api) {
   }
 
   async function setTab(tab) {
-    tab = tab === 'rover' ? 'rover' : 'analogs';
+    tab = VIEWS[tab] ? tab : 'analogs';
     if (tab === state.tab) return;
+    const prev = state.tab;
     state.tab = tab;
     const on = active();
     document.body.classList.toggle('rover-tab', on);
+    document.body.classList.toggle('route-tab', tab === 'route'); // [route]
     paintMenu();
     view.hidden = !on;
     panel.hidden = !on;
     try {
-      history.replaceState(null, '', on ? '#rover' : location.pathname + location.search);
+      history.replaceState(null, '', tab === 'analogs' ? location.pathname + location.search : `#${tab}`);
     } catch { /* file:// or sandboxed: the URL is only a convenience */ }
-    if (on) {
-      api.clearMatch(); // the analog results leave the screen; the clicked cell stays
-      // the rover goes to Mars or the Moon and is tested on Earth
-      const l = api.left().key;
-      const r = api.right().key;
-      if (r !== 'earth' || l === 'earth') api.setBodies(l !== 'earth' ? l : r !== 'earth' ? r : 'mars', 'earth');
-      api.rebuildPlaces();
-      ensureView().then(() => active() && state.view?.start());
-      render();
-      api.reframe();
-      await update();
-    } else {
+    if (prev === 'rover') { // leave the rover view
       state.request++;
       state.result = null;
       state.view?.stop();
@@ -735,15 +734,32 @@ export function createRover(api) {
       g.clearHexes();
       g.clearRanks();
       api.clearEarthCell();
-      api.rebuildPlaces();
+    }
+    if (prev === 'route') api.route?.close(); // [route]
+    if (tab !== 'analogs') {
+      api.clearMatch(); // the analog results leave the screen; the clicked cell stays
+      // the rover goes to Mars or the Moon and is tested on Earth
+      const l = api.left().key;
+      const r = api.right().key;
+      if (r !== 'earth' || l === 'earth') api.setBodies(l !== 'earth' ? l : r !== 'earth' ? r : 'mars', 'earth');
+    }
+    api.rebuildPlaces();
+    if (on) {
+      ensureView().then(() => active() && state.view?.start());
+      render();
+      api.reframe();
+      await update();
+    } else if (tab === 'route') { // [route]
+      api.route?.open();
+    } else {
       api.runMatch(); // back to the analog map of the clicked cell, if there is one
     }
   }
 
   paintMenu();
-  window.addEventListener('hashchange', () => setTab(location.hash === '#rover' ? 'rover' : 'analogs'));
-  // #rover in the URL opens the rover view directly (once main.js has created the globes)
-  if (location.hash === '#rover') setTimeout(() => setTab('rover'), 0);
+  window.addEventListener('hashchange', () => setTab(location.hash.slice(1)));
+  // #rover / #route in the URL open that view directly (once main.js has created the globes)
+  if (VIEWS[location.hash.slice(1)] && location.hash !== '#analogs') setTimeout(() => setTab(location.hash.slice(1)), 0);
 
   return {
     get active() {
@@ -758,7 +774,7 @@ export function createRover(api) {
     /** Panels that cover the globes (main.js keeps the selected hexagon out from under them). */
     panels: { left: [view], right: [panel] },
     /** Place-search entries offered in the current view (the rover is always tested on Earth). */
-    allowsPlace: (e) => !active() || e.kind !== 'zone' || e.body === 'earth',
+    allowsPlace: (e) => state.tab === 'analogs' || e.kind !== 'zone' || e.body === 'earth',
     setTab,
     update,
     reset,
