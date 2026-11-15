@@ -2,7 +2,7 @@
 
 How a click on Mars becomes a ranked list of places on Earth. Every formula here is implemented in the
 file named next to it; every parameter is in `configs/variables.yaml`, `configs/pruebas.yaml` or
-`app/data/rover.json`. Values chosen by the team are marked **[assumption]**.
+`app/data/rover.json`. Values chosen by the team are described as such where they appear.
 
 **Contents:** [1. Principles](#1-principles) · [2. The grid](#2-the-grid-h3-hexagons) ·
 [3. From raw data to a card](#3-from-raw-data-to-a-card) · [4. The analog index](#4-the-analog-index) ·
@@ -159,11 +159,11 @@ matters operationally is which instrument reaches the ice: **0.5** (within the f
 
 | Body | Rule |
 |---|---|
-| Mars, \|lat\| ≤ 60° | SWIM 2.0 ice-consistency maps (−1…+1) for 0–1 m, 1–5 m and > 5 m: the shallowest layer with consistency > 0.25 **[assumption]** (with 0, 43 % of the "shallow ice" cells were equatorial; with 0.25, 1.6 %) |
+| Mars, \|lat\| ≤ 60° | SWIM 2.0 ice-consistency maps (−1…+1) for 0–1 m, 1–5 m and > 5 m: the shallowest layer with consistency > 0.25, chosen by the team (with 0, 43 % of the "shallow ice" cells were equatorial; with 0.25, 1.6 %) |
 | Mars, beyond 60° | Epithermal neutron flux ≤ 6.1 counts/s → ice within 1 m (threshold calibrated against SWIM in the 45–60° band, balanced accuracy 0.80). North of 70° N the 2002 map is masked by winter CO₂ frost: ice within 1 m is **assumed** |
 | Moon, south of −80° | Diviner polar resource product: median depth at which water ice is stable |
-| Moon, \|lat\| < 60° | No stable ice near the surface **[assumption]**. Between 60° and 80°, and at the north pole: no data |
-| Earth | Permanent snow/ice ≥ 50 % of the cell → 0 m. Mean surface temperature < 0 °C → permafrost, with the ice under the active layer, whose thickness follows the Stefan relation $z = E\sqrt{\mathrm{TDD}}$ (TDD = thawing degree-days per year, $E$ = 0.035 m/√(°C·day) **[assumption]**; Nelson et al. 1997). Otherwise none |
+| Moon, \|lat\| < 60° | No stable ice near the surface. Between 60° and 80°, and at the north pole: no data |
+| Earth | Permanent snow/ice ≥ 50 % of the cell → 0 m. Mean surface temperature < 0 °C → permafrost, with the ice under the active layer, whose thickness follows the Stefan relation $z = E\sqrt{\mathrm{TDD}}$ (TDD = thawing degree-days per year, $E$ = 0.035 m/√(°C·day); Nelson et al. 1997). Otherwise none |
 
 **Rainfall** (`precip_mm_year`) is 0 on Mars and the Moon by nature; on Earth it is the IMERG 2019–2023
 mean. It measures how far an Earth place is from an environment without liquid water.
@@ -195,7 +195,7 @@ Earth: Mars air is ~60 times thinner, so the same speed pushes ~60 times less.
 
 Earth has 14.1 M land cells, but a forest or a city is not a useful analog. The search is limited to
 1,374,390 cells (34.4 % of the land). For each 0.05° pixel, from the MODIS land-cover fractions and the
-IMERG rainfall (`scripts/build_earth_mask.py`, thresholds are **[assumptions]**):
+IMERG rainfall (`scripts/build_earth_mask.py`, thresholds chosen by the team):
 
 - **polar ice**: permanent snow or ice ≥ 50 %;
 - **desert**: barren ≥ 50 %;
@@ -243,7 +243,7 @@ $s_v = M_v[t_v][c_v]$:
 | **> 5 m** | 0.25 | 0.6 | 1.0 | 0.3 |
 | **none** | 0.0 | 0.1 | 0.3 | 1.0 |
 
-Tolerances, each with its written reason (all **[assumptions]**, to be validated: `LIMITATIONS.md` §4):
+Tolerances, each with its written reason (all chosen by the team, to be validated: `LIMITATIONS.md` §4):
 
 | Variable | Dimension | `half_diff` | Reason |
 |---|---|---|---|
@@ -331,7 +331,7 @@ I_{\text{area}} = (1 - \alpha)\thinspace  I_{\text{cell}} + \alpha\thinspace  \f
 $$
 
    where $I_k$ are the 6 neighbouring cells (a neighbour outside the search mask counts 0) and
-   $\alpha$ is an **[assumption]** (`scoring.area_weight`). A hexagon
+   $\alpha$ is chosen by the team (`scoring.area_weight`). A hexagon
    and its ring span ~20 km on Earth: this puts first the homogeneous areas where a field campaign
    fits, not an isolated good cell.
 5. **Spread the results.** Sites are taken in order, skipping any closer than $d_{\min}$ to one already
@@ -385,7 +385,7 @@ is why the app asks what you want to test.
 
 ## 7. Rover test planner
 
-Code: `app/src/rover.js`; parts, margins and caps in `app/data/rover.json` (all **[assumptions]**).
+Code: `app/src/rover.js`; parts, margins and caps in `app/data/rover.json` (all chosen by the team).
 
 The question is different from the index: not "how similar on average", but "is there a place where
 this part can be tested?". Each part of the rover depends on a few variables $k$, each with a margin

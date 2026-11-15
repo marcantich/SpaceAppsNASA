@@ -28,7 +28,7 @@ from .paths import CATALOGS, INTERIM, PROCESSED, RAW
 H3_RES = 5
 RAW_MARS = RAW / "mars"
 POLAR_LAT = 88.0          # the 128 ppd tiles stop at ±88°: beyond it, the polar maps are used
-NO_ICE_DEPTH_M = 10.0     # [assumption] value stored when SWIM finds no ice in the top ~5 m+
+NO_ICE_DEPTH_M = 10.0     # value stored when SWIM finds no ice in the top ~5 m+
 # SWIM consistency near 0 means "inconclusive", not "ice": with a threshold of 0 about 43 % of the
 # "ice" cells fell at |lat| < 30°; with 0.25 only 1.6 % (checked 2026-11-14). Arcadia (known
 # shallow ice) has 0.51.

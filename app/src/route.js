@@ -41,7 +41,7 @@ const DEM = {
   },
 };
 
-// Where to look on Earth: centres of well-known planetary analog areas [our choice of places].
+// Where to look on Earth: centres of well-known planetary analog areas (our choice of places).
 const REGIONS = [
   { id: 'death-valley', name: 'Death Valley, USA', lat: 36.28, lon: -116.81 },
   { id: 'hanksville', name: 'Hanksville (MDRS), Utah, USA', lat: 38.41, lon: -110.79 },

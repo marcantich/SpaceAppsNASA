@@ -1,5 +1,5 @@
 {
-  "_note": "Rover test planner (hand-written config, read by app/src/rover.js). Each part = the card variables it depends on + the margin (±) it tolerates. margin null = the tolerance of configs/variables.yaml. All margins and caps are OUR ASSUMPTIONS [supuesto]: change them here, the app recomputes.",
+  "_note": "Rover test planner (hand-written config, read by app/src/rover.js). Each part = the card variables it depends on + the margin (±) it tolerates. margin null = the tolerance of configs/variables.yaml. All margins and caps are chosen by the team: change them here, the app recomputes.",
   "model": {
     "file": "rover/perseverance.glb",
     "name": "Mars 2020 Perseverance",

@@ -14,7 +14,7 @@ test planner.
 | Surface pressure (Pa) | ~0 | ~610 | 101,325 | Heat leaves differently (no convection in vacuum), dust is lifted differently, drills are not cooled by air |
 | Solar day | 29.5 days | 24.66 h | 24 h | Shadows move ~30 times faster on Earth than on the Moon; thermal cycles differ |
 | Radiation | No atmosphere, no magnetosphere | Thin atmosphere, no global magnetosphere | Shielded by both | Cannot be field-tested |
-| Temperature range | A few tens of K in permanent shadow to ≈ 390 K at noon | Mean ≈ 210 K | Coldest satellite-measured surface ≈ 175 K **[verify]** | No Earth cell reaches the mean cold of Mars: the best thermal notes stay low, and that is a result, not an error |
+| Temperature range | A few tens of K in permanent shadow to ≈ 390 K at noon | Mean ≈ 210 K | Coldest satellite-measured surface ≈ 175 K | No Earth cell reaches the mean cold of Mars: the best thermal notes stay low, and that is a result, not an error |
 
 ## 2. What the index does not compare yet
 

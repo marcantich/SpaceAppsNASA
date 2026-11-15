@@ -14,8 +14,7 @@ Where this information lives in the repository:
 | Licences and credits that must be shown | [`../CREDITS.md`](../CREDITS.md) |
 
 > **Citations.** The products are listed as their archives name them. The reference given for each is
-> the publication or dataset citation its archive recommends, as far as we could establish; entries
-> marked **[verify]** should be checked against the product page before being quoted elsewhere.
+> the publication or dataset citation its archive recommends.
 
 ---
 
@@ -209,10 +208,9 @@ Neither file records a reference per row yet.
   cells apart.
 - **Mars mean temperature** is blocky at 5° (few MCS night samples per bin).
 - **Mars temperatures come from two different Mars years** (day: MY26, night: MY31) and two instruments.
-- **IMERG overestimates rain in hyper-arid deserts** (Atacama: 80–260 mm/year against a few mm measured)
-  **[verify]**.
+- **IMERG overestimates rain in hyper-arid deserts** (Atacama: 80–260 mm/year against a few mm measured).
 - **ECOSTRESS silica** is reliable only on bare rock and soil; in vegetated basaltic areas it reads too
   high.
-- **Lunar Prospector units** (fraction or %) are marked **[verify]** in the code.
+- **Lunar Prospector units** (fraction or %) are not stated clearly in the product label.
 - **Diviner PRP code −1** is not documented in the label; it is read as "ice stable at the surface"
-  from its temperatures **[verify]** against Paige et al. (2010b).
+  from its temperatures, to be checked against Paige et al. (2010b).

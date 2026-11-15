@@ -4,8 +4,6 @@
 > *why* of the method; the *how* is in [01_how_it_works.md](01_how_it_works.md). Most of it was applied;
 > where the final product differs, it is said in a note (the final formula is in
 > [09_selection_criteria.md](09_selection_criteria.md)).
-> **[verify]** = not checked · **[hypothesis]** = a bet the engine has to confirm or reject ·
-> **[assumption]** = a value chosen by us.
 
 ---
 
@@ -73,7 +71,7 @@ bodies.
 - **Percentiles** only for indices without a common physical scale.
 - If Earth **does not reach the range**, $s_k$ is low and the card shows it. Example: lunar permanently
   shadowed regions are at a few tens of K; Earth's satellite-measured minimum is ≈ 175 K on the Antarctic
-  plateau [verify]. That is useful information, not a failure of the method.
+  plateau. That is useful information, not a failure of the method.
 
 ### 2.2 ⚠️ Slope and roughness depend on the DEM resolution
 
@@ -164,10 +162,10 @@ on the fly: it can show both values on the card, recompute with any test, and sh
 
 ---
 
-## 4. Bets for the story ("Surprise us") [hypothesis]
+## 4. Bets for the story ("Surprise us")
 
 **A. Moon: "the base will go to the highlands, but we train on the maria".** The lunar south pole is
-highland terrain (feldspathic / anorthositic, on the rim of the Aitken basin) [verify]. Many classic lunar
+highland terrain (feldspathic / anorthositic, on the rim of the Aitken basin). Many classic lunar
 analogs are basaltic (Hawaii, Lanzarote, Craters of the Moon, SP Crater): they reproduce the **maria**, not
 the highlands where the base will go. Likely result: **no single site matches everything**, which leads
 to B.
@@ -192,7 +190,7 @@ the "campaign" (fewest sites that cover every part of the rover).
 
 Saying it out loud gives credibility. Rover traction and sinkage scale with $g$, and so does crater
 morphology: the simple-to-complex transition is at ~2–4 km on Earth, ~7 km on Mars and ~15–20 km on the
-Moon [verify]. A crater "of the same size" is **not** an analog crater. In the app these limits appear as
+Moon. A crater "of the same size" is **not** an analog crater. In the app these limits appear as
 the physics caps of the rover test planner.
 
 ---

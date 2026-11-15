@@ -8,7 +8,7 @@ Input (data/raw/earth/):
   mcd12c1/        MODIS MCD12C1 v061: % of each IGBP class in each 0.05° cell (~5.6 km)
   imerg_monthly/  GPM IMERG v07 monthly, 0.1°, 2019–2023 → mean annual rainfall (mm/year)
 
-Rule (thresholds are [assumptions], set by Science):
+Rule (thresholds chosen by the team):
   land           = 100 − %water ≥ 50
   polar ice      = %permanent snow/ice ≥ 50
   desert         = %barren ≥ 50                              (regardless of rain: lava, salt flats)
@@ -36,7 +36,7 @@ sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from analogs.paths import CATALOGS, INTERIM, MAPS, PROCESSED, RAW, VALIDATION  # noqa: E402
 
-# --- Thresholds [assumption] ---
+# --- Thresholds (chosen by the team) ---
 MIN_LAND = 50          # % of land in the 0.05° cell
 MIN_SNOW = 50          # % permanent snow/ice → polar ice
 MIN_BARREN = 50        # % barren → desert (no rainfall condition)

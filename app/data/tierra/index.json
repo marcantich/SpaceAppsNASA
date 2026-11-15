@@ -84,7 +84,7 @@
    "offset": 0.0,
    "unit": "m",
    "label": "Depth to ground ice (class like Mars SWIM; 10 = no ice found)",
-   "source": "Estimated: MODIS MCD12C1 permanent snow/ice → 0 m; permafrost where mean LST (MYD11C3) < 0 °C → active-layer depth E·√(thaw degree-days), E = 0.035 (Stefan) [assumption]; otherwise no ice; see ice_depth_source",
+   "source": "Estimated: MODIS MCD12C1 permanent snow/ice → 0 m; permafrost where mean LST (MYD11C3) < 0 °C → active-layer depth E·√(thaw degree-days), E = 0.035 (Stefan); otherwise no ice; see ice_depth_source",
    "source_column": "ice_depth_source"
   },
   {

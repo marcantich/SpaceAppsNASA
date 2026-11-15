@@ -205,7 +205,7 @@ def _mean(grid: EarthGrid, name: str) -> np.ndarray:
 MIN_CELL_FRAC = 0.25      # as in build_earth_mask.py: the cell is in the mask if ≥ 25 % of its land is
 
 # --- Permafrost → ice depth (the equivalent of SWIM on Mars and Diviner PRP on the Moon) ---------------
-# [assumption] Method (to be reviewed by Science):
+# Method chosen by the team (to be reviewed by Science):
 #   1. ice at the surface: ≥ 50 % of the cell is permanent snow / ice (MCD12C1) → 0 m
 #   2. permafrost: mean annual surface temperature < 0 °C → ice under the ACTIVE LAYER,
 #      thickness from the Stefan formula  ALT = E·√(thawing degree-days)  (Nelson et al. 1997)
@@ -213,7 +213,7 @@ MIN_CELL_FRAC = 0.25      # as in build_earth_mask.py: the cell is in the mask i
 # ice_depth_m is stored in the SAME CLASSES as Mars (0.5 = first metre · 3 = 1–5 m · 5 = > 5 m · 10 = none);
 # ice_depth_cont_m stores the estimated metres. Limitations: LST is the clear-sky surface and snow
 # insulates the ground; Earth ice is under an atmosphere (partial analogy, variables.yaml).
-STEFAN_E = 0.035          # m / √(°C·day) [assumption]: 0.02–0.05 depending on the soil
+STEFAN_E = 0.035          # m / √(°C·day): 0.02–0.05 depending on the soil
 NO_ICE_DEPTH_M = 10.0
 
 
@@ -347,7 +347,7 @@ def earth_sources(relief_source: str) -> dict[str, str]:
         "t_mean_K": lst, "t_max_K": lst, "t_min_K": lst, "t_night_K": lst,
         "dust_aod": "NASA MERRA-2 M2TMNXAER DUEXTTAU, climatology 2019–2023 (GES DISC)",
         "ice_depth_m": "Estimated: MODIS MCD12C1 permanent snow/ice → 0 m; permafrost where mean LST (MYD11C3) "
-                       "< 0 °C → active-layer depth E·√(thaw degree-days), E = 0.035 (Stefan) [assumption]; "
+                       "< 0 °C → active-layer depth E·√(thaw degree-days), E = 0.035 (Stefan); "
                        "otherwise no ice; see ice_depth_source",
         "ice_depth_cont_m": "Same estimate as ice_depth_m, in metres (see its source)",
         "ice_depth_source": "1 = ice sheet / glacier (MODIS MCD12C1), 2 = permafrost model (Stefan, MYD11C3), "

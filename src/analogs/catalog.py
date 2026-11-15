@@ -98,7 +98,7 @@ DATASETS: list[Dataset] = [
       "0.35 GB", "src/analogs/moon.py"),
     C("moon", "lunar_prospector_grs", "Lunar Prospector GRS", "Composition: FeO, SiO₂, Al₂O₃, TiO₂, MgO, CaO, K, Th, U",
       "feo_wt_pct, tio2_wt_pct, silica_wt_pct, th_ppm…", "2° (~60 km)", "FIXED (mission 1998–99)",
-      ".tab table + .fmt; units [verify]", "PDS Geosciences", "scripts/download_moon.py", "11 MB", "src/analogs/moon.py"),
+      ".tab table + .fmt; units not stated clearly in the label", "PDS Geosciences", "scripts/download_moon.py", "11 MB", "src/analogs/moon.py"),
     C("moon", "diviner_rocks", "LRO Diviner rock abundance", "Rocks at the surface, 60° N–60° S", "rock_abundance_pct",
       "1/32° (~0.95 km)", "FIXED", "PDS3 .img + .lbl", "PDS Geosciences", "scripts/download_moon.py", "85 MB",
       "src/analogs/moon.py"),

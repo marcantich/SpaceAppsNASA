@@ -164,7 +164,7 @@ SpaceAppsNASA/
 ├── configs/             variables.yaml, pruebas.yaml
 ├── src/analogs/         Python package: download, card grids, export, the index
 ├── scripts/             command-line entry points (thin wrappers around src/analogs/)
-├── data/                catalogs/ [in git] · raw/, interim/, processed/ [not in git, except manifests]
+├── data/                catalogs/ (in git) · raw/, interim/, processed/ (not in git, except manifests)
 ├── docs/                documentation (index: docs/README.md)
 ├── outputs/             figures, quick-look maps, validation tables
 ├── presentation/        where the pitch is (the deck itself is attached to a GitHub release)
@@ -178,7 +178,6 @@ SpaceAppsNASA/
 - **Units:** SI; temperatures in K. A column name ends with its unit (`_deg`, `_K`, `_m`, `_pct`,
   `_mm_year`).
 - **Missing data** is NaN in Python and the reserved integer in the binary; never 0 or a sentinel value.
-- **[verify]** marks something not checked; **[assumption]** marks a value chosen by the team.
 - Heavy data never go in git. Every downloaded file is listed in `data/raw/<body>/MANIFEST.csv`.
 
 ## 7. Glossary (Spanish names kept in the data contract)

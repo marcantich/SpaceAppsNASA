@@ -18,9 +18,10 @@
 #   criterion  WHY that half_diff (physical, operational or measurement reason)
 #   sources    where the number comes from on each body (null = does not exist or not applicable)
 #
-# ⚠️ Every half_diff has a written criterion but is still an [assumption]: it has to be validated
-#    with known analogs (docs/09: point 9 of the criteria report).
-# ⚠️ Sources marked [verify] are identified but not downloaded or checked.
+# ⚠️ Every half_diff has a written criterion but is a value chosen by the team: it has to be
+# validated with known analogs (docs/09: point 9 of the criteria report).
+# ⚠️ Sources of variables not yet in the comparison (rocks, rock type, caves, operability) are
+# identified but not downloaded or checked.
 # See docs/03_approach.md §2 for the caveats of each variable.
 # =============================================================================
 
@@ -38,7 +39,7 @@ dimensions:
   composition: {label: "Composition"}
 
 scoring:
-  area_weight: 0.4                   # [assumption] weight of the 6 neighbours in the ranking index
+  area_weight: 0.4                   # weight of the 6 neighbours in the ranking index
 
 variables:
 
@@ -46,7 +47,7 @@ variables:
     label: "Slope"
     unit: "°"
     type: numeric
-    tolerance: 5                     # [assumption]
+    tolerance: 5
     dimension: terrain
     half_diff: 3                     # note 0.5 at a 3° difference
     criterion: "Operational: ~3° separates the slope classes for a rover (0–3 flat, 3–8 gentle, 8–15 moderate, > 15 steep; Curiosity's operational limit ~20°) and is ~2× the slope error between ~460 m DEMs"
@@ -60,7 +61,7 @@ variables:
     label: "Roughness (RMS slope)"
     unit: "°"
     type: numeric
-    tolerance: 3                     # [assumption]
+    tolerance: 3
     dimension: terrain
     half_diff: 2                     # note 0.5 at a 2° difference
     criterion: "Measurement: ~2° is the noise of the RMS roughness with ~460 m DEMs (MOLA with < 50 % laser coverage, ETOPO); smaller differences are not significant"
@@ -74,32 +75,32 @@ variables:
     label: "Rock abundance"
     unit: "%"
     type: numeric
-    tolerance: 10                    # [assumption]
+    tolerance: 10
     dimension: terrain
     half_diff: 5                     # note 0.5 at a 5 % difference
     criterion: "Operational: 5 % of the area covered by rocks noticeably changes the obstacle density for a rover (Golombek & Rapp 1997)"
     note: "Better than thermal inertia, which depends on the gas pressure (approach §2.3)"
     sources:
       moon:  "Diviner dgdr_ra_avg_cyl_032 (60N–60S). Does NOT exist at the pole → empty (checked)"
-      mars:  "THEMIS / TES rock abundance [verify]"
-      earth: "SoilGrids, coarse fragments [verify]"
+      mars:  "THEMIS / TES rock abundance"
+      earth: "SoilGrids, coarse fragments"
 
   lithology:
     label: "Rock type"
     unit: ""
     type: categorical
     categories: [basalt, anorthosite, other_igneous, sedimentary, evaporite, ice]
-    matrix: {}                       # [assumption] empty → equal = 1, different = 0. To be filled by Science.
+    matrix: {}                       # empty → equal = 1, different = 0. To be filled by Science.
     sources:
       moon:  "From Lunar Prospector GRS FeO (2°, global): high iron → basalt (mare), low → anorthosite (highlands). Detail: USGS geologic map"
-      mars:  "USGS Global Geologic Map of Mars (Tanaka et al., 2014) [verify]"
-      earth: "GLiM (Global Lithological Map) [verify]"
+      mars:  "USGS Global Geologic Map of Mars (Tanaka et al., 2014)"
+      earth: "GLiM (Global Lithological Map)"
 
   sun_elev_max_deg:
     label: "Maximum Sun elevation"
     unit: "°"
     type: numeric
-    tolerance: 3                     # [assumption] (old linear formula)
+    tolerance: 3                     # (old linear formula)
     dimension: sky
     half_diff: 10                    # note 0.5 at a 10° difference
     criterion: "Physical: a 10° difference in the highest Sun elevation changes the noon irradiance on a horizontal panel by ≲ 15 % (at mid elevations) and shadow length ~2× with a low Sun. With 3° the search was tied to the same latitude"
@@ -124,11 +125,11 @@ variables:
     label: "Mean annual temperature"
     unit: "K"
     type: numeric
-    tolerance: 20                    # [assumption]
+    tolerance: 20
     dimension: thermal
     half_diff: 15                    # note 0.5 at a 15 K difference
     criterion: "Climatic: ~15 K is the mean annual temperature difference between neighbouring climate belts on Earth (polar ↔ subpolar ↔ temperate). No Earth cell reaches the ~210 K of Mars: the soft curve still ranks them (the Antarctic plateau ahead of the Sahara)"
-    note: "Diviner PRP gives the mean at 2 cm depth; MODIS gives the surface: not exactly the same quantity [verify]"
+    note: "Diviner PRP gives the mean at 2 cm depth; MODIS gives the surface: not exactly the same quantity"
     sources:
       moon:  "LRO Diviner GCP: (day + night)/2 of the mission-mean cycle (moon.py)"
       mars:  "MGS TES MY26 (day) + MRO MCS MY31 (night): (day + night)/2 (mars_grid.py)"
@@ -138,7 +139,7 @@ variables:
     label: "Maximum annual temperature"
     unit: "K"
     type: numeric
-    tolerance: 30                    # [assumption]
+    tolerance: 30
     dimension: thermal
     half_diff: 20                    # note 0.5 at a 20 K difference
     criterion: "Climatic: extremes vary more than the mean; 20 K ≈ the spread between the warmest month of two deserts at neighbouring latitudes. Also, Mars gives a P95 and Earth a monthly mean (a few K of bias)"
@@ -151,7 +152,7 @@ variables:
     label: "Minimum annual temperature"
     unit: "K"
     type: numeric
-    tolerance: 30                    # [assumption]
+    tolerance: 30
     dimension: thermal
     half_diff: 20                    # note 0.5 at a 20 K difference
     criterion: "Climatic: same as the maximum (20 K between neighbouring belts in the coldest month)"
@@ -165,7 +166,7 @@ variables:
     label: "Night temperature (annual mean)"
     unit: "K"
     type: numeric
-    tolerance: 20                    # [assumption]
+    tolerance: 20
     dimension: thermal
     half_diff: 15                    # note 0.5 at a 15 K difference
     criterion: "Climatic: like the annual mean (15 K between neighbouring belts)"
@@ -179,7 +180,7 @@ variables:
     label: "Mean annual rainfall (aridity)"
     unit: "mm/year"
     type: numeric
-    tolerance: 250                   # [assumption]
+    tolerance: 250
     dimension: water
     half_diff: 100                   # note 0.5 at 100 mm/year
     criterion: "Aridity classes (UNEP): hyper-arid < 25 mm, arid 25–200, semi-arid 200–500. With a target of 0 (Mars, Moon), 100 mm/year = half the arid range → note 0.5"
@@ -193,7 +194,7 @@ variables:
     label: "Ice depth"
     unit: "m"
     type: numeric
-    tolerance: 0.5                   # [assumption] (old linear formula)
+    tolerance: 0.5                   # (old linear formula)
     dimension: water
     # Classes (0.5 = within the first metre · 3 = 1–5 m · 5 = > 5 m · 10 = no ice): similarity by
     # matrix, not by difference. Row = target, column = Earth.
@@ -207,14 +208,14 @@ variables:
     sources:
       moon:  "LRO Diviner PRP, ice stability depth (south pole ≤ −80°); |lat| < 60°: no ice (assumption). Continuous metres; 10 = none (moon.py)"
       mars:  "SWIM 2.0 (±60°) + GRS neutrons + assumption north of 70° (mars_grid.py). Classes 0.5 / 3 / 5 / 10"
-      earth: "Estimated: permanent ice MCD12C1 → 0 m; permafrost (mean LST < 0 °C) → active layer by Stefan E·√(thawing degree-days), E = 0.035 [assumption]; otherwise 10 m. Classes as Mars (earth_grid.py). Validate with ESA CCI Permafrost"
+      earth: "Estimated: permanent ice MCD12C1 → 0 m; permafrost (mean LST < 0 °C) → active layer by Stefan E·√(thawing degree-days), E = 0.035; otherwise 10 m. Classes as Mars (earth_grid.py). Validate with ESA CCI Permafrost"
     # All three cards also carry ice_depth_source (where each cell's value comes from: measured, model or assumed)
 
   dust_aod:
     label: "Airborne dust (optical depth)"
     unit: ""
     type: numeric
-    tolerance: 0.2                   # [assumption]
+    tolerance: 0.2
     dimension: sky
     half_diff: 0.15                  # note 0.5 at a 0.15 difference
     criterion: "Atmospheric: the Mars background is τ ≈ 0.3–0.6 (storms > 1) and Earth deserts τ ≈ 0.1–0.5; 0.15 ≈ the difference between a clean and a dusty desert"
@@ -227,28 +228,28 @@ variables:
     label: "Silica (SiO₂)"
     unit: "wt %"
     type: numeric
-    tolerance: 5                     # [assumption]
+    tolerance: 5
     dimension: composition
     half_diff: 5                     # note 0.5 at a 5 % difference
     criterion: "Geological: 5 % SiO₂ separates rock families (basalt 45–52 %, andesite 52–63 %, granite ~70 %). Not compared yet: Mars does not export grs_si"
     note: "Composition of the exposed surface. Basalt ~45–52 %, granite ~70 %, quartz sand > 90 %"
     sources:
-      moon:  "Lunar Prospector GRS, SiO₂ (2°, ~60 km) [verify units] (moon.py)"
-      mars:  "Mars Odyssey GRS, Si (5°) × 2.139 → SiO₂ [verify] — PENDING: mars_grid.py computes it (grs_si) but the web export does not include it"
+      moon:  "Lunar Prospector GRS, SiO₂ (2°, ~60 km) (moon.py)"
+      mars:  "Mars Odyssey GRS, Si (5°) × 2.139 → SiO₂ — PENDING: mars_grid.py computes it (grs_si) but the web export does not include it"
       earth: "ECOSTRESS ECO_L3G_WPS (0.01°, 53° N–53° S) (earth_grid.py)"
 
   snow_cover_pct:
     label: "Snow (mean annual cover)"
     unit: "%"
     type: numeric
-    tolerance: 30                    # [assumption]
+    tolerance: 30
     dimension: water
     half_diff: 20                    # note 0.5 at a 20 % difference
     criterion: "Cover: 20 points of mean annual cover ≈ two months more or less of snow-covered ground"
     note: "Earth only for now: useful as a filter or for a manual search (surface ice)"
     sources:
       moon:  null
-      mars:  "Seasonal CO₂/H₂O frost [verify]"
+      mars:  "Seasonal CO₂/H₂O frost"
       earth: "MODIS MOD10CM, 2019–2023 climatology"
 
   caves:
@@ -259,8 +260,8 @@ variables:
     dimension: terrain
     sources:
       moon:  "LROC Pits Atlas (278 pits, global). 0 south of −80° (checked)"
-      mars:  "Mars Global Cave Candidate Catalog, MGC³ (USGS) [verify]"
-      earth: "Proxy: basaltic volcanic fields (Smithsonian GVP + GLiM) [verify]"
+      mars:  "Mars Global Cave Candidate Catalog, MGC³ (USGS)"
+      earth: "Proxy: basaltic volcanic fields (Smithsonian GVP + GLiM)"
 
 # -----------------------------------------------------------------------------
 # OPERABILITY: exists on Earth only. NOT part of the similarity; used as a filter
@@ -270,11 +271,11 @@ operability:
   travel_time_h:
     label: "Travel time to the nearest city"
     unit: "h"
-    source: "Weiss et al. (2018), Nature [verify]"
+    source: "Weiss et al. (2018), Nature"
   protected_area:
     label: "Protected area (0 = no, 1 = yes)"
     unit: ""
-    source: "WDPA (World Database on Protected Areas) [verify]"
+    source: "WDPA (World Database on Protected Areas)"
 
 # -----------------------------------------------------------------------------
 # WHAT EARTH CANNOT REPRODUCE: fixed block on every card (approach §5)

@@ -11,7 +11,7 @@
 #   label          name shown in the app's "Test" menu
 #   test_validity  sentence for the card: what Earth does NOT reproduce in this test
 #
-# ⚠️ ALL weights are [assumption]: set by the Science team.
+# ⚠️ ALL weights are chosen by the team (Science).
 #    Reasoned draft in docs/01_how_it_works.md §5.
 # =============================================================================
 

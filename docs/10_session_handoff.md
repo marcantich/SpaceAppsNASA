@@ -74,7 +74,7 @@ Official log: `docs/decisions/README.md` (001–007). The ones taken in this ses
 8. **Mars ice:** SWIM 2.0 consistency with threshold **0.25** (0 put 43 % of "shallow ice" at the
    equator); beyond ±60° the GRS epithermal neutrons (≤ 6.1 cps = ice within 1 m, calibrated on SWIM
    45–60°, balanced accuracy 0.80); **north of 70°N assumed** (2002 neutron map is masked by winter CO₂
-   frost). Per-cell `ice_depth_source` 1 SWIM / 2 neutrons / 3 assumed. "No ice" stored as 10 m [assumption].
+   frost). Per-cell `ice_depth_source` 1 SWIM / 2 neutrons / 3 assumed. "No ice" stored as 10 m.
 9. **Mars poles:** slope/roughness/laser coverage blanked beyond **87°** (MGS never flew there; MOLA is
    interpolated → fake 0°); NS neutron rows ±89.25/±89.75 are fill zeros → filled from ±88.75.
 10. **Sun:** `sun_elev_max_deg = 90° − max(0, |lat| − obliquity)` (noon, whole year, flat horizon;

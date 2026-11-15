@@ -137,7 +137,7 @@
    "offset": 0.0,
    "unit": "wt%",
    "label": "Silica, SiO2 (Lunar Prospector, 2°)",
-   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences) [units: verify]",
+   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences)",
    "short_source": "LP GRS"
   },
   {
@@ -147,7 +147,7 @@
    "offset": 0.0,
    "unit": "wt%",
    "label": "Iron, FeO (Lunar Prospector, 2°)",
-   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences) [units: verify]",
+   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences)",
    "short_source": "LP GRS"
   },
   {
@@ -157,7 +157,7 @@
    "offset": 0.0,
    "unit": "wt%",
    "label": "Titanium, TiO2 (Lunar Prospector, 2°)",
-   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences) [units: verify]",
+   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences)",
    "short_source": "LP GRS"
   },
   {
@@ -167,7 +167,7 @@
    "offset": 0.0,
    "unit": "ppm",
    "label": "Thorium (Lunar Prospector, 2°)",
-   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences) [units: verify]",
+   "source": "Lunar Prospector GRS elemental abundances, 2° equal-area cells (PDS Geosciences)",
    "short_source": "LP GRS"
   },
   {

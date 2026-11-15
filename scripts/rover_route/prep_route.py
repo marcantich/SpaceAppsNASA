@@ -2,7 +2,7 @@
 usage: python prep_route.py traverse.json waypoints.json output.json"""
 import json, sys, numpy as np
 R_MARS = 3389500.0
-SEGMENTS = {  # km along the route [assumption: stretches chosen by hand]
+SEGMENTS = {  # km along the route (stretches chosen by hand)
     "landing": (0.0, 3.0),
     "floor": (9.0, 12.0),
     "rim": (27.0, 36.0),

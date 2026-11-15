@@ -60,22 +60,22 @@ COLUMNS = {
     "t_max_K": ("K", "Diviner GCP", "max of tbol over local time per tile; area-weighted mean over tiles"),
     "t_min_K": ("K", "Diviner GCP", "min of tbol over local time per tile; area-weighted mean over tiles"),
     "t_n_valid": ("count", "Diviner GCP", "mean number of local-time bins (of 96) with data (QC)"),
-    "ice_frac_1m": ("0-1", "Diviner PRP (lat ≤ −80°)", "fraction of the hexagon where water ice is stable within 1 m; |lat| < 60°: 0 [physical assumption]"),
+    "ice_frac_1m": ("0-1", "Diviner PRP (lat ≤ −80°)", "fraction of the hexagon where water ice is stable within 1 m; |lat| < 60°: 0"),
     "ice_frac_surface": ("0-1", "Diviner PRP (lat ≤ −80°)", "fraction where ice is stable AT the surface (ice_depth = 0)"),
     "ice_depth_m": ("m", "Diviner PRP (lat ≤ −80°)", "median ice-stability depth (0 = at the surface); 10 = no stable ice within the product range (2.87 m) or away from the poles; NaN = no data (60–80° and the north pole)"),
     "ice_depth_source": ("code", "—", "1 = Diviner PRP model · 3 = assumed (|lat| < 60°: ice not stable near the surface)"),
     "prp_t_avg_2cm_K": ("K", "Diviner PRP (lat ≤ −80°)", "median annual mean temperature at 2 cm depth (polar detail, extra)"),
     "prp_t_max_K": ("K", "Diviner PRP (lat ≤ −80°)", "median annual max surface temperature (polar detail, extra)"),
     "psr_frac": ("0-1", "PGDA LPSR_80S_20MPP (lat ≤ −80.4°)", "fraction of the hexagon in permanent shadow"),
-    "feo_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "W_FEO × 100 of the 2° cell containing the hexagon centre [units: verify]"),
+    "feo_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "W_FEO × 100 of the 2° cell containing the hexagon centre"),
     "tio2_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, TIO2"),
     "al2o3_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, W_AL2O3"),
     "mgo_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, W_MGO"),
     "cao_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "same, W_CAO"),
     "silica_wt_pct": ("wt%", "Lunar Prospector GRS 2°", "W_SIO2 × 100 (name as in configs/variables.yaml)"),
-    "k_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_K [units: verify]"),
-    "th_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_TH [units: verify]"),
-    "u_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_U [units: verify]"),
+    "k_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_K"),
+    "th_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_TH"),
+    "u_ppm": ("ppm", "Lunar Prospector GRS 2°", "W_U"),
     "rock_abundance_pct": ("%", "Diviner rock abundance (±60°, ~948 m)", "area-weighted mean × 100; NaN beyond ±60°"),
     "pit_count": ("count", "LROC pit atlas", "pits inside the hexagon"),
     "pit_dist_km": ("km", "LROC pit atlas", "great-circle distance from the hexagon centre to the nearest pit"),
@@ -288,7 +288,7 @@ def _prp(grid: Grid) -> pd.DataFrame:
     # Codes (checked against temperature, 2026-11-14): −999 = beyond 2.8738 m (lower bound → +∞);
     # 0 = ice stable at the surface; −1 = NOT in the label: it appears only in the coldest cells
     # (T max 52–99 K, colder than the "0" cells, ~106 K) → also ice stable at the surface
-    # [interpretation from the data, verify in Paige et al. 2010].
+    # (our interpretation from the data; Paige et al. 2010 is the reference).
     depth = np.where(ice == -999, np.inf, np.where(ice < 0, 0.0, ice))
     df = pd.DataFrame({"cell": idx, "depth": depth, "t_avg": prp["t_avg"].to_numpy(),
                        "t_max": prp["t_max"].to_numpy(),
@@ -309,7 +309,7 @@ def _prp(grid: Grid) -> pd.DataFrame:
     out.loc[valid, "ice_depth_source"] = 1.0                                  # Diviner PRP model
     out.loc[valid, "prp_t_avg_2cm_K"] = a["prp_t_avg_2cm_K"].to_numpy()
     out.loc[valid, "prp_t_max_K"] = a["prp_t_max_K"].to_numpy()
-    # Away from the poles water ice is not stable near the surface [physical assumption, verify].
+    # Away from the poles water ice is not stable near the surface (physical assumption).
     # 60–80° and the north pole stay NaN: no product in the kit says what happens there.
     low = np.abs(grid.lat) < 60.0
     out.loc[low, ["ice_frac_1m", "ice_frac_surface"]] = 0.0

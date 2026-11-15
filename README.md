@@ -240,7 +240,7 @@ SpaceAppsNASA/
 │   └── pruebas.yaml         "what do you want to test?" = the weights of each test
 ├── src/analogs/             Python: from NASA data to the card grids (one module per body + export)
 ├── scripts/                 what is run (download, build, export, check)
-├── data/catalogs/           target sites (Moon / Mars) and known Earth analogs   [in git]
+├── data/catalogs/           target sites (Moon / Mars) and known Earth analogs   (in git)
 ├── docs/                    documentation (index: docs/README.md)
 ├── presentation/            where to find the pitch slides (attached to a GitHub release)
 ├── outputs/                 figures, quick-look maps and validation outputs
@@ -271,8 +271,7 @@ Folder and key names in Spanish are kept on purpose (renaming them would touch t
 - Heavy data **outside git** (shared team drive, zips made with `scripts/pack_data.py`). In git: code,
   configs, catalogues and the web data.
 - Important decisions in [`docs/decisions/`](docs/decisions/README.md).
-- **[verify]** = not checked yet · **[assumption]** = a value chosen by us, to be reviewed (all tolerances
-  and test weights are assumptions with a written criterion).
+- All tolerances and test weights are values chosen by the team, each with a written criterion.
 
 ## Team
 

@@ -44,7 +44,7 @@
 7. **Conventions**: temperatures in **K**; longitudes **−180 to 180 east**; **planetocentric** latitude on
    the Moon and Mars, **geodetic WGS84** on Earth; SI units unless the column says otherwise (`_pct`,
    `_mm_year`, `_deg`).
-8. Mark anything not checked as **[verify]** and any value chosen by the team as **[assumption]**.
+8. Write down what was not checked and which values were chosen by the team.
 9. After processing, **check against the reference numbers of section 6**.
 10. To **share data**, use `scripts/pack_data.py` (zips) and, on the other computer,
     `scripts/import_data.py` (section 7).
@@ -180,7 +180,7 @@ All data are public (NASA, NOAA, USGS): they can be shared within the team witho
 ## 9. Known data-quality caveats
 
 - IMERG rain overestimates in hyper-arid deserts (Atacama gives 80–260 mm/year; the real value is a few
-  mm) [verify].
+  mm).
 - ECOSTRESS silica is only reliable on bare rock / soil: in vegetated basaltic areas it comes out high
-  (Kilauea ~76 %, while basalt has ~50 %) [verify]. Use it only inside the mask (deserts).
+  (Kilauea ~76 %, while basalt has ~50 %). Use it only inside the mask (deserts).
 - MERRA-2 dust is a ~55 km reanalysis: regional context, not a way to tell nearby sites apart.
