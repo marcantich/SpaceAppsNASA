@@ -17,7 +17,7 @@
 3. Similarity is an **index from 0 to 100**: each variable is compared **in its physical units** with a
    soft note (`configs/variables.yaml`) and averaged by dimension with the weights of the chosen test
    (`configs/pruebas.yaml`).
-4. The **code** is in the GitHub repository (`https://github.com/marcantich/SpaceAppsNASA`). The **data**
+4. The **code** is in the GitHub repository (`https://github.com/pablourioste/SpaceAppsNASA`). The **data**
    are in this folder, **outside git** (they weigh GB).
 5. The three bodies are processed and exported (Mars H3 res 5, Moon H3 res 4, Earth H3 res 6).
 
@@ -90,7 +90,7 @@ setx ANALOGS_DATA_DIR "D:\path\to\SpaceAppsData"     # then open a NEW terminal
 ## 3. Preparing the computer (once)
 
 ```powershell
-git clone https://github.com/marcantich/SpaceAppsNASA.git
+git clone https://github.com/pablourioste/SpaceAppsNASA.git
 cd SpaceAppsNASA
 py -3.12 -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements.txt

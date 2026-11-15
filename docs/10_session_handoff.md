@@ -10,7 +10,7 @@
 ## 1. The project in one paragraph
 
 NASA Space Apps 2026 challenge *"Identify Earth locations that analog the permanent Moon base
-locations and Mars"* (team repo `marcantich/SpaceAppsNASA`, team: Marc, Pablo, Ángel, Adrià…).
+locations and Mars"* (team repo `pablourioste/SpaceAppsNASA`, formerly `marcantich/SpaceAppsNASA`, team: Marc, Pablo, Ángel, Adrià…).
 A web app with **3D globes (CesiumJS)**: click **any point** of Mars or the Moon → the app finds the
 most similar places on Earth (and vice versa: any-to-any), paints Earth by similarity and flies to the
 best analog, with a **card** of every variable and its source. A second view, the **Rover test

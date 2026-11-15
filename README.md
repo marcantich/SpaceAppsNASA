@@ -61,7 +61,7 @@ installing so the commands are found.
 **2. Download the project:**
 
 ```bash
-git clone https://github.com/marcantich/SpaceAppsNASA.git
+git clone https://github.com/pablourioste/SpaceAppsNASA.git
 ```
 
 ```bash
@@ -169,6 +169,11 @@ Folder and key names in Spanish are kept on purpose (renaming them would touch t
 | Earth data | |
 | Engine | |
 | App | |
+
+## Pitch
+
+The 7-slide pitch (PowerPoint, 127 MB) is attached to the GitHub release `pitch`:
+[download `Earth_Analog_Presentation.pptx`](https://github.com/pablourioste/SpaceAppsNASA/releases/download/pitch/Earth_Analog_Presentation.pptx).
 
 ## Next steps
 

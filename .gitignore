@@ -58,6 +58,10 @@ desktop.ini
 # --- Vídeos pesados de la presentación ---
 presentation/**/*.mp4
 presentation/**/*.mov
+# Slide decks: too large for git (the pitch is 127 MB; GitHub refuses files over 100 MB).
+# The pitch is attached to the GitHub release `pitch` instead (see presentation/README.md).
+presentation/**/*.pptx
+presentation/**/~$*
 
 # --- Local Claude Code config (preview server) ---
 .claude/

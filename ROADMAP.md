@@ -142,6 +142,6 @@
 - [ ] **6.2** Performance: limit tiles, test on laptop and phone.
 - [ ] **6.3** "Sources and method" section: PDS, Trek, GIBS, Copernicus, JAXA, CSA and the formula.
 - [ ] **6.4** Demo video in case the connection fails.
-- [x] **6.5** ✅ Done: `presentation/slides/Earth_Analogs_pitch.pptx`. Original task: Slides: problem → data → method → demo → limitations.
+- [x] **6.5** ✅ Done: the pitch (127 MB, too large for the repository) is attached to the GitHub release `pitch`: https://github.com/pablourioste/SpaceAppsNASA/releases/download/pitch/Earth_Analog_Presentation.pptx. Original task: Slides: problem → data → method → demo → limitations.
 - [ ] **6.6** Review the final Space Apps submission (app link, repository, video).
 - [x] **6.7** ✅ Done 2026-11-15: **no Spanish left in the interface.** Test names, test validity sentences, variable labels and criteria came from `configs/pruebas.yaml` and `configs/variables.yaml` (in Spanish); both files translated to English (comments too; keys such as `ruedas` kept, the app and data use them) and `app/data/tierra/match.json` regenerated with `python scripts/export_scoring.py`. Note: that script needs `h3ronpy` (`pip install -r requirements.txt`).
