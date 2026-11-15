@@ -6,6 +6,16 @@ declaration.
 **Tool:** Claude (Anthropic), mainly through **Claude Code** (an AI coding assistant working in the
 repository: it reads files, runs commands and edits code at the team's request), and the Claude app.
 
+## In short
+
+| Use | Yes / no | Where |
+|---|---|---|
+| **Research and information gathering** | Yes | Finding and comparing datasets (e.g. which Mars wind data to use), reading their documentation and formats, checking licences and required credits, looking up scientific methods and references |
+| **Coding** | Yes | Web app (JavaScript) and data pipeline (Python) |
+| **Debugging** | Yes | Finding and fixing errors in the app and in the data processing |
+| **Writing and editing** | Yes | README, credits, method and data documents, translation of the team's documents into English |
+| **Presentation (pptx)** | Yes | Help drafting the slide deck |
+
 ## Where we used it
 
 | Part of the project | How AI was used | What the team did |
@@ -14,6 +24,7 @@ repository: it reads files, runs commands and edits code at the team's request),
 | **Data pipeline** (`src/analogs/`, `scripts/`) | Writing the Python that downloads NASA / NOAA data, builds the card grids and exports them; reading data formats (PDS labels, netCDF); checking outputs against expected values | Chose the datasets and the method (decision log in `docs/decisions/`), ran the downloads and reviewed the results |
 | **Scientific choices** | Proposing and explaining options (e.g. tolerances, how to compute slope or solar energy, which wind dataset to use and its licence) with references | Took the decisions: variables, tolerances and test weights are the team's assumptions, marked as such in `configs/` |
 | **Documentation** | Drafting and translating the README, `CREDITS.md`, the data format and method documents, `docs/NEXT_STEPS.md` | Reviewed and edited them |
+| **Research and information gathering** | Searching for datasets and comparing them (coverage, resolution, licence), reading their documentation and file formats, finding methods and references (e.g. the NASA solar radiation model for Mars) | Chose which sources to use |
 | **Licences and sources** | Researching the licence and required credit of each dataset, imagery layer and library | Checked and accepted them (`CREDITS.md`) |
 | **Presentation** | Help drafting the slide deck | Wrote the story and give the pitch |
 
