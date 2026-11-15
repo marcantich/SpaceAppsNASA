@@ -219,7 +219,7 @@ decision 006).
 | Tile name | `t{row:02d}_{col:02d}.bin.gz`, row = ⌊(90 − lat) / 10⌋ (0 = 80–90°N), col = ⌊(lon + 180) / 10⌋ (0 = 180–170°W); tiles with no data are not written (404 = no data) |
 | Pixel | gzip, one byte per pixel, row-major from the tile's north-west corner: bits 0–6 = slope / 0.5° (127 = no data), bit 7 = 1 if at least one of the 2×2 MOLA pixels has a laser shot |
 | Method | slope at every MOLA 128 ppd pixel by central differences (as the grid), median of 2×2 → 64 ppd; no data beyond ±87° |
-| Reader | `app/src/slopetiles.js` (`slopeAt(lat, lon)`), shown by `card.js` as "↳ at this point" under the cell's slope, tagged `laser` or `interp.` |
+| Reader | `app/src/slopetiles.js` (`slopeAt(lat, lon)`), shown by `card.js` as the card's **Slope** (tagged `laser` or `interp.`), with the cell's median on a second line "↳ whole cell" |
 
 Why 64 and not 128 px/deg: measured, the whole planet at 128 ppd is ~384 MB compressed (too much for
 the repository and GitHub Pages), 64 ppd ~105 MB, and near the equator most 128 ppd pixels are

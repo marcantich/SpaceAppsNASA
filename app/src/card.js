@@ -324,16 +324,21 @@ export function createCardPanel(el, { onClose } = {}) {
                 <dd title="${esc(col.unit ? `Unit: ${col.unit} · ` : '')}Source: ${esc(col.source)}">${text}</dd>
                 <dd class="src" title="Source: ${esc(col.source)}">${src ? tag(src) : ''}</dd>`;
       };
-      // slope at the clicked point (~0.9 km pixel) right under the cell's median slope
+      // Slope shown = the ~0.9 km pixel under the click (data tiles); the cell's median, which is
+      // what the analog index compares, goes on a second line. No pixel data (poles, other bodies)
+      // → the cell's slope as before.
       const p = opts.point;
-      const pointRow = p && Number.isFinite(p.slope)
-        ? `<dt class="point" title="Slope of the ~${p.km} km pixel under the click (the line above is the median of the whole cell)">↳ at this point</dt>
+      const slopeRow = p && Number.isFinite(p.slope) && cols.slope_deg
+        ? `<dt title="Slope of the ~${p.km} km pixel under the click">Slope</dt>
            <dd title="Unit: ° · Source: ${esc(p.source)}">${p.slope.toFixed(1)} °</dd>
-           <dd class="src" title="${p.measured ? 'At least one MOLA laser shot in this pixel' : 'No laser shot here: interpolated between MOLA ground tracks (smoother than reality)'}">${tag(p.measured ? 'laser' : 'interp.')}</dd>`
-        : '';
-      const summary = SUMMARY.filter((k) => cols[k]).map((k) => row(k) + (k === 'slope_deg' ? pointRow : '')).join('');
+           <dd class="src" title="${p.measured ? 'At least one MOLA laser shot in this pixel' : 'No laser shot here: interpolated between MOLA ground tracks (smoother than reality)'}">${tag(p.measured ? 'laser' : 'interp.')}</dd>
+           <dt class="point" title="Median slope of the whole ~${card.cellSizeKm ?? 9} km cell: the value the analog index compares">↳ whole cell</dt>
+           <dd title="Unit: ° · Source: ${esc(cols.slope_deg.source)}">${formatValue(cols.slope_deg, values.slope_deg, values, cols).text}</dd>
+           <dd class="src"></dd>`
+        : null;
+      const summary = SUMMARY.filter((k) => cols[k]).map((k) => (k === 'slope_deg' && slopeRow ? slopeRow : row(k))).join('');
       const sections = SECTIONS.map(([name, keys]) => {
-        const rows = keys.filter((k) => cols[k]).map(row).join('');
+        const rows = keys.filter((k) => cols[k] && !(k === 'slope_deg' && slopeRow)).map(row).join('');
         return rows ? `<section><h3>${name}</h3><dl>${rows}</dl></section>` : '';
       }).join('');
       el.hidden = false;
