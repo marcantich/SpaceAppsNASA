@@ -1,49 +1,113 @@
 # 🌍🌕🔴 Earth Analogs for Moon & Mars — NASA Space Apps 2026
 
-**Challenge:** *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars.* Full
-statement in [`docs/02_reto_oficial.md`](docs/02_reto_oficial.md).
+**Click any point of Mars or the Moon and find the places on Earth that physically resemble it**, with
+the reasons: every variable, its value on both sides and where each number comes from.
 
-**What we built:** a web app with 3D globes of Mars, the Moon and Earth. **Click any point** of Mars or the
-Moon and the app finds the most similar places on Earth (or the other way round: any body against any
-other). It paints the search globe by similarity, flies to the best analog and shows a **card** with
-every variable, its value on both sides and its source, plus an **analog index from 0 to 100** broken
-down by dimension (terrain, thermal, water & ice, sky & light). You can choose **what you want to
-test** (wheels, navigation, ice detection, solar power…), restrict the search to a zone of Earth, and
-open two more views: the **Rover test planner**, which says where on Earth each part of a rover could be
-field-tested, and the **Route replica**, which finds on Earth a path with the slopes of a rover route.
+**Challenge:** *Identify Earth Locations that Analog the Permanent Moon Base Locations and Mars*
+([full statement](docs/02_reto_oficial.md)).
+
+**Contents:** [What it does](#what-it-does) · [Quick start](#quick-start) · [How it works](#how-it-works) ·
+[The analog index](#the-analog-index-in-three-steps) · [Data](#data) · [Limits](#what-it-does-not-do) ·
+[Run it, step by step](#run-it-on-your-computer-step-by-step) · [Regenerating the data](#regenerating-the-data-python) ·
+[Repository map](#repository-map) · [Documentation](#documentation) · [Team](#team) ·
+[Licence and credits](#licence-and-credits)
+
+## What it does
+
+A web app with 3D globes of Mars, the Moon and Earth, with three views:
+
+| View | What you do | What you get |
+|---|---|---|
+| **Analogs** | Click any point of one body (any body against any other) | The other globe painted by similarity, the six best sites, a **card** with every variable on both sides and its source, and an **analog index from 0 to 100** broken down by dimension (terrain, thermal, water & ice, sky & light) |
+| **Rover test planner** | Send a rover to a Mars or Moon cell | For each part of the rover (wheels, cameras, drill, thermal control, dust): whether it can be field-tested on Earth, where, and what physics prevents (gravity, vacuum) |
+| **Route replica** | Draw a route on Mars or the Moon, or load a real rover traverse | A path on Earth with the same slopes in the same order |
+
+You choose **what you want to test** (wheels, navigation, ice detection, solar power, dust…): the same
+place can be a good analog for one test and a poor one for another. The search can be limited to a zone
+of Earth.
+
+## Quick start
+
+Needs [Git](https://git-scm.com/downloads) and [Node.js 20 or newer](https://nodejs.org). No account, no
+server, no Python.
+
+```bash
+git clone https://github.com/pablourioste/SpaceAppsNASA.git
+cd SpaceAppsNASA/app
+npm install
+npm run dev
+```
+
+Open <http://localhost:5173>, press Enter and click any point of Mars.
+Detailed instructions and troubleshooting: [below](#run-it-on-your-computer-step-by-step).
 
 ## How it works
 
-```
- 1. DATA (Python, run once)              2. WEB DATA (in git)                 3. APP (browser, no server)
-    NASA / NOAA archives  →  card grids  →  compact binary files       →  click → card → score every
-    raw files, tens of GB    (H3 cells)     app/data/, ~160 MB             cell of the other body → fly
-    outside git              data/processed                                 app/  (Vite + CesiumJS)
+```mermaid
+flowchart LR
+  A["1 · DATA<br/>NASA / NOAA archives<br/>tens of GB, outside git"] -->|"Python, run once"| B["Card grids<br/>one card per hexagonal cell"]
+  B -->|"export"| C["2 · WEB DATA<br/>compact binary files<br/>app/data/, ~160 MB, in git"]
+  C --> D["3 · APP<br/>browser, no server<br/>click → card → score every cell → fly"]
+  E["Live map imagery<br/>NASA GIBS · Solar System Treks"] --> D
 ```
 
-- Each body is covered by **hexagonal cells** (Uber H3) and each cell has a **card**: slope, roughness,
-  temperatures, water ice, dust, Sun elevation… computed from NASA mission data at the **same scale on
-  every body** (slope at a ~460 m baseline on all three), so the comparison is fair.
-- The cards are pre-computed once and exported as small compressed binary files. All the matching happens
-  **in the browser** (~0.1–0.6 s per search). The only live requests are the map imagery.
-- The index compares values **in physical units**: each variable gets a soft note
-  `1 / (1 + (difference / half_diff)²)` (1 when equal, 0.5 at `half_diff`), notes are averaged per
-  dimension, dimensions are averaged with the weights of the chosen test, and the ranking mixes each cell
-  with its 6 neighbours (homogeneous areas first). Only the variables with data on both sides are
-  compared, and the app says how many. Details: [`docs/09_criterios_seleccion.md`](docs/09_criterios_seleccion.md)
-  and the comments in [`app/src/scoring.js`](app/src/scoring.js).
+- Each body is covered by **hexagonal cells** ([H3](https://h3geo.org)) and each cell has a **card**:
+  slope, roughness, temperatures, water ice, dust, Sun elevation… computed from NASA mission data.
+- The comparison is fair because it is made **at the same scale on every body**: slope and roughness
+  come from ~460 m elevation pixels on all three, aggregated to cells of 6–12 km.
+- The cards are computed once and stored as small compressed files. All the matching happens **in the
+  browser** (~0.1–0.6 s per search). The only live requests are the map imagery.
 
 | Body | Cells | Cell size | Main data |
 |---|---|---|---|
-| Mars | 2,016,842 (H3 res 5) | ~9.1 km | MGS MOLA, TES, Odyssey GRS, MRO MCS, SWIM 2.0, NASA Ames Mars GCM |
-| Moon | 288,122 (H3 res 4) | ~12.3 km | LRO LOLA, Diviner, Lunar Prospector, NASA PGDA |
-| Earth | 14,117,882 (H3 res 6), of which 1,374,390 searched (deserts, polar ice, arid open land) | ~6.5 km | NOAA ETOPO 2022, MODIS, GPM IMERG, MERRA-2, ECOSTRESS |
+| Mars | 2,016,842 | ~9.1 km | MGS MOLA and TES, Odyssey GRS, MRO MCS, SWIM 2.0, NASA Ames Mars GCM |
+| Moon | 288,122 | ~12.3 km | LRO LOLA and Diviner, Lunar Prospector, NASA PGDA |
+| Earth | 14,117,882, of which 1,374,390 searched (deserts, polar ice, arid open land) | ~6.5 km | NOAA ETOPO 2022, MODIS, GPM IMERG, MERRA-2, ECOSTRESS |
 
-On Mars the card also shows the **slope at the clicked point** (~0.9 km pixel, read from data tiles), the
-**solar energy for a horizontal panel** (NASA Appelbaum & Flood model) and the **mean wind and wind
-stress** (NASA Ames Mars GCM). Full list of sources: [`CREDITS.md`](CREDITS.md).
+More: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
-## 🚀 Run it on your computer (from scratch)
+## The analog index in three steps
+
+Values are compared **in physical units** (K, degrees, metres), not as percentiles within each body.
+
+1. **A note per variable**, from 0 to 1: `1 / (1 + (difference / half_diff)²)`. It is 1 when both
+   values are equal, 0.5 when they differ by the tolerance `half_diff`, and never 0, so places are still
+   ranked when Earth cannot reach the target value (the cold of Mars).
+2. **A note per dimension**: the weighted mean of its variables, so three temperatures count once.
+3. **The index**: 100 × the weighted mean of the dimensions, with the weights of the chosen test.
+
+The ranking then mixes each cell with its 6 neighbours (60 % / 40 %) to put homogeneous areas first,
+and spreads the results over the globe. Only variables with data on both sides are compared, and the app
+says how many. Every tolerance has a written reason in [`configs/variables.yaml`](configs/variables.yaml).
+
+Formulas, derivation of each variable and a worked example: [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md).
+
+## Data
+
+All data are public measurements or published models from NASA, NOAA and USGS archives (PDS, Earthdata,
+NCEI, NASA Ames). Nothing is AI-generated.
+
+- Every dataset with its mission, resolution, period, download location and reference:
+  [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md).
+- Every downloaded file with its URL: `data/raw/<body>/MANIFEST.csv`.
+- Licences and required credits (imagery, 3D model, libraries): [`CREDITS.md`](CREDITS.md).
+
+On Mars the card also shows the slope at the clicked point (~0.9 km pixel), the solar energy on a
+horizontal panel (NASA Appelbaum & Flood model) and the mean wind and wind stress (NASA Ames Mars GCM).
+
+## What it does not do
+
+- **Earth cannot reproduce** the gravity, the pressure, the day length or the radiation of the Moon and
+  Mars. These are shown with each test, never hidden inside the index.
+- **Geology is not compared yet**: two cells can match in terrain and climate and be different rocks.
+- **The scale is 6–12 km**: what is smaller than a cell is averaged out.
+- **Tolerances and weights are the team's assumptions**, each with a written reason; they are not
+  calibrated, and the validation against known analogs is designed but not done.
+- **The index is not a probability**: it orders places for one target and one test.
+
+In full: [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md).
+
+## Run it on your computer, step by step
 
 The app runs **locally**: nothing to deploy and no account needed. Everything it needs is in this
 repository (~170 MB with the data); only the map imagery is loaded from the internet while you use it.
@@ -99,13 +163,14 @@ To stop it: `Ctrl + C` in the terminal. Next time, only steps 4 and 5.
 | The globes stay black | It needs an internet connection for the imagery; reload the page |
 
 Python is **not** needed to run the app, only to rebuild the data (next section).
+
 ## Regenerating the data (Python)
 
 ```bash
 python -m venv .venv
 .venv\Scripts\activate             # Windows   (Linux/Mac: source .venv/bin/activate)
 pip install -r requirements.txt    # SSL errors: add --use-feature=truststore
-python -m pytest                   # 19 passed
+python -m pytest                   # 13 passed
 ```
 
 Raw data stay **outside git** (tens of GB): by default in `C:\Users\<you>\SpaceAppsData` (`raw/`,
@@ -118,10 +183,12 @@ Raw data stay **outside git** (tens of GB): by default in `C:\Users\<you>\SpaceA
 | 3. Web export | `scripts/export_mars_web.py`, `scripts/export_mars_slope_tiles.py` | `scripts/export_moon_web.py` | (written by `build_earth_grid.py`) |
 
 After changing a tolerance, a weight or a test in `configs/`, run `python scripts/export_scoring.py` and
-reload the page. Check any export with `scripts/check_grid_binary.py`. Web data format:
-[`docs/07_card_grid_binary_format.md`](docs/07_card_grid_binary_format.md). Data guide:
-[`docs/08_datos_LEEME.md`](docs/08_datos_LEEME.md). Script index:
-[`scripts/README.md`](scripts/README.md).
+reload the page. Check any export with `scripts/check_grid_binary.py`. The app's own tests: `npm test`
+in `app/`.
+
+Guides: [`scripts/README.md`](scripts/README.md) (every script),
+[`docs/08_datos_LEEME.md`](docs/08_datos_LEEME.md) (the data folder and the processing order),
+[`docs/07_card_grid_binary_format.md`](docs/07_card_grid_binary_format.md) (the web data format).
 
 ## Repository map
 
@@ -131,7 +198,7 @@ SpaceAppsNASA/
 ├── ROADMAP.md               task list, with what was done and how it was checked
 ├── CREDITS.md, LICENSE      data / imagery / library credits and the code licence
 ├── app/                     THE APP (Vite + CesiumJS + three.js)
-│   ├── src/                 globes, cards, scoring, search, rover planner, route replica (see app/README.md)
+│   ├── src/                 globes, cards, scoring, search, rover planner, route replica
 │   └── data/                what the app reads: marte/, luna/, tierra/ card grids, scoring settings,
 │                            Mars slope tiles, rover config and 3D model
 ├── configs/                 WHAT IS COMPARED
@@ -140,9 +207,8 @@ SpaceAppsNASA/
 ├── src/analogs/             Python: from NASA data to the card grids (one module per body + export)
 ├── scripts/                 what is run (download, build, export, check)
 ├── data/catalogs/           target sites (Moon / Mars) and known Earth analogs   [in git]
-├── docs/                    documentation (numbered in reading order; decisions/ = decision log;
-│                            NEXT_STEPS.md = what we would do next)
-├── presentation/            the pitch slides
+├── docs/                    documentation (index: docs/README.md)
+├── presentation/            where to find the pitch slides (attached to a GitHub release)
 ├── outputs/                 figures, quick-look maps and validation outputs
 └── tests/                   tests: Python (pytest) and JavaScript (npm test, from app/)
 ```
@@ -150,6 +216,20 @@ SpaceAppsNASA/
 Folder and key names in Spanish are kept on purpose (renaming them would touch the data files):
 `marte` = Mars, `luna` = Moon, `tierra` = Earth, `pruebas` = tests, `objetivos` = target sites,
 `analogos_conocidos` = known analogs, `fichas` = cards.
+
+## Documentation
+
+| Document | What it explains |
+|---|---|
+| [`docs/README.md`](docs/README.md) | Index of all the documents, in reading order |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | How the repository works: the three stages, what happens on a click, module map, glossary |
+| [`docs/METHODOLOGY.md`](docs/METHODOLOGY.md) | The mathematics: grid, how each variable is computed, the index, the ranking, rover planner, route replica |
+| [`docs/DATA_SOURCES.md`](docs/DATA_SOURCES.md) | Every dataset, where it comes from and how to cite it |
+| [`docs/CODE_REFERENCE.md`](docs/CODE_REFERENCE.md) | Every module, script and configuration file |
+| [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md) | What is not measured, not reproducible on Earth or not validated |
+| [`docs/07_card_grid_binary_format.md`](docs/07_card_grid_binary_format.md) | Format of the files the app reads |
+| [`docs/decisions/README.md`](docs/decisions/README.md) | Decision log |
+| [`docs/NEXT_STEPS.md`](docs/NEXT_STEPS.md) | What we would do next |
 
 ## How we work
 
