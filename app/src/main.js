@@ -685,9 +685,17 @@ const placeSearch = createPlaceSearch(document.getElementById('place-search'), d
   bodies: () => [left.key, right.key, ['earth', 'mars', 'moon'].find((b) => b !== left.key && b !== right.key)],
 });
 
-// Esc clears every selection: coordinate markers, highlighted sites, cell outlines, cards and score
+// Esc clears every selection (coordinate markers, highlighted sites, cell outlines, cards and score)
+// and takes both cameras back to the opening view, like the home button. With a search zone, the
+// right globe goes back to the zone instead. Not in the route view: there the zoom is the drawing.
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') clearAll();
+  if (e.key !== 'Escape') return;
+  clearAll();
+  if (route.active) return;
+  animToken++; // stop the approach animation if it is still running
+  left.flyHome();
+  if (zone) right.flyToZone(zone, 1.5);
+  else right.flyHome();
 });
 
 setBodies('mars', 'earth');
