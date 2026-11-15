@@ -177,7 +177,7 @@ const badge = (score, color, cls = 'score') =>
   `<b class="${cls}" style="background:${color};color:${inkOn(color)}">${Number.isFinite(score) ? score.toFixed(0) : '—'}</b>`;
 
 /**
- * Score dock: bottom centre, across both globes. It is about the PAIR (clicked cell ◀ index ▶ candidate),
+ * Score dock: bottom centre, across both globes. It is about the PAIR (clicked cell · index · candidate),
  * so it sits between them. One bar per dimension; the per-variable values fold under "Variables".
  * data = { index, cell, ring, color, colorOf, source: { name, body }, candidate: { name, body },
  *          dims: [{ label, score, rows: [{ name, short, label, unit, target, earth, note }] }] }
@@ -214,7 +214,7 @@ export function createScoreDock(el, { onClose } = {}) {
         <div class="dock-pair">
           <div class="dock-side left"><b>${esc(source.name)}</b><span>${esc(source.body)} · clicked cell</span></div>
           <div class="dock-score">
-            <span class="arrow">◀</span>${badge(index, color, 'big')}<span class="arrow">▶</span>
+            ${badge(index, color, 'big')}
             <span class="dock-sub">analog index${Number.isFinite(ring) ? ` · cell ${cell.toFixed(0)}, 20 km around ${ring.toFixed(0)}` : ''}</span>
           </div>
           <div class="dock-side right"><b>${esc(candidate.name)}</b><span>${esc(candidate.body)} · analog</span></div>

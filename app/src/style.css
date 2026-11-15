@@ -851,15 +851,9 @@ details.dock-more > summary:hover {
 
 .dock-score {
   display: grid;
-  grid-template-columns: auto auto auto;
   align-items: center;
   justify-items: center;
   gap: 2px 8px;
-}
-
-.dock-score .arrow {
-  color: var(--muted);
-  font-size: 11px;
 }
 
 .dock-sub {
