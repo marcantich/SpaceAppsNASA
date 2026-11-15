@@ -1,35 +1,35 @@
 # =============================================================================
-# VARIABLES: la "ficha técnica" de cada sitio
+# VARIABLES: the "data sheet" (card) of every place
 # =============================================================================
-# Lista ÚNICA de columnas que comparten las fichas de la Tierra, la Luna y Marte.
-# Si una variable se añade aquí, el resto del código la recoge sola.
+# The SINGLE list of columns shared by the Earth, Moon and Mars cards.
+# A variable added here is picked up by the rest of the code automatically.
 #
-#   type       numeric  → nota por diferencia (abajo); categorical → nota = matrix[objetivo][tierra]
-#   half_diff  NOTA SUAVE (la que usan la web y src/analogs/similarity.py):
-#                  nota = 1 / (1 + (diferencia / half_diff)²)
-#              → 1 si es igual, 0,5 con una diferencia de half_diff, 0,2 con 2×, 0,06 con 4×…
-#              Nunca llega a 0: cuando la Tierra no alcanza el valor del objetivo (frío de Marte)
-#              sigue ordenando lo más cercano por delante.
-#   matrix     (numérica por clases, p. ej. hielo) parecido entre clases: matrix[objetivo][tierra]
-#   tolerance  fórmula LINEAL antigua: nota = max(0, 1 − |Δ| / tolerance). Solo la usan las
-#              variables sin half_diff y las herramientas viejas (comparador de app/comparator.js)
-#   dimension  grupo de la variable (bloque `dimensions` al final): el índice pesa las DIMENSIONES,
-#              no las variables, para que 3 temperaturas no cuenten 3 veces
-#   criterion  POR QUÉ ese half_diff (físico, operativo o de medida)
-#   sources    de dónde sale el número en cada cuerpo (null = no existe o no aplica)
+#   type       numeric → note from the difference (below); categorical → note = matrix[target][earth]
+#   half_diff  SOFT NOTE (used by the web app and src/analogs/similarity.py):
+#                  note = 1 / (1 + (difference / half_diff)²)
+#              → 1 when equal, 0.5 at a difference of half_diff, 0.2 at 2×, 0.06 at 4×…
+#              It never reaches 0: when Earth cannot reach the target value (the cold of Mars)
+#              the closest places are still ranked first.
+#   matrix     (numeric by classes, e.g. ice) similarity between classes: matrix[target][earth]
+#   tolerance  old LINEAR formula: note = max(0, 1 − |Δ| / tolerance). Only used by variables
+#              without half_diff and by the old tools (comparator in app/comparator.js)
+#   dimension  group of the variable (`dimensions` block below): the index weighs DIMENSIONS,
+#              not variables, so that 3 temperatures do not count 3 times
+#   criterion  WHY that half_diff (physical, operational or measurement reason)
+#   sources    where the number comes from on each body (null = does not exist or not applicable)
 #
-# ⚠️ Los half_diff tienen un criterio escrito pero siguen siendo [supuesto]: falta validarlos
-#    con análogos conocidos (docs/09: punto 9 del informe de criterios).
-# ⚠️ Las fuentes marcadas [verificar] están identificadas pero no descargadas ni comprobadas.
-# Ver docs/03_enfoque.md §2 para los cuidados de cada variable.
+# ⚠️ Every half_diff has a written criterion but is still an [assumption]: it has to be validated
+#    with known analogs (docs/09: point 9 of the criteria report).
+# ⚠️ Sources marked [verify] are identified but not downloaded or checked.
+# See docs/03_enfoque.md §2 for the caveats of each variable.
 # =============================================================================
 
-# Índice (web y src/analogs/similarity.py):
-#   nota_dimensión = media ponderada de las notas de sus variables disponibles
-#   índice_celda   = 100 · Σ W_d · nota_d / Σ W_d      (W_d = 1, o el mayor peso de la prueba en esa dimensión)
-#   índice_zona    = (1 − area_weight) · índice_celda + area_weight · media de las 6 celdas vecinas
-#                    (las vecinas fuera de la zona de búsqueda cuentan 0): premia zonas homogéneas de
-#                    ~20 km donde cabe una campaña de campo. El ranking usa índice_zona.
+# Index (web app and src/analogs/similarity.py):
+#   dimension_note = weighted mean of the notes of its available variables
+#   cell_index     = 100 · Σ W_d · note_d / Σ W_d      (W_d = 1, or the test's largest weight in that dimension)
+#   area_index     = (1 − area_weight) · cell_index + area_weight · mean of the 6 neighbour cells
+#                    (neighbours outside the search zone count 0): rewards homogeneous areas of
+#                    ~20 km where a field campaign fits. The ranking uses area_index.
 dimensions:
   terrain:     {label: "Terrain"}
   thermal:     {label: "Thermal"}
@@ -38,71 +38,71 @@ dimensions:
   composition: {label: "Composition"}
 
 scoring:
-  area_weight: 0.4                   # [supuesto] peso de las 6 vecinas en el índice del ranking
+  area_weight: 0.4                   # [assumption] weight of the 6 neighbours in the ranking index
 
 variables:
 
   slope_deg:
-    label: "Pendiente"
+    label: "Slope"
     unit: "°"
     type: numeric
-    tolerance: 5                     # [supuesto]
+    tolerance: 5                     # [assumption]
     dimension: terrain
-    half_diff: 3                     # nota 0,5 con 3° de diferencia
-    criterion: "Operativo: ~3° separa las clases de pendiente para un rover (0–3 llano, 3–8 suave, 8–15 moderada, > 15 fuerte; límite operativo de Curiosity ~20°) y es ~2× el error de pendiente entre MDE de ~460 m"
-    note: "MISMA escala en los tres cuerpos (enfoque §2.2): píxeles de ~460–474 m, diferencias centrales (≈ 0,9 km), mediana ponderada por área en la celda H3"
+    half_diff: 3                     # note 0.5 at a 3° difference
+    criterion: "Operational: ~3° separates the slope classes for a rover (0–3 flat, 3–8 gentle, 8–15 moderate, > 15 steep; Curiosity's operational limit ~20°) and is ~2× the slope error between ~460 m DEMs"
+    note: "SAME scale on all three bodies (approach §2.2): ~460–474 m pixels, central differences (≈ 0.9 km), area-weighted median inside the H3 cell"
     sources:
-      moon:  "LRO LOLA GDR ldem_64, 64 px/° (~474 m) → src/analogs/moon.py (H3 res 4, ~12,3 km)"
-      mars:  "MGS MOLA MEGDR 128 px/° (~463 m) + mapas polares → src/analogs/mars_grid.py (H3 res 5, ~9,1 km)"
-      earth: "NOAA ETOPO 2022 15″ (~463 m), solo tierra → src/analogs/earth_grid.py (H3 res 6, ~6,5 km)"
+      moon:  "LRO LOLA GDR ldem_64, 64 px/° (~474 m) → src/analogs/moon.py (H3 res 4, ~12.3 km)"
+      mars:  "MGS MOLA MEGDR 128 px/° (~463 m) + polar maps → src/analogs/mars_grid.py (H3 res 5, ~9.1 km)"
+      earth: "NOAA ETOPO 2022 15″ (~463 m), land only → src/analogs/earth_grid.py (H3 res 6, ~6.5 km)"
 
   roughness_deg:
-    label: "Rugosidad (RMS de la pendiente)"
+    label: "Roughness (RMS slope)"
     unit: "°"
     type: numeric
-    tolerance: 3                     # [supuesto]
+    tolerance: 3                     # [assumption]
     dimension: terrain
-    half_diff: 2                     # nota 0,5 con 2° de diferencia
-    criterion: "Medida: ~2° es el ruido de la rugosidad RMS con MDE de ~460 m (MOLA con < 50 % de cobertura láser, ETOPO); diferencias menores no son significativas"
-    note: "Paso alto: RMS de la pendiente tras quitar el plano (Marte, Tierra) o el gradiente medio (Luna, ≈ lo mismo) de la celda"
+    half_diff: 2                     # note 0.5 at a 2° difference
+    criterion: "Measurement: ~2° is the noise of the RMS roughness with ~460 m DEMs (MOLA with < 50 % laser coverage, ETOPO); smaller differences are not significant"
+    note: "High-pass: RMS slope after removing the cell's fitted plane (Mars, Earth) or mean gradient (Moon, ≈ the same)"
     sources:
       moon:  "LRO LOLA GDR ldem_64 (moon.py)"
       mars:  "MGS MOLA MEGDR 128 px/° (mars_grid.py)"
       earth: "NOAA ETOPO 2022 15″ (earth_grid.py)"
 
   rock_abundance_pct:
-    label: "Abundancia de rocas"
+    label: "Rock abundance"
     unit: "%"
     type: numeric
-    tolerance: 10                    # [supuesto]
+    tolerance: 10                    # [assumption]
     dimension: terrain
-    half_diff: 5                     # nota 0,5 con 5 % de diferencia
-    criterion: "Operativo: 5 % de área cubierta de rocas cambia la densidad de obstáculos para un rover de forma apreciable (Golombek & Rapp 1997)"
-    note: "Mejor que la inercia térmica, que depende de la presión del gas (enfoque §2.3)"
+    half_diff: 5                     # note 0.5 at a 5 % difference
+    criterion: "Operational: 5 % of the area covered by rocks noticeably changes the obstacle density for a rover (Golombek & Rapp 1997)"
+    note: "Better than thermal inertia, which depends on the gas pressure (approach §2.3)"
     sources:
-      moon:  "Diviner dgdr_ra_avg_cyl_032 (60N–60S). En el polo NO existe → vacío (comprobado)"
-      mars:  "THEMIS / TES rock abundance [verificar]"
-      earth: "SoilGrids, fragmentos gruesos [verificar]"
+      moon:  "Diviner dgdr_ra_avg_cyl_032 (60N–60S). Does NOT exist at the pole → empty (checked)"
+      mars:  "THEMIS / TES rock abundance [verify]"
+      earth: "SoilGrids, coarse fragments [verify]"
 
   lithology:
-    label: "Tipo de roca"
+    label: "Rock type"
     unit: ""
     type: categorical
     categories: [basalt, anorthosite, other_igneous, sedimentary, evaporite, ice]
-    matrix: {}                       # [supuesto] vacía → igual = 1, distinto = 0. La rellena Ciencia.
+    matrix: {}                       # [assumption] empty → equal = 1, different = 0. To be filled by Science.
     sources:
-      moon:  "Del FeO de Lunar Prospector GRS (2°, global): mucho hierro → basalto (mar), poco → anortosita (tierras altas). Detalle: mapa geológico USGS"
-      mars:  "USGS Global Geologic Map of Mars (Tanaka et al., 2014) [verificar]"
-      earth: "GLiM (Global Lithological Map) [verificar]"
+      moon:  "From Lunar Prospector GRS FeO (2°, global): high iron → basalt (mare), low → anorthosite (highlands). Detail: USGS geologic map"
+      mars:  "USGS Global Geologic Map of Mars (Tanaka et al., 2014) [verify]"
+      earth: "GLiM (Global Lithological Map) [verify]"
 
   sun_elev_max_deg:
-    label: "Elevación máxima del Sol"
+    label: "Maximum Sun elevation"
     unit: "°"
     type: numeric
-    tolerance: 3                     # [supuesto] (fórmula lineal antigua)
+    tolerance: 3                     # [assumption] (old linear formula)
     dimension: sky
-    half_diff: 10                    # nota 0,5 con 10° de diferencia
-    criterion: "Físico: 10° de diferencia en la altura máxima del Sol cambia la irradiancia de mediodía en un panel horizontal ≲ 15 % (a media altura) y la longitud de las sombras ~2× con Sol bajo. Con 3° la búsqueda quedaba atada a la misma latitud"
+    half_diff: 10                    # note 0.5 at a 10° difference
+    criterion: "Physical: a 10° difference in the highest Sun elevation changes the noon irradiance on a horizontal panel by ≲ 15 % (at mid elevations) and shadow length ~2× with a low Sun. With 3° the search was tied to the same latitude"
     # Definition (closed 2026-11-14; used for Mars in src/analogs/mars_grid.py and for Earth in
     # src/analogs/earth.py): highest NOON Sun elevation over a whole year, flat horizon:
     #     h_max = 90° − max(0, |lat| − obliquity)
@@ -121,177 +121,177 @@ variables:
       earth: "calculated: obliquity 23.44°"
 
   t_mean_K:
-    label: "Temperatura media anual"
+    label: "Mean annual temperature"
     unit: "K"
     type: numeric
-    tolerance: 20                    # [supuesto]
+    tolerance: 20                    # [assumption]
     dimension: thermal
-    half_diff: 15                    # nota 0,5 con 15 K de diferencia
-    criterion: "Climático: ~15 K es la diferencia de temperatura media anual entre cinturones climáticos vecinos de la Tierra (polar ↔ subpolar ↔ templado). Ninguna celda de la Tierra llega a los ~210 K de Marte: la curva suave sigue ordenando (la meseta antártica por delante del Sahara)"
-    note: "Diviner PRP da la media a 2 cm de profundidad; MODIS da la superficie: no es exactamente la misma magnitud [verificar]"
+    half_diff: 15                    # note 0.5 at a 15 K difference
+    criterion: "Climatic: ~15 K is the mean annual temperature difference between neighbouring climate belts on Earth (polar ↔ subpolar ↔ temperate). No Earth cell reaches the ~210 K of Mars: the soft curve still ranks them (the Antarctic plateau ahead of the Sahara)"
+    note: "Diviner PRP gives the mean at 2 cm depth; MODIS gives the surface: not exactly the same quantity [verify]"
     sources:
-      moon:  "LRO Diviner GCP: (día + noche)/2 del ciclo medio de la misión (moon.py)"
-      mars:  "MGS TES MY26 (día) + MRO MCS MY31 (noche): (día + noche)/2 (mars_grid.py)"
-      earth: "MODIS Aqua MYD11C3: (día + noche)/2 de las 12 medias mensuales 2019–2023 (earth_grid.py)"
+      moon:  "LRO Diviner GCP: (day + night)/2 of the mission-mean cycle (moon.py)"
+      mars:  "MGS TES MY26 (day) + MRO MCS MY31 (night): (day + night)/2 (mars_grid.py)"
+      earth: "MODIS Aqua MYD11C3: (day + night)/2 of the 12 monthly means 2019–2023 (earth_grid.py)"
 
   t_max_K:
-    label: "Temperatura máxima anual"
+    label: "Maximum annual temperature"
     unit: "K"
     type: numeric
-    tolerance: 30                    # [supuesto]
+    tolerance: 30                    # [assumption]
     dimension: thermal
-    half_diff: 20                    # nota 0,5 con 20 K de diferencia
-    criterion: "Climático: los extremos varían más que la media; 20 K ≈ amplitud entre el mes más cálido de dos desiertos de latitudes vecinas. Además Marte da un P95 y la Tierra una media mensual (unos K de sesgo)"
+    half_diff: 20                    # note 0.5 at a 20 K difference
+    criterion: "Climatic: extremes vary more than the mean; 20 K ≈ the spread between the warmest month of two deserts at neighbouring latitudes. Also, Mars gives a P95 and Earth a monthly mean (a few K of bias)"
     sources:
-      moon:  "LRO Diviner GCP: máximo del ciclo diurno medio (moon.py)"
-      mars:  "MGS TES MY26: percentil 95 de los valores de la tarde (mars_grid.py)"
-      earth: "MODIS Aqua MYD11C3 (13:30): mes más cálido de la climatología 2019–2023 (earth_grid.py). Es una media mensual, no un P95: sale unos K más baja que la definición de Marte"
+      moon:  "LRO Diviner GCP: maximum of the mean diurnal cycle (moon.py)"
+      mars:  "MGS TES MY26: 95th percentile of the afternoon values (mars_grid.py)"
+      earth: "MODIS Aqua MYD11C3 (13:30): warmest month of the 2019–2023 climatology (earth_grid.py). It is a monthly mean, not a P95: a few K lower than the Mars definition"
 
   t_min_K:
-    label: "Temperatura mínima anual"
+    label: "Minimum annual temperature"
     unit: "K"
     type: numeric
-    tolerance: 30                    # [supuesto]
+    tolerance: 30                    # [assumption]
     dimension: thermal
-    half_diff: 20                    # nota 0,5 con 20 K de diferencia
-    criterion: "Climático: igual que la máxima (20 K entre cinturones vecinos en el mes más frío)"
-    note: "Condición típica (mes/hora más fría de la climatología), no el récord"
+    half_diff: 20                    # note 0.5 at a 20 K difference
+    criterion: "Climatic: same as the maximum (20 K between neighbouring belts in the coldest month)"
+    note: "Typical condition (coldest month/hour of the climatology), not the record"
     sources:
-      moon:  "LRO Diviner GCP: mínimo del ciclo diurno medio (moon.py)"
-      mars:  null                    # no exportada: para Marte se compara t_night_K
-      earth: "MODIS Aqua MYD11C3 (01:30): mes más frío de la climatología 2019–2023 (earth_grid.py)"
+      moon:  "LRO Diviner GCP: minimum of the mean diurnal cycle (moon.py)"
+      mars:  null                    # not exported: Mars compares t_night_K instead
+      earth: "MODIS Aqua MYD11C3 (01:30): coldest month of the 2019–2023 climatology (earth_grid.py)"
 
   t_night_K:
-    label: "Temperatura nocturna (media anual)"
+    label: "Night temperature (annual mean)"
     unit: "K"
     type: numeric
-    tolerance: 20                    # [supuesto]
+    tolerance: 20                    # [assumption]
     dimension: thermal
-    half_diff: 15                    # nota 0,5 con 15 K de diferencia
-    criterion: "Climático: como la media anual (15 K entre cinturones vecinos)"
-    note: "La temperatura que mejor comparten la Tierra y Marte: media anual de noche"
+    half_diff: 15                    # note 0.5 at a 15 K difference
+    criterion: "Climatic: like the annual mean (15 K between neighbouring belts)"
+    note: "The temperature Earth and Mars share best: annual mean at night"
     sources:
-      moon:  null                    # no exportada: para la Luna se compara t_min_K
+      moon:  null                    # not exported: the Moon compares t_min_K instead
       mars:  "MRO MCS DDR v6.2, MY31, ~03 h (mars_grid.py)"
-      earth: "MODIS Aqua MYD11C3 (01:30), media anual 2019–2023 (earth_grid.py)"
+      earth: "MODIS Aqua MYD11C3 (01:30), annual mean 2019–2023 (earth_grid.py)"
 
   precip_mm_year:
-    label: "Lluvia media anual (aridez)"
-    unit: "mm/año"
+    label: "Mean annual rainfall (aridity)"
+    unit: "mm/year"
     type: numeric
-    tolerance: 250                   # [supuesto]
+    tolerance: 250                   # [assumption]
     dimension: water
-    half_diff: 100                   # nota 0,5 con 100 mm/año
-    criterion: "Clases de aridez (UNEP): hiperárido < 25 mm, árido 25–200, semiárido 200–500. Con objetivo 0 (Marte, Luna), 100 mm/año = mitad del rango árido → nota 0,5"
-    note: "En la Luna y Marte vale 0: mide cuánto se aleja la Tierra de un ambiente sin agua líquida"
+    half_diff: 100                   # note 0.5 at 100 mm/year
+    criterion: "Aridity classes (UNEP): hyper-arid < 25 mm, arid 25–200, semi-arid 200–500. With a target of 0 (Mars, Moon), 100 mm/year = half the arid range → note 0.5"
+    note: "It is 0 on the Moon and Mars: it measures how far Earth is from an environment without liquid water"
     sources:
-      moon:  "0 (no llueve)"
-      mars:  "0 (no llueve)"
-      earth: "GPM IMERG mensual v07, media 2019–2023"
+      moon:  "0 (no rain)"
+      mars:  "0 (no rain)"
+      earth: "GPM IMERG monthly v07, mean 2019–2023"
 
   ice_depth_m:
-    label: "Profundidad del hielo"
+    label: "Ice depth"
     unit: "m"
     type: numeric
-    tolerance: 0.5                   # [supuesto] (fórmula lineal antigua)
+    tolerance: 0.5                   # [assumption] (old linear formula)
     dimension: water
-    # Clases (0,5 = en el primer metro · 3 = 1–5 m · 5 = > 5 m · 10 = sin hielo): parecido por matriz,
-    # no por diferencia. Fila = objetivo, columna = Tierra.
+    # Classes (0.5 = within the first metre · 3 = 1–5 m · 5 = > 5 m · 10 = no ice): similarity by
+    # matrix, not by difference. Row = target, column = Earth.
     matrix:
       0.5: {0.5: 1.0, 3: 0.5, 5: 0.25, 10: 0.0}
       3:   {0.5: 0.5, 3: 1.0, 5: 0.6,  10: 0.1}
       5:   {0.5: 0.25, 3: 0.6, 5: 1.0, 10: 0.3}
       10:  {0.5: 0.0, 3: 0.1, 5: 0.3,  10: 1.0}
-    criterion: "Operativo, por alcance de instrumentos: ≤ 1 m lo ven neutrones/radar y lo saca un taladro corto; 1–5 m necesita taladro profundo; > 5 m y 'sin hielo' son casi equivalentes para operaciones de superficie"
-    note: "Analogía PARCIAL: en la Luna el hielo sublima al vacío; en la Tierra hay atmósfera"
+    criterion: "Operational, by instrument reach: ≤ 1 m is seen by neutrons/radar and reached by a short drill; 1–5 m needs a deep drill; > 5 m and 'no ice' are almost equivalent for surface operations"
+    note: "PARTIAL analogy: on the Moon ice sublimates into vacuum; on Earth there is an atmosphere"
     sources:
-      moon:  "LRO Diviner PRP, profundidad de estabilidad del hielo (polo sur ≤ −80°); |lat| < 60°: sin hielo (supuesto). Metros continuos; 10 = no (moon.py)"
-      mars:  "SWIM 2.0 (±60°) + neutrones GRS + supuesto al N de 70° (mars_grid.py). Clases 0,5 / 3 / 5 / 10"
-      earth: "Estimada: hielo permanente MCD12C1 → 0 m; permafrost (LST media < 0 °C) → capa activa por Stefan E·√(grados-día de deshielo), E = 0,035 [supuesto]; si no, 10 m. Clases como Marte (earth_grid.py). Validar con ESA CCI Permafrost"
-    # Las tres fichas traen además ice_depth_source (de dónde sale el valor en cada celda: medido, modelo o supuesto)
+      moon:  "LRO Diviner PRP, ice stability depth (south pole ≤ −80°); |lat| < 60°: no ice (assumption). Continuous metres; 10 = none (moon.py)"
+      mars:  "SWIM 2.0 (±60°) + GRS neutrons + assumption north of 70° (mars_grid.py). Classes 0.5 / 3 / 5 / 10"
+      earth: "Estimated: permanent ice MCD12C1 → 0 m; permafrost (mean LST < 0 °C) → active layer by Stefan E·√(thawing degree-days), E = 0.035 [assumption]; otherwise 10 m. Classes as Mars (earth_grid.py). Validate with ESA CCI Permafrost"
+    # All three cards also carry ice_depth_source (where each cell's value comes from: measured, model or assumed)
 
   dust_aod:
-    label: "Polvo en suspensión (espesor óptico)"
+    label: "Airborne dust (optical depth)"
     unit: ""
     type: numeric
-    tolerance: 0.2                   # [supuesto]
+    tolerance: 0.2                   # [assumption]
     dimension: sky
-    half_diff: 0.15                  # nota 0,5 con 0,15 de diferencia
-    criterion: "Atmosférico: el fondo de Marte es τ ≈ 0,3–0,6 (tormentas > 1) y los desiertos de la Tierra τ ≈ 0,1–0,5; 0,15 ≈ la diferencia entre un desierto limpio y uno polvoriento"
+    half_diff: 0.15                  # note 0.5 at a 0.15 difference
+    criterion: "Atmospheric: the Mars background is τ ≈ 0.3–0.6 (storms > 1) and Earth deserts τ ≈ 0.1–0.5; 0.15 ≈ the difference between a clean and a dusty desert"
     sources:
       moon:  null
-      mars:  "MGS TES MY26, 9,3 µm × 2,6 → visible (mars_grid.py)"
-      earth: "NASA MERRA-2 M2TMNXAER, DUEXTTAU (solo polvo, 550 nm), media anual 2019–2023 (earth_grid.py)"
+      mars:  "MGS TES MY26, 9.3 µm × 2.6 → visible (mars_grid.py)"
+      earth: "NASA MERRA-2 M2TMNXAER, DUEXTTAU (dust only, 550 nm), annual mean 2019–2023 (earth_grid.py)"
 
   silica_wt_pct:
-    label: "Sílice (SiO₂)"
-    unit: "% peso"
+    label: "Silica (SiO₂)"
+    unit: "wt %"
     type: numeric
-    tolerance: 5                     # [supuesto]
+    tolerance: 5                     # [assumption]
     dimension: composition
-    half_diff: 5                     # nota 0,5 con 5 % de diferencia
-    criterion: "Geológico: 5 % de SiO₂ separa familias de roca (basalto 45–52 %, andesita 52–63 %, granito ~70 %). Aún no se compara: Marte no exporta grs_si"
-    note: "Composición de la superficie expuesta. Basalto ~45–52 %, granito ~70 %, arena de cuarzo > 90 %"
+    half_diff: 5                     # note 0.5 at a 5 % difference
+    criterion: "Geological: 5 % SiO₂ separates rock families (basalt 45–52 %, andesite 52–63 %, granite ~70 %). Not compared yet: Mars does not export grs_si"
+    note: "Composition of the exposed surface. Basalt ~45–52 %, granite ~70 %, quartz sand > 90 %"
     sources:
-      moon:  "Lunar Prospector GRS, SiO₂ (2°, ~60 km) [verificar unidades] (moon.py)"
-      mars:  "Mars Odyssey GRS, Si (5°) × 2,139 → SiO₂ [verificar] — PENDIENTE: mars_grid.py lo calcula (grs_si) pero la web no lo exporta"
-      earth: "ECOSTRESS ECO_L3G_WPS (0,01°, 53° N–53° S) (earth_grid.py)"
+      moon:  "Lunar Prospector GRS, SiO₂ (2°, ~60 km) [verify units] (moon.py)"
+      mars:  "Mars Odyssey GRS, Si (5°) × 2.139 → SiO₂ [verify] — PENDING: mars_grid.py computes it (grs_si) but the web export does not include it"
+      earth: "ECOSTRESS ECO_L3G_WPS (0.01°, 53° N–53° S) (earth_grid.py)"
 
   snow_cover_pct:
-    label: "Nieve (cobertura media anual)"
+    label: "Snow (mean annual cover)"
     unit: "%"
     type: numeric
-    tolerance: 30                    # [supuesto]
+    tolerance: 30                    # [assumption]
     dimension: water
-    half_diff: 20                    # nota 0,5 con 20 % de diferencia
-    criterion: "Cobertura: 20 puntos de cobertura media anual ≈ dos meses más o menos de suelo nevado"
-    note: "Solo Tierra de momento: sirve para filtrar o para buscar a mano (hielo superficial)"
+    half_diff: 20                    # note 0.5 at a 20 % difference
+    criterion: "Cover: 20 points of mean annual cover ≈ two months more or less of snow-covered ground"
+    note: "Earth only for now: useful as a filter or for a manual search (surface ice)"
     sources:
       moon:  null
-      mars:  "Escarcha estacional de CO₂/H₂O [verificar]"
-      earth: "MODIS MOD10CM, climatología 2019–2023"
+      mars:  "Seasonal CO₂/H₂O frost [verify]"
+      earth: "MODIS MOD10CM, 2019–2023 climatology"
 
   caves:
-    label: "Cuevas o tubos de lava (0 = no, 1 = sí)"
+    label: "Caves or lava tubes (0 = no, 1 = yes)"
     unit: ""
     type: numeric
-    tolerance: 1                     # igual → 1, distinto → 0
+    tolerance: 1                     # equal → 1, different → 0
     dimension: terrain
     sources:
-      moon:  "LROC Pits Atlas (278 pozos, global). 0 al sur de −80° (comprobado)"
-      mars:  "Mars Global Cave Candidate Catalog, MGC³ (USGS) [verificar]"
-      earth: "Proxy: campos volcánicos basálticos (Smithsonian GVP + GLiM) [verificar]"
+      moon:  "LROC Pits Atlas (278 pits, global). 0 south of −80° (checked)"
+      mars:  "Mars Global Cave Candidate Catalog, MGC³ (USGS) [verify]"
+      earth: "Proxy: basaltic volcanic fields (Smithsonian GVP + GLiM) [verify]"
 
 # -----------------------------------------------------------------------------
-# OPERABILIDAD: solo existe en la Tierra. NO entra en el parecido; sirve de filtro
-# ("enséñame solo sitios accesibles") y para el gráfico parecido vs. accesibilidad.
+# OPERABILITY: exists on Earth only. NOT part of the similarity; used as a filter
+# ("show me only accessible sites") and for the similarity vs accessibility chart.
 # -----------------------------------------------------------------------------
 operability:
   travel_time_h:
-    label: "Tiempo de viaje a la ciudad más cercana"
+    label: "Travel time to the nearest city"
     unit: "h"
-    source: "Weiss et al. (2018), Nature [verificar]"
+    source: "Weiss et al. (2018), Nature [verify]"
   protected_area:
-    label: "Zona protegida (0 = no, 1 = sí)"
+    label: "Protected area (0 = no, 1 = yes)"
     unit: ""
-    source: "WDPA (World Database on Protected Areas) [verificar]"
+    source: "WDPA (World Database on Protected Areas) [verify]"
 
 # -----------------------------------------------------------------------------
-# LO QUE LA TIERRA NO PUEDE REPRODUCIR: bloque fijo en cada ficha (enfoque §5)
+# WHAT EARTH CANNOT REPRODUCE: fixed block on every card (approach §5)
 # -----------------------------------------------------------------------------
 bodies:
   moon:
-    label: "Luna"
+    label: "Moon"
     gravity_m_s2: 1.62
-    surface_pressure_Pa: 0           # ~vacío (exosfera)
-    solar_day_h: 708.7               # 29,53 días
+    surface_pressure_Pa: 0           # ~vacuum (exosphere)
+    solar_day_h: 708.7               # 29.53 days
   mars:
-    label: "Marte"
+    label: "Mars"
     gravity_m_s2: 3.71
-    surface_pressure_Pa: 610         # media; varía con la estación
+    surface_pressure_Pa: 610         # mean; varies with the season
     solar_day_h: 24.66               # 1 sol
   earth:
-    label: "Tierra"
+    label: "Earth"
     gravity_m_s2: 9.81
     surface_pressure_Pa: 101325
     solar_day_h: 24.0

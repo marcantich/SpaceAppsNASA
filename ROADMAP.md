@@ -1,7 +1,7 @@
 # Roadmap: phases and tasks
 
 > Project tracking list. Tick each task when it is done: `- [ ]` → `- [x]`.
-> Last update: 2026-11-14.
+> Last update: 2026-11-15.
 
 **Legend:** `app/` = the web app (Vite + CesiumJS) · `src/analogs/` = the engine and Python preprocessing · `app/data/` = the index the app reads (format in [`app/README.md`](app/README.md)).
 
@@ -29,9 +29,9 @@
 - [x] **1.3** **Moon** viewer with `Ellipsoid.MOON` and Moon Trek tiles (`LRO_WAC_Mosaic_Global_303ppd_v02`).
 - [x] **1.4** Turn off the atmosphere, fog, and Earth's Sun/Moon in the Mars and Moon viewers (stars kept).
 - [x] **1.5** Screen layout: target (Moon or Mars) on the left and Earth on the right (stacked on narrow screens), with a button to switch between the Moon and Mars.
-- [x] **1.6** Zoom and poles checked. Deepest level Trek actually serves: Mars 7 (~330 m/px), Moon 8; beyond that Cesium upsamples the last tile. Earth's north pole: small artifact above 85° (Web Mercator limit).
+- [x] **1.6** Zoom and poles checked. Deepest level Trek actually serves: Mars 7 (~330 m/px), Moon 8; beyond that Cesium upsamples the last tile. Earth's poles: ~~artifact above 85° (Web Mercator limit)~~ fixed 2026-11-15: the Blue Marble base layer now comes from GIBS in geographic projection (EPSG:4326, `gibsGeoLayer` in `bodies.js`, 512 px tiles, levels 0–7), which reaches ±90°.
 - [x] **1.7** Relief layer with a toggle: MOLA colour hillshade (Mars), LOLA colour hillshade v6 (Moon; Trek serves it as PNG) and ASTER GDEM colour shaded relief (Earth).
-- [x] **1.8** High-resolution imagery drawn automatically when zooming in: MRO CTX global mosaic for Mars (~5 m/px, greyscale, Caltech Murray Lab/Esri, listed by Mars Trek; up to level 12) and Sentinel-2 cloudless 2016 for Earth (~10 m/px, EOX, CC BY 4.0; up to level 14). The Moon stays at LRO WAC (~100 m/px).
+- [x] **1.8** High-resolution imagery drawn automatically when zooming in: MRO CTX global mosaic for Mars (~5 m/px, greyscale, Caltech Murray Lab/Esri, listed by Mars Trek; up to level 12) and Sentinel-2 cloudless 2016 for Earth (~10 m/px, EOX, CC BY 4.0; up to level 14). **2026-11-15:** Sentinel-2 cloudless has no Antarctica (EOX serves plain white tiles, even over the Dry Valleys rock), so it is clipped at 60° S and Antarctica keeps the Blue Marble (~500 m/px). A sharper Antarctic layer (e.g. Landsat LIMA) would be a later improvement. The Moon stays at LRO WAC (~100 m/px).
 
 ## Phase 2 · Interaction and coordinates (`app/`)
 
@@ -121,6 +121,10 @@
   **Part 2 to do:** compare with Earth and fly to the best match — needs the Earth card grid in the app (3.16 Earth: export `fichas_tierra_h3r5` with `write_grid_binary`, see `docs/07`) and 4.2 (formula in JS).
 - [x] **4.10** ✅ Done 2026-11-14: **Rover test planner** (second view of the app since 2026-11-15: the title in the toolbar is a view menu, "Analogs" / "Rover test planner", and `#rover` in the URL opens it directly; `app/src/rover.js`, `rover3d.js`, `rover.css`, config `app/data/rover.json`). A 3D rover (NASA's Perseverance model, clickable parts) is sent to the selected Mars / Moon cell. For each part (wheels, cameras, drill, thermal control, dust) the app checks every Earth search cell against a **box of margins** around the target values (all the part's variables inside ± margin → field test; only inside ± 2 × margin, a missing variable or a physics cap such as gravity → with caveats; nothing, or vacuum needed → lab only) and gives an **Earth testability index** = 100 · (field + ½ · caveats) / parts. Click a part → Earth is painted with the cells where it can be tested and flies to the best one; "Whole rover" → cells where most parts pass at once, plus a campaign (fewest sites that cover every part). Respects the Earth zone filter. Checked in the browser (dev and built app): Jezero 70 % (5 of 5 parts, thermal only at 2 × margin in Antarctica), Shackleton 30 % (thermal and dust are lab only; wheels in 169 Earth cells). Margins and caps are assumptions [supuesto], editable in `rover.json`. Details: `app/README.md`.
 
+- [x] **4.11** ✅ Done 2026-11-15: **empty result lists and arbitrary #1 fixed** (`rank` in `app/src/match.js`, found in the `PLAN_ENTREGA.md` audit). (a) The threshold walked down the score histogram and stopped *before* a bin that overflowed `topN`; with tests of few variables thousands of cells tie (often at 100), so no cell was kept → empty list in 75 of 189 site × test combinations. Now the overflowing bin is included and the list is cut to `topN` after sorting. (b) Ties: cells whose index rounds to the same whole point (as the app shows it) are ordered by the index on *all shared variables*, so with "Wheels" the #1 is the flat cell that is also most similar in climate, not the first in table order. (c) When the 3,000 best cells all lie in one region, the search keeps going down the list (up to 50,000 cells) until it has 6 sites ≥ `minKm` apart. Checked in the browser on the 21 target sites × 9 test options: 0 empty lists, 6 sites in every case (~0.2 s per search instead of ~0.1 s: the general index is computed too).
+- [x] **4.12** ✅ Done 2026-11-15: score hexagons on the search globe drawn more transparent (alpha 0.78 → 0.32, `showHexes` in `globe.js`) so the planet shows through. Also: switching body sends the globe that stays back to its whole view (or the search zone), instead of staying zoomed on the old analog.
+- [ ] **4.13** **Tests that promise more than they compare** (pending, not started). Earth has no `lithology`, `caves` or `rock_abundance_pct` columns, so "Drilling / sampling" compares only ice (= "Ice detection"), "Habitat" only the mean temperature, and "Wheels" slope + roughness without rocks. Plan: (a) hide Drilling and Habitat from the menu (e.g. `hidden: true` in `configs/pruebas.yaml`, kept for when the data exist); (b) in the results bar, say what was really compared and what is missing ("Compared: slope, roughness · not available on Earth: rock abundance"); `makePlan` in `scoring.js` already knows which variables exist.
+
 ## Phase 5 · Data layers on the globes (`app/`)
 
 - [ ] **5.1** Export each variable as an equirectangular PNG from Python (`outputs/maps/`).
@@ -137,3 +141,4 @@
 - [ ] **6.4** Demo video in case the connection fails.
 - [ ] **6.5** Slides: problem → data → method → demo → limitations.
 - [ ] **6.6** Review the final Space Apps submission (app link, repository, video).
+- [x] **6.7** ✅ Done 2026-11-15: **no Spanish left in the interface.** Test names, test validity sentences, variable labels and criteria came from `configs/pruebas.yaml` and `configs/variables.yaml` (in Spanish); both files translated to English (comments too; keys such as `ruedas` kept, the app and data use them) and `app/data/tierra/match.json` regenerated with `python scripts/export_scoring.py`. Note: that script needs `h3ronpy` (`pip install -r requirements.txt`).

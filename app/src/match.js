@@ -261,18 +261,13 @@ export class Matcher {
    * (for the map), best: up to `nBest` sites at least `minKm` apart ranked by the area index,
    * threshold, n: cells searched, zone, minKm, body }.
    */
-  rank(sourceValues, sourceBody, prueba, { topN = 6000, nBest = 6, minKm = 400, zone = null } = {}) {
+  /**
+   * Index of every cell for `plan` (Float32Array, −1 = no shared variable). One 256-entry note
+   * table per u1 variable, so the per-cell loop is just lookups.
+   */
+  scoreAll(plan) {
     const t = this.table;
-    const plan = this.plan(sourceValues, sourceBody, prueba);
     const n = t.n;
-    const inZone = zone ? t.zoneMask(zone) : null;
-    // spacing of the results: smaller bodies and zones get closer sites
-    const R = { earth: 6371, mars: 3390, moon: 1737 }[this.body] ?? 6371;
-    minKm *= R / 6371;
-    if (zone) minKm = Math.min(minKm, zoneSizeKm(zone) * (R / 6371) / 5);
-    minKm = Math.max(5, minKm);
-
-    // one 256-entry note table per u1 variable: the per-cell loop is then just lookups
     const dims = Object.values(plan.dims).map(({ weight, vars }) => ({
       weight,
       vars: Object.entries(vars).map(([name, w]) => {
@@ -287,9 +282,7 @@ export class Matcher {
         return { w, arr: c.arr, lut, c, spec, target };
       }),
     }));
-
     const score = new Float32Array(n);
-    const hist = new Uint32Array(1001);
     for (let i = 0; i < n; i++) {
       let num = 0;
       let den = 0;
@@ -311,34 +304,71 @@ export class Matcher {
         }
         den += d.weight; // a dimension with no data at all counts 0 (what was not measured is not rewarded)
       }
-      const s = any && den > 0 ? (100 * num) / den : -1;
-      score[i] = s;
-      if (s >= 0 && (!inZone || inZone.mask[i])) hist[Math.round(s * 10)]++;
+      score[i] = any && den > 0 ? (100 * num) / den : -1;
     }
+    return score;
+  }
 
-    // threshold that keeps ~topN cells of the zone, then sort only those
-    let kept = 0;
-    let bin = 1000;
-    for (; bin > 0 && kept + hist[bin] <= topN; bin--) kept += hist[bin];
-    const threshold = Math.max(0, (bin + 0.5) / 10);
-    const top = [];
-    for (let i = 0; i < n; i++) if (score[i] >= threshold && (!inZone || inZone.mask[i])) top.push(i);
-    top.sort((a, b) => score[b] - score[a]);
+  rank(sourceValues, sourceBody, prueba, { topN = 6000, nBest = 6, minKm = 400, zone = null } = {}) {
+    const t = this.table;
+    const plan = this.plan(sourceValues, sourceBody, prueba);
+    const n = t.n;
+    const inZone = zone ? t.zoneMask(zone) : null;
+    // spacing of the results: smaller bodies and zones get closer sites
+    const R = { earth: 6371, mars: 3390, moon: 1737 }[this.body] ?? 6371;
+    minKm *= R / 6371;
+    if (zone) minKm = Math.min(minKm, zoneSizeKm(zone) * (R / 6371) / 5);
+    minKm = Math.max(5, minKm);
+
+    const score = this.scoreAll(plan);
+    // Tie-break: a test with few variables gives thousands of cells the same index. Cells whose
+    // index rounds to the same whole point (as the app shows it) count as tied, and among them the
+    // one most similar on ALL shared variables goes first (not the first in table order).
+    const general = prueba ? this.scoreAll(this.plan(sourceValues, sourceBody, '')) : score;
+    const tie = (a, b, i, j) => Math.round(b) - Math.round(a) || general[j] - general[i] || b - a;
+    const byScore = (i, j) => tie(score[i], score[j], i, j);
+
+    const hist = new Uint32Array(1001);
+    for (let i = 0; i < n; i++) if (score[i] >= 0 && (!inZone || inZone.mask[i])) hist[Math.round(score[i] * 10)]++;
+
+    /** The `limit` best cells of the zone, best first (ties broken by the general index). */
+    const bestCells = (limit) => {
+      // walk down the histogram until `limit` cells are reached; the bin that overflows is
+      // included whole (it may hold thousands of tied cells) and the list is cut after sorting
+      let kept = 0;
+      let bin = 1000;
+      for (; bin > 0 && kept < limit; bin--) kept += hist[bin];
+      const cut = Math.max(0, (bin + 0.5) / 10);
+      const list = [];
+      for (let i = 0; i < n; i++) if (score[i] >= cut && (!inZone || inZone.mask[i])) list.push(i);
+      list.sort(byScore);
+      if (list.length > limit) list.length = limit;
+      return list;
+    };
+    const top = bestCells(topN);
+    const threshold = top.length ? Math.max(0, score[top[top.length - 1]]) : 0;
 
     // ranking: the cell mixed with its 6 neighbours (homogeneous areas first)
-    const cand = top.slice(0, 3000).map((i) => {
+    const candidate = (i) => {
       const h3 = t.h3(i);
       const ring = this.neighbourMean(h3, score);
       return { i, h3, cell: score[i], ring, area: areaIndex(this.meta, score[i], ring) };
-    });
-    cand.sort((a, b) => b.area - a.area);
+    };
     const best = [];
-    for (const c of cand) {
+    const tryAdd = (c) => {
       const [lat, lon] = cellToLatLng(c.h3);
       if (best.every((b) => greatCircleDistance([lat, lon], [b.lat, b.lon], 'km') * (R / 6371) >= minKm)) {
         best.push({ ...c, lat, lon, score: c.area, env: t.value('env', c.i), ...this.scoreOf(plan, c.i) });
-        if (best.length === nBest) break;
       }
+      return best.length === nBest;
+    };
+    const cand = top.slice(0, 3000).map(candidate);
+    cand.sort((a, b) => tie(a.area, b.area, a.i, b.i));
+    for (const c of cand) if (tryAdd(c)) break;
+    // the best cells may all lie in one region: then look further down the list for the others
+    if (best.length < nBest) {
+      for (const i of bestCells(50000).slice(3000)) if (tryAdd(candidate(i))) break;
+      best.sort((a, b) => tie(a.score, b.score, a.i, b.i));
     }
     const histogram = { ge90: 0, ge75: 0, ge50: 0 };
     for (let k = 1000; k >= 500; k--) {

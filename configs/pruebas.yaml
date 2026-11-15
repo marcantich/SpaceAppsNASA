@@ -1,57 +1,58 @@
 # =============================================================================
-# PRUEBAS: "¿Qué quieres probar?"
+# TESTS: "What do you want to test?"
 # =============================================================================
-# Cada prueba es SOLO una lista de pesos (0–1) sobre las variables de configs/variables.yaml.
-#   peso 1   → esa variable cuenta mucho
-#   peso 0 o ausente → esa variable no cuenta para esta prueba
+# Each test is ONLY a list of weights (0–1) over the variables of configs/variables.yaml.
+#   weight 1          → that variable counts a lot
+#   weight 0 / absent → that variable does not count for this test
 #
-# Añadir una prueba nueva = añadir un bloque aquí. No hay que tocar código.
-# En la app, el usuario también puede mover los pesos a mano (combinaciones libres).
+# Adding a new test = adding a block here. No code changes needed.
+# (The keys stay in Spanish — ruedas, perforacion… — because the app and the data use them.)
 #
-#   test_validity  frase para la ficha: qué NO reproduce la Tierra en esta prueba
+#   label          name shown in the app's "Test" menu
+#   test_validity  sentence for the card: what Earth does NOT reproduce in this test
 #
-# ⚠️ TODOS los pesos son [supuesto]: los fija el equipo de Ciencia.
-#    Borrador razonado en docs/01_como_funciona.md §5.
+# ⚠️ ALL weights are [assumption]: set by the Science team.
+#    Reasoned draft in docs/01_como_funciona.md §5.
 # =============================================================================
 
 pruebas:
 
   ruedas:
-    label: "Ruedas / movilidad"
+    label: "Wheels / mobility"
     weights: {slope_deg: 1.0, roughness_deg: 1.0, rock_abundance_pct: 0.8}
-    test_validity: "La carga por rueda es ∝ m·g: probar con un vehículo aligerado (g_destino / g_Tierra)"
+    test_validity: "Wheel load scales with m·g: test with a lightened vehicle (g_target / g_Earth)"
 
   navegacion:
-    label: "Navegación autónoma / cámaras"
+    label: "Autonomous navigation / cameras"
     weights: {sun_elev_max_deg: 1.0, slope_deg: 0.5, roughness_deg: 0.5}
-    test_validity: "En la Tierra las sombras se mueven ~30 veces más rápido y el cielo las rellena de luz difusa"
+    test_validity: "On Earth shadows move ~30 times faster and the sky fills them with diffuse light"
 
   perforacion:
-    label: "Perforación / toma de muestras"
+    label: "Drilling / sampling"
     weights: {lithology: 1.0, ice_depth_m: 0.7}
-    test_validity: "El material se reproduce; la temperatura del subsuelo no"
+    test_validity: "The material can be reproduced; the subsurface temperature cannot"
 
   hielo:
-    label: "Detección de hielo"
+    label: "Ice detection"
     weights: {ice_depth_m: 1.0, t_mean_K: 0.5}
-    test_validity: "El hielo lunar está en vacío; el terrestre, bajo atmósfera: la sublimación es distinta"
+    test_validity: "Lunar ice sits in vacuum; Earth ice under an atmosphere: sublimation is different"
 
   energia_termica:
-    label: "Energía solar y control térmico"
+    label: "Solar power and thermal control"
     weights: {sun_elev_max_deg: 0.8, t_mean_K: 1.0, t_max_K: 0.6}
-    test_validity: "La Tierra no baja de ≈ −90 °C ni llega al mediodía lunar (≈ +120 °C)"
+    test_validity: "Earth never drops below ≈ −90 °C nor reaches the lunar noon (≈ +120 °C)"
 
   polvo:
-    label: "Polvo, juntas y mecanismos (Marte)"
+    label: "Dust, seals and mechanisms (Mars)"
     weights: {dust_aod: 1.0}
-    test_validity: "El aire de Marte es ~60 veces menos denso: el polvo se levanta de otra forma"
+    test_validity: "Martian air is ~60 times thinner: dust is lifted differently"
 
   habitat:
-    label: "Hábitat / operaciones humanas"
+    label: "Habitat / human operations"
     weights: {t_mean_K: 0.6, caves: 0.4}
-    test_validity: "Ni la gravedad reducida ni la radiación se reproducen"
+    test_validity: "Neither reduced gravity nor radiation are reproduced"
 
   comunicaciones:
-    label: "Comunicaciones (línea de visión)"
+    label: "Communications (line of sight)"
     weights: {roughness_deg: 1.0, slope_deg: 0.5}
-    test_validity: "La geometría del relieve sí se reproduce"
+    test_validity: "The geometry of the relief is reproduced"

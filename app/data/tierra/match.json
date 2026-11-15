@@ -96,75 +96,75 @@
  ],
  "variables": {
   "slope_deg": {
-   "label": "Pendiente",
+   "label": "Slope",
    "unit": "°",
    "tolerance": 5,
    "dimension": "terrain",
-   "criterion": "Operativo: ~3° separa las clases de pendiente para un rover (0–3 llano, 3–8 suave, 8–15 moderada, > 15 fuerte; límite operativo de Curiosity ~20°) y es ~2× el error de pendiente entre MDE de ~460 m",
+   "criterion": "Operational: ~3° separates the slope classes for a rover (0–3 flat, 3–8 gentle, 8–15 moderate, > 15 steep; Curiosity's operational limit ~20°) and is ~2× the slope error between ~460 m DEMs",
    "half_diff": 3
   },
   "roughness_deg": {
-   "label": "Rugosidad (RMS de la pendiente)",
+   "label": "Roughness (RMS slope)",
    "unit": "°",
    "tolerance": 3,
    "dimension": "terrain",
-   "criterion": "Medida: ~2° es el ruido de la rugosidad RMS con MDE de ~460 m (MOLA con < 50 % de cobertura láser, ETOPO); diferencias menores no son significativas",
+   "criterion": "Measurement: ~2° is the noise of the RMS roughness with ~460 m DEMs (MOLA with < 50 % laser coverage, ETOPO); smaller differences are not significant",
    "half_diff": 2
   },
   "sun_elev_max_deg": {
-   "label": "Elevación máxima del Sol",
+   "label": "Maximum Sun elevation",
    "unit": "°",
    "tolerance": 3,
    "dimension": "sky",
-   "criterion": "Físico: 10° de diferencia en la altura máxima del Sol cambia la irradiancia de mediodía en un panel horizontal ≲ 15 % (a media altura) y la longitud de las sombras ~2× con Sol bajo. Con 3° la búsqueda quedaba atada a la misma latitud",
+   "criterion": "Physical: a 10° difference in the highest Sun elevation changes the noon irradiance on a horizontal panel by ≲ 15 % (at mid elevations) and shadow length ~2× with a low Sun. With 3° the search was tied to the same latitude",
    "half_diff": 10
   },
   "t_mean_K": {
-   "label": "Temperatura media anual",
+   "label": "Mean annual temperature",
    "unit": "K",
    "tolerance": 20,
    "dimension": "thermal",
-   "criterion": "Climático: ~15 K es la diferencia de temperatura media anual entre cinturones climáticos vecinos de la Tierra (polar ↔ subpolar ↔ templado). Ninguna celda de la Tierra llega a los ~210 K de Marte: la curva suave sigue ordenando (la meseta antártica por delante del Sahara)",
+   "criterion": "Climatic: ~15 K is the mean annual temperature difference between neighbouring climate belts on Earth (polar ↔ subpolar ↔ temperate). No Earth cell reaches the ~210 K of Mars: the soft curve still ranks them (the Antarctic plateau ahead of the Sahara)",
    "half_diff": 15
   },
   "t_max_K": {
-   "label": "Temperatura máxima anual",
+   "label": "Maximum annual temperature",
    "unit": "K",
    "tolerance": 30,
    "dimension": "thermal",
-   "criterion": "Climático: los extremos varían más que la media; 20 K ≈ amplitud entre el mes más cálido de dos desiertos de latitudes vecinas. Además Marte da un P95 y la Tierra una media mensual (unos K de sesgo)",
+   "criterion": "Climatic: extremes vary more than the mean; 20 K ≈ the spread between the warmest month of two deserts at neighbouring latitudes. Also, Mars gives a P95 and Earth a monthly mean (a few K of bias)",
    "half_diff": 20
   },
   "t_min_K": {
-   "label": "Temperatura mínima anual",
+   "label": "Minimum annual temperature",
    "unit": "K",
    "tolerance": 30,
    "dimension": "thermal",
-   "criterion": "Climático: igual que la máxima (20 K entre cinturones vecinos en el mes más frío)",
+   "criterion": "Climatic: same as the maximum (20 K between neighbouring belts in the coldest month)",
    "half_diff": 20
   },
   "t_night_K": {
-   "label": "Temperatura nocturna (media anual)",
+   "label": "Night temperature (annual mean)",
    "unit": "K",
    "tolerance": 20,
    "dimension": "thermal",
-   "criterion": "Climático: como la media anual (15 K entre cinturones vecinos)",
+   "criterion": "Climatic: like the annual mean (15 K between neighbouring belts)",
    "half_diff": 15
   },
   "precip_mm_year": {
-   "label": "Lluvia media anual (aridez)",
-   "unit": "mm/año",
+   "label": "Mean annual rainfall (aridity)",
+   "unit": "mm/year",
    "tolerance": 250,
    "dimension": "water",
-   "criterion": "Clases de aridez (UNEP): hiperárido < 25 mm, árido 25–200, semiárido 200–500. Con objetivo 0 (Marte, Luna), 100 mm/año = mitad del rango árido → nota 0,5",
+   "criterion": "Aridity classes (UNEP): hyper-arid < 25 mm, arid 25–200, semi-arid 200–500. With a target of 0 (Mars, Moon), 100 mm/year = half the arid range → note 0.5",
    "half_diff": 100
   },
   "ice_depth_m": {
-   "label": "Profundidad del hielo",
+   "label": "Ice depth",
    "unit": "m",
    "tolerance": 0.5,
    "dimension": "water",
-   "criterion": "Operativo, por alcance de instrumentos: ≤ 1 m lo ven neutrones/radar y lo saca un taladro corto; 1–5 m necesita taladro profundo; > 5 m y 'sin hielo' son casi equivalentes para operaciones de superficie",
+   "criterion": "Operational, by instrument reach: ≤ 1 m is seen by neutrons/radar and reached by a short drill; 1–5 m needs a deep drill; > 5 m and 'no ice' are almost equivalent for surface operations",
    "matrix": {
     "0.5": {
      "0.5": 1.0,
@@ -193,11 +193,11 @@
    }
   },
   "dust_aod": {
-   "label": "Polvo en suspensión (espesor óptico)",
+   "label": "Airborne dust (optical depth)",
    "unit": "",
    "tolerance": 0.2,
    "dimension": "sky",
-   "criterion": "Atmosférico: el fondo de Marte es τ ≈ 0,3–0,6 (tormentas > 1) y los desiertos de la Tierra τ ≈ 0,1–0,5; 0,15 ≈ la diferencia entre un desierto limpio y uno polvoriento",
+   "criterion": "Atmospheric: the Mars background is τ ≈ 0.3–0.6 (storms > 1) and Earth deserts τ ≈ 0.1–0.5; 0.15 ≈ the difference between a clean and a dusty desert",
    "half_diff": 0.15
   }
  },
@@ -209,70 +209,70 @@
  },
  "pruebas": {
   "ruedas": {
-   "label": "Ruedas / movilidad",
+   "label": "Wheels / mobility",
    "weights": {
     "slope_deg": 1.0,
     "roughness_deg": 1.0,
     "rock_abundance_pct": 0.8
    },
-   "test_validity": "La carga por rueda es ∝ m·g: probar con un vehículo aligerado (g_destino / g_Tierra)"
+   "test_validity": "Wheel load scales with m·g: test with a lightened vehicle (g_target / g_Earth)"
   },
   "navegacion": {
-   "label": "Navegación autónoma / cámaras",
+   "label": "Autonomous navigation / cameras",
    "weights": {
     "sun_elev_max_deg": 1.0,
     "slope_deg": 0.5,
     "roughness_deg": 0.5
    },
-   "test_validity": "En la Tierra las sombras se mueven ~30 veces más rápido y el cielo las rellena de luz difusa"
+   "test_validity": "On Earth shadows move ~30 times faster and the sky fills them with diffuse light"
   },
   "perforacion": {
-   "label": "Perforación / toma de muestras",
+   "label": "Drilling / sampling",
    "weights": {
     "lithology": 1.0,
     "ice_depth_m": 0.7
    },
-   "test_validity": "El material se reproduce; la temperatura del subsuelo no"
+   "test_validity": "The material can be reproduced; the subsurface temperature cannot"
   },
   "hielo": {
-   "label": "Detección de hielo",
+   "label": "Ice detection",
    "weights": {
     "ice_depth_m": 1.0,
     "t_mean_K": 0.5
    },
-   "test_validity": "El hielo lunar está en vacío; el terrestre, bajo atmósfera: la sublimación es distinta"
+   "test_validity": "Lunar ice sits in vacuum; Earth ice under an atmosphere: sublimation is different"
   },
   "energia_termica": {
-   "label": "Energía solar y control térmico",
+   "label": "Solar power and thermal control",
    "weights": {
     "sun_elev_max_deg": 0.8,
     "t_mean_K": 1.0,
     "t_max_K": 0.6
    },
-   "test_validity": "La Tierra no baja de ≈ −90 °C ni llega al mediodía lunar (≈ +120 °C)"
+   "test_validity": "Earth never drops below ≈ −90 °C nor reaches the lunar noon (≈ +120 °C)"
   },
   "polvo": {
-   "label": "Polvo, juntas y mecanismos (Marte)",
+   "label": "Dust, seals and mechanisms (Mars)",
    "weights": {
     "dust_aod": 1.0
    },
-   "test_validity": "El aire de Marte es ~60 veces menos denso: el polvo se levanta de otra forma"
+   "test_validity": "Martian air is ~60 times thinner: dust is lifted differently"
   },
   "habitat": {
-   "label": "Hábitat / operaciones humanas",
+   "label": "Habitat / human operations",
    "weights": {
     "t_mean_K": 0.6,
     "caves": 0.4
    },
-   "test_validity": "Ni la gravedad reducida ni la radiación se reproducen"
+   "test_validity": "Neither reduced gravity nor radiation are reproduced"
   },
   "comunicaciones": {
-   "label": "Comunicaciones (línea de visión)",
+   "label": "Communications (line of sight)",
    "weights": {
     "roughness_deg": 1.0,
     "slope_deg": 0.5
    },
-   "test_validity": "La geometría del relieve sí se reproduce"
+   "test_validity": "The geometry of the relief is reproduced"
   }
  },
  "dimensions": {

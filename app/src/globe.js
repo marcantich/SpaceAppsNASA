@@ -38,6 +38,12 @@ export function createGlobe(container, bodyKey) {
     // Cesium only adds stars by default with the Earth ellipsoid
     skyBox: Cesium.SkyBox.createEarthSkyBox(),
   });
+  // No Cesium ion logo: the app uses no Cesium ion service (no token, no ion assets; checked: no
+  // request to cesium.com) and the CesiumJS licence (Apache 2.0) does not require it. CesiumJS is
+  // credited in the "Data attribution" list instead (and in CREDITS.md).
+  viewer.cesiumWidget.creditContainer.querySelector('.cesium-credit-logoContainer')?.remove();
+  viewer.creditDisplay.addStaticCredit(new Cesium.Credit(
+    'Globe engine: <a href="https://cesium.com/platform/cesiumjs/" target="_blank" rel="noopener">CesiumJS</a> (Apache 2.0)', false));
   // Our own click handling replaces Cesium's default double-click "track entity"
   viewer.screenSpaceEventHandler.removeInputAction(Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
@@ -57,7 +63,11 @@ export function createGlobe(container, bodyKey) {
   // High-resolution layer, only drawn once the camera is close enough
   if (body.detail) {
     viewer.imageryLayers.add(
-      new Cesium.ImageryLayer(body.detail.make(), { minimumTerrainLevel: body.detail.fromLevel }),
+      new Cesium.ImageryLayer(body.detail.make(), {
+        minimumTerrainLevel: body.detail.fromLevel,
+        // only where the detail imagery has data (outside it the base layer shows)
+        ...(body.detail.rectangle ? { rectangle: body.detail.rectangle } : {}),
+      }),
     );
   }
 
@@ -225,7 +235,7 @@ export function createGlobe(container, bodyKey) {
   function showHexes(list) {
     clearHexes();
     if (!list.length) return Promise.resolve();
-    const instances = list.map(({ h3, color, alpha = 0.78 }) => new Cesium.GeometryInstance({
+    const instances = list.map(({ h3, color, alpha = 0.32 }) => new Cesium.GeometryInstance({
       geometry: new Cesium.PolygonGeometry({
         polygonHierarchy: new Cesium.PolygonHierarchy(cellToBoundary(h3).map(([la, lo]) => toCartesian(la, lo))),
         height: HEX_HEIGHT,

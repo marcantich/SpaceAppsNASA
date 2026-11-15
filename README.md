@@ -118,3 +118,9 @@ python scripts/make_mock_data.py   # datos FALSOS en app/data/ para empezar la a
 | Datos de la Tierra | |
 | Motor | |
 | App | |
+
+## Licence and credits
+
+Code: [MIT](LICENSE). Data, imagery, the 3D model and the libraries keep their own licences and credits:
+see [`CREDITS.md`](CREDITS.md). The Sentinel-2 cloudless imagery (EOX) is CC BY 4.0 and must be credited.
+This project uses public NASA data but is not endorsed by NASA.
