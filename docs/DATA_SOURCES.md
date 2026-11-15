@@ -34,7 +34,7 @@ Archive: NASA Planetary Data System (PDS), no account needed. Downloaded with
 | GRS special products: epithermal neutron flux | Mars Odyssey · Neutron Spectrometer | 0.5° | 2002 | `ns_epithermal_cps`; ice beyond ±60° | PDS Geosciences: `ody/urn-nasa-pds-odyssey_grs_special/` |
 | SWIM 2.0 ice-consistency maps (0–1 m, 1–5 m, > 5 m) | Subsurface Water Ice Mapping project (multi-instrument: radar, neutrons, thermal, imagery) | ~3 km, ±60° | — | `ice_depth_m` | `swim.psi.edu` (Planetary Science Institute / NASA Mars Exploration Program) |
 | FV3-based Mars GCM, Beta Output Release 1 (reference simulation) | NASA Ames Mars Climate Modeling Center (model, not a measurement) | 2° × 2° | One model year | `wind_mean_m_s`, `wind_stress_mPa`, albedo for the solar model | NASA Ames data portal `data.nas.nasa.gov/mcmcref`, doi:10.25966/rjgg-r639 |
-| Normalised net flux tables (Table III) | Appelbaum & Flood solar radiation model | — | — | `solar_kwh_m2_sol` (calculated) | NASA TM-102299 and updates; tables as transcribed in the `marsrad` package (used as data only) |
+| Normalised net flux tables (Table III) | Appelbaum & Flood solar radiation model | — | — | `solar_kwh_m2_sol` (calculated) | NASA TM-102299 and updates; values read from the transcription in the R package `marsrad` (GPL-3; numbers only, no code) |
 
 References:
 
@@ -53,10 +53,14 @@ References:
 - Feldman, W. C. et al. (2002). Global distribution of neutrons from Mars: results from Mars Odyssey.
   *Science* 297, 75–78.
 - Morgan, G. A. et al. (2021). Availability of subsurface water-ice resources in the northern
-  mid-latitudes of Mars. *Nature Astronomy* 5, 230–236. (SWIM; for SWIM 2.0 see the project site
-  **[verify]**.)
+  mid-latitudes of Mars. *Nature Astronomy* 5, 230–236. (First SWIM maps.)
+- Putzig, N. E., Morgan, G. A. et al. (2024). Ice resource mapping on Mars. In *Handbook of Space
+  Resources*, Springer, 583–616. doi:10.1007/978-3-030-97913-3_16. (The SWIM method; the SWIM 2.0
+  composite maps are downloaded from swim.psi.edu.)
 - NASA Ames Mars Climate Modeling Center. FV3-based Mars Global Climate Model, Beta Output Release 1.
-  doi:10.25966/rjgg-r639.
+  NASA Ames data portal, doi:10.25966/rjgg-r639.
+- Labrèche, G. *marsrad*: Mars solar radiation (R package, GPL-3), github.com/georgeslabreche/marsrad.
+  Source of our transcription of the Appelbaum & Flood net-flux table (numbers only).
 - Appelbaum, J. & Flood, D. J. (1990). Solar radiation on Mars. *Solar Energy* 45(6), 353–363 (NASA
   TM-102299); updates NASA TM-103623 (1990) and TM-105216 (1991).
 
@@ -93,9 +97,9 @@ References:
   Lunar Radiometer Experiment. *Icarus* 283, 300–325.
 - Bandfield, J. L. et al. (2011). Lunar surface rock abundance and regolith fines temperatures derived
   from LRO Diviner Radiometer data. *JGR Planets* 116, E00H02.
-- Barker, M. K. et al. (2021). Improved LOLA elevation maps for south pole landing sites: error
-  estimates and their impact on illumination conditions. *Planetary and Space Science* 203, 105119.
-  **[verify]** that it is the reference of PGDA product 90.
+- Barker, M. K., Mazarico, E., Neumann, G. A., Smith, D. E., Zuber, M. T., Head, J. W. & Sun, X.
+  (2023). A new view of the lunar south pole from the Lunar Orbiter Laser Altimeter (LOLA).
+  *Planetary Science Journal* 4, 183. doi:10.3847/PSJ/acf3e1. (Reference of PGDA product 90.)
 - Prettyman, T. H. et al. (2006). Elemental composition of the lunar surface: analysis of gamma ray
   spectroscopy data from Lunar Prospector. *JGR Planets* 111, E12007.
 - Wagner, R. V. & Robinson, M. S. (2014). Distribution, formation mechanisms, and significance of lunar
@@ -137,8 +141,9 @@ References:
   5419–5454.
 - Hall, D. K. & Riggs, G. A. (2021). MODIS/Terra Snow Cover Monthly L3 Global 0.05Deg CMG, Version 61.
   NASA NSIDC DAAC. doi:10.5067/MODIS/MOD10CM.061.
-- ECOSTRESS Science Team. ECOSTRESS Gridded Weight Percent Silica L3 Global, ECO_L3G_WPS v001. NASA LP
-  DAAC. **[verify]** the dataset DOI on the product page.
+- ECOSTRESS Science Team. ECOSTRESS Gridded Weight Percent Silica L3 Global 0.01 Degree Map,
+  ECO_L3G_WPS v001 (2023–2024 composite). NASA LP DAAC. Catalogue record:
+  earthdata.nasa.gov/data/catalog/lpcloud-eco-l3g-wps-001.
 
 ---
 
@@ -160,9 +165,9 @@ Read from the browser by byte ranges or tiles; not stored in the repository.
 
 | Body | Product | Resolution | Provider |
 |---|---|---|---|
-| Mars | HRSC + MOLA blended DEM, global, v2 | 200 m | USGS Astrogeology Science Center / DLR. Fergason, R. L., Hare, T. M. & Laura, J. (2018) |
-| Moon | LRO LOLA global DEM | 118 m | USGS Astrogeology Science Center / NASA GSFC (LOLA Science Team, 2014) |
-| Earth | "Terrarium" terrain tiles (SRTM ~30 m; USGS 3DEP 10 m in the USA) | ~30 m | Mapzen terrain tiles, AWS Open Data |
+| Mars | HRSC + MOLA blended DEM, global, v2 | 200 m | Fergason, R. L., Hare, T. M. & Laura, J. (2018), USGS Astrogeology. HRSC: ESA/DLR/FU Berlin (CC BY-SA 3.0 IGO); MOLA: NASA (CC0) |
+| Moon | LRO LOLA global DEM | 118 m | LOLA Science Team (2014), NASA GSFC; USGS Astrogeology (public domain) |
+| Earth | "Terrarium" terrain tiles (SRTM ~30 m; USGS 3DEP 10 m in the USA; national DEMs elsewhere) | ~30 m | Mapzen / AWS Terrain Tiles; attribution of every source as listed in `CREDITS.md` |
 | Mars | Real traverses of Perseverance and Curiosity (`app/data/route/presets.json`), resampled every 10 m | — | NASA/JPL-Caltech, mars.nasa.gov |
 
 ---

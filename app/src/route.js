@@ -31,13 +31,13 @@ const DEM = {
     name: 'Mars', R: 3396190, minStep: 200, W: 106694, H: 53347, offset: 854272, scale: 1,
     pxPerDeg: 1 / 0.003374120830641,
     url: `${S3}Mars/HRSC_MOLA_Blend/Mars_HRSC_MOLA_BlendDEM_Global_200mp_v2.tif`,
-    credit: 'Mars HRSC+MOLA blended DEM 200 m (USGS Astrogeology, DLR)',
+    credit: 'Mars HRSC+MOLA blended DEM 200 m v2 (Fergason, Hare & Laura 2018, USGS Astrogeology; HRSC: ESA/DLR/FU Berlin, CC BY-SA 3.0 IGO; MOLA: NASA, CC0)',
   },
   moon: {
     name: 'Moon', R: 1737400, minStep: 120, W: 92160, H: 46080, offset: 738233, scale: 0.5,
     pxPerDeg: 256,
     url: `${S3}Lunar_LRO_LOLA_Global_LDEM_118m_Mar2014.tif`,
-    credit: 'LRO LOLA global DEM 118 m (USGS Astrogeology, NASA GSFC)',
+    credit: 'LRO LOLA global DEM 118 m (LOLA Science Team 2014, NASA GSFC; USGS Astrogeology)',
   },
 };
 
@@ -153,6 +153,15 @@ async function sampleDem(body, pts) {
 }
 
 // ---- Earth: elevation grid in local metres around a point, from Terrarium PNG tiles --------------
+// Attribution required by the terrain tiles (github.com/tilezen/joerd/blob/master/docs/attribution.md)
+const TERRAIN_CREDIT = 'Mapzen / AWS Terrain Tiles (Terrarium). Sources: '
+  + '3DEP, GMTED2010 and SRTM data courtesy of the U.S. Geological Survey; '
+  + 'ArcticDEM DEMs were created from DigitalGlobe, Inc., imagery and funded under NSF awards 1043681, 1559691 and 1542736; '
+  + 'EU-DEM produced using Copernicus data and information funded by the European Union; '
+  + 'ETOPO1 (NOAA NCEI); © Commonwealth of Australia (Geoscience Australia) 2017; '
+  + '© offene Daten Österreichs – DGM Österreich; contains information licensed under the Open Government Licence – Canada; '
+  + 'Source: INEGI, Continental relief, 2016; © Land Information New Zealand; © Kartverket; '
+  + '© Environment Agency copyright and/or database right 2015.';
 const tiles = new Map();
 function loadTile(z, x, y) {
   const n = 2 ** z;
@@ -574,7 +583,7 @@ export function createRoute(api) {
     goBtn.disabled = false;
     const best = state.results[0];
     $(find, '.note').innerHTML = `${failed.length ? `<span class="err">${failed.join(' · ')}</span><br>` : ''}${
-      best ? `Search window: ${fmtKm(GRID * p.L / 3)} around each place. Compared at ${Math.round(p.L)} m steps: relief only, not rocks or sand. Earth elevation: Terrarium tiles (SRTM / USGS 3DEP).` : 'No path found.'}`;
+      best ? `Search window: ${fmtKm(GRID * p.L / 3)} around each place. Compared at ${Math.round(p.L)} m steps: relief only, not rocks or sand. Earth elevation: ${TERRAIN_CREDIT}` : 'No path found.'}`;
     if (best) show(best, { fly: true });
   }
 
