@@ -374,10 +374,47 @@ export function createRover(api) {
   const view = document.createElement('div');
   view.className = 'rover-view';
   view.hidden = true;
-  view.innerHTML = '<header><b>Your rover</b><span>drag to turn · click a part</span></header>'
+  view.innerHTML = '<header><b>Your rover</b><span>drag to turn · click a part</span><button type="button" class="rover-min-btn" title="Minimise the rover to see and click the planet" aria-label="Minimise rover">–</button></header>'
     + '<div class="rover-stage"><p class="rover-wait">Loading the 3D rover (5 MB)…</p></div><footer></footer>';
   document.getElementById('pane-left').append(view);
   const stage = view.querySelector('.rover-stage');
+
+  // The rover window itself minimises to a small live thumbnail of the rover (bottom-right of the
+  // left pane): click it to enlarge and pick the parts; the "–" button shrinks it again so the planet
+  // can be seen and clicked. Starts minimised.
+  const minBtn = view.querySelector('.rover-min-btn');
+  let roverOpen = false;
+  function setRoverOpen(open) {
+    roverOpen = open;
+    view.classList.toggle('min', !open);
+    document.body.classList.toggle('rover-open', open);
+    view.title = open ? '' : 'Your rover: click to enlarge and choose its parts';
+    view.setAttribute('aria-expanded', String(open));
+  }
+  view.addEventListener('click', () => { if (!roverOpen) setRoverOpen(true); });
+  view.addEventListener('keydown', (e) => {
+    if (!roverOpen && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); setRoverOpen(true); }
+  });
+  minBtn.addEventListener('click', (e) => { e.stopPropagation(); setRoverOpen(false); });
+  // Also minimise with a click anywhere else on the left pane, or with Esc. Both are caught in the
+  // capture phase and stopped, so that click / key only closes the window (it does not also pick a
+  // point of the planet or clear the selection).
+  const paneLeft = document.getElementById('pane-left');
+  for (const type of ['pointerdown', 'mousedown']) {
+    paneLeft.addEventListener(type, (e) => {
+      if (!roverOpen || view.contains(e.target)) return;
+      e.stopPropagation();
+      e.preventDefault();
+      if (type === 'pointerdown') setRoverOpen(false);
+    }, true);
+  }
+  document.addEventListener('keydown', (e) => {
+    if (e.key !== 'Escape' || !roverOpen || view.hidden) return;
+    e.stopPropagation();
+    setRoverOpen(false);
+  }, true);
+  view.tabIndex = 0;
+  setRoverOpen(false);
 
   // ---- plan panel: right edge of the Earth pane ---------------------------------------------------
   const panel = document.createElement('aside');

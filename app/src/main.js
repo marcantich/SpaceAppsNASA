@@ -243,8 +243,10 @@ async function runMatch({ animate: fly = true } = {}) {
     setStatus('');
     if (request !== matchRequest) return null;
     if (fly) {
-      if (zone) right.flyToZone(zone, FLY_S);
-      else if (h3) animate([{ globe: right, h3, panels: rightPanels() }]);
+      // Always go to the best match, also inside a zone (before, a zone search stopped at the
+      // whole-zone view and the best analog had to be found by hand).
+      if (h3) animate([{ globe: right, h3, panels: rightPanels() }]);
+      else if (zone) right.flyToZone(zone, FLY_S);
     }
     return { h3 };
   } catch (err) {
