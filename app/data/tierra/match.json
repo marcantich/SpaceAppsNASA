@@ -205,6 +205,9 @@
   "precip_mm_year": [
    "mars",
    "moon"
+  ],
+  "dust_aod": [
+   "moon"
   ]
  },
  "pruebas": {
@@ -292,5 +295,22 @@
    "label": "Composition"
   }
  },
- "area_weight": 0.4
+ "area_weight": 0.4,
+ "labels": {
+  "slope_deg": "Slope",
+  "roughness_deg": "Roughness (RMS slope)",
+  "rock_abundance_pct": "Rock abundance",
+  "lithology": "Rock type",
+  "sun_elev_max_deg": "Maximum Sun elevation",
+  "t_mean_K": "Mean annual temperature",
+  "t_max_K": "Maximum annual temperature",
+  "t_min_K": "Minimum annual temperature",
+  "t_night_K": "Night temperature (annual mean)",
+  "precip_mm_year": "Mean annual rainfall (aridity)",
+  "ice_depth_m": "Ice depth",
+  "dust_aod": "Airborne dust (optical depth)",
+  "silica_wt_pct": "Silica (SiO₂)",
+  "snow_cover_pct": "Snow (mean annual cover)",
+  "caves": "Caves or lava tubes (0 = no, 1 = yes)"
+ }
 }

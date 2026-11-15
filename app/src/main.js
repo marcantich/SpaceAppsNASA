@@ -16,7 +16,7 @@ import { createCardPanel, createResultsBar, createScoreDock } from './card.js';
 import { cellToBoundary, cellToLatLng, greatCircleDistance } from 'h3-js';
 import { latLonToCartesian } from './coords.js';
 import { Matcher, RAMP_CSS, isTableLoaded, loadScoringMeta, loadTable, rampColor } from './match.js';
-import { areaIndex, scoreCell } from './scoring.js';
+import { areaIndex, scoreCell, valueOn } from './scoring.js';
 import { ZONES_BY_BODY, makeZone, zoneText } from './zones.js';
 import { createPlaceSearch, createZoneMenu } from './places.js';
 import { countryAt, preloadCountries } from './countries.js';
@@ -279,7 +279,8 @@ const ENV = ['outside the search zone', 'polar ice', 'desert', 'arid open land']
 function compareWith(c) {
   const { plan, matcher } = lastRank;
   const meta = matcher.meta;
-  const sc = scoreCell(meta, plan, (name) => c.values[name]);
+  const val = (name) => valueOn(meta, matcher.body, c.values, name); // 0 = no rain on Mars, no dust on the Moon
+  const sc = scoreCell(meta, plan, val);
   const ring = matcher.neighbourMean(c.h3, lastRank.score);
   const index = areaIndex(meta, sc.index, ring);
   const dims = Object.entries(plan.dims).map(([d, { label, vars }]) => ({
@@ -291,7 +292,7 @@ function compareWith(c) {
       short: SHORT_VAR[name] ?? name,
       unit: matcher.table.cols[name]?.unit ?? meta.variables[name].unit,
       target: plan.target[name],
-      earth: c.values[name],
+      earth: val(name),
       note: sc.notes[name],
     })),
   }));

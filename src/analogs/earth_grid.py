@@ -404,8 +404,13 @@ def match_scoring_meta() -> dict:
     return {
         "variables": variables,
         "dimensions": cfg.get("dimensions", {}),
+        # names of every variable, also those not compared yet (rocks, lithology, caves), so the app
+        # can say in words what a test could not compare
+        "labels": {k: v["label"] for k, v in cfg["variables"].items()},
         "area_weight": float((cfg.get("scoring") or {}).get("area_weight", 0.0)),
-        "zero_on_target": {"precip_mm_year": ["mars", "moon"]},   # no llueve: vale 0 aunque la ficha no lo traiga
+        # zero by nature on that body, even when its card has no column (no rain on Mars or the Moon;
+        # no airborne dust on the airless Moon): counted as 0 in both directions (app/src/scoring.js)
+        "zero_on_target": {"precip_mm_year": ["mars", "moon"], "dust_aod": ["moon"]},
         "pruebas": {k: {"label": v["label"], "weights": v["weights"], "test_validity": v.get("test_validity", "")}
                     for k, v in pruebas.items()},
     }

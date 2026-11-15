@@ -12,7 +12,7 @@
 // is found by binary search.
 import { cellToChildren, cellToLatLng, getRes0Cells, getBaseCellNumber, gridDisk, greatCircleDistance, isPentagon } from 'h3-js';
 import { zoneContains, zoneSizeKm } from './zones.js';
-import { areaIndex, makePlan, noteOf, scoreCell } from './scoring.js';
+import { areaIndex, isZeroOn, makePlan, noteOf, scoreCell } from './scoring.js';
 
 const DATA = `${import.meta.env?.BASE_URL ?? '/'}data/`; // (no Vite env when tested in Node)
 const NODATA = { u1: 255, u2: 65535 };
@@ -230,15 +230,22 @@ export class Matcher {
    * search body really has are compared (no rain on Mars / the Moon: it is not a column there).
    */
   plan(sourceValues, sourceBody, prueba) {
-    // a variable that is constant on the search body (zero_on_target: no rain on Mars or the Moon)
-    // would score every cell alike: it is not compared, even if the grid carries the column
-    const constant = (name) => this.meta.zero_on_target?.[name]?.includes(this.body);
-    return makePlan(this.meta, sourceValues, sourceBody, prueba, (name) => !!this.table.cols[name] && !constant(name));
+    // Compared: what the search table has, plus what is zero by nature on the search body (no rain on
+    // Mars or the Moon, no dust on the Moon) even without a column, so the index is the same in both
+    // directions. Such a variable scores every cell alike: it moves the index, not the ranking.
+    return makePlan(this.meta, sourceValues, sourceBody, prueba,
+      (name) => !!this.table.cols[name] || isZeroOn(this.meta, this.body, name));
+  }
+
+  /** Value of table cell i (0 for a variable that is zero by nature on this body). */
+  value(name, i) {
+    const v = this.table.value(name, i);
+    return Number.isFinite(v) ? v : isZeroOn(this.meta, this.body, name) ? 0 : NaN;
   }
 
   /** Index of table cell i (with the dimension scores and notes). */
   scoreOf(plan, i) {
-    return scoreCell(this.meta, plan, (name) => this.table.value(name, i));
+    return scoreCell(this.meta, plan, (name) => this.value(name, i));
   }
 
   /**
@@ -275,6 +282,11 @@ export class Matcher {
         const spec = this.meta.variables[name];
         const target = plan.target[name];
         let lut = null;
+        if (!c) {
+          // no column, zero by nature on this body (e.g. dust on the Moon): the same note for every cell
+          const note = noteOf(spec, target, 0);
+          return { w, arr: null, lut: null, c: null, spec, target, constNote: note };
+        }
         if (c.dtype === 'u1') {
           lut = new Float32Array(256);
           for (let q = 0; q < 256; q++) lut[q] = q === 255 ? NaN : noteOf(spec, target, q * c.scale + c.offset);
@@ -291,8 +303,13 @@ export class Matcher {
         let dn = 0;
         let dd = 0;
         for (const v of d.vars) {
-          const q = v.arr[i];
-          const note = v.lut ? v.lut[q] : (q === NODATA[v.c.dtype] ? NaN : noteOf(v.spec, v.target, q * v.c.scale + v.c.offset));
+          let note;
+          if (!v.arr) {
+            note = v.constNote;
+          } else {
+            const q = v.arr[i];
+            note = v.lut ? v.lut[q] : (q === NODATA[v.c.dtype] ? NaN : noteOf(v.spec, v.target, q * v.c.scale + v.c.offset));
+          }
           if (note === note) { // not NaN
             dn += v.w * note;
             dd += v.w;
